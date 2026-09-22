@@ -1,0 +1,3 @@
+interface:
+  display_name: "Seevee Agent"
+  short_description: "Operate Seevee CV data, comments, templates, and exports safely."
