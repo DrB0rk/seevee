@@ -15,8 +15,24 @@ Default document profile: ISO A4 portrait, 210 x 297 mm.
 - docs/DASHBOARD_EDITOR.md — fixed dashboard/editor UX and live-preview behavior.
 - docs/TEMPLATE_AUTHORING.md — Astro template contract, compiler lifecycle and sandbox rules.
 - docs/AGENT_CONTRACT.md — agent roles, mutation boundaries and validation workflow.
+- docs/CLI_INSTALLER.md — installer, `seevee` CLI, workspace scaffold and detached dashboard runtime.
 - AGENTS.md — repository instructions for coding agents.
 - skills/seevee-agent/ — reusable Seevee operating skill for agents.
+
+## Install and initialize
+
+The target user experience is:
+
+~~~sh
+npm install -g @drb0rk/seevee
+mkdir my-cv
+cd my-cv
+seevee init
+~~~
+
+The package name may change to another official scope before publication, but the installed executable remains `seevee`.
+
+`seevee init` is non-interactive: it scaffolds the local workspace, starts the dashboard in the background, opens the browser, and exits. The user can then launch any external agent in the directory.
 
 ## Core flow
 
