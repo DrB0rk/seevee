@@ -1,0 +1,290 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://seevee.dev/schema/v1/common.schema.json",
+  "title": "Seevee Common Types",
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 160,
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+    },
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "jsonPointer": {
+      "type": "string",
+      "pattern": "^(|/(?:[^~/]|~0|~1)*)$"
+    },
+    "extensions": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*(?:\\.[A-Za-z0-9][A-Za-z0-9._-]*)+$"
+      },
+      "additionalProperties": true
+    },
+    "partialDate": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "precision",
+            "year"
+          ],
+          "properties": {
+            "precision": {
+              "const": "year"
+            },
+            "year": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9999
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "precision",
+            "year",
+            "month"
+          ],
+          "properties": {
+            "precision": {
+              "const": "month"
+            },
+            "year": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9999
+            },
+            "month": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 12
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "precision",
+            "year",
+            "month",
+            "day"
+          ],
+          "properties": {
+            "precision": {
+              "const": "day"
+            },
+            "year": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9999
+            },
+            "month": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 12
+            },
+            "day": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 31
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "dateRange": {
+      "type": "object",
+      "required": [
+        "start",
+        "end",
+        "isCurrent"
+      ],
+      "properties": {
+        "start": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/partialDate"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "end": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/partialDate"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "isCurrent": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "nodeRef": {
+      "type": "object",
+      "required": [
+        "kind",
+        "nodeId",
+        "nodeType"
+      ],
+      "properties": {
+        "kind": {
+          "const": "node"
+        },
+        "nodeId": {
+          "$ref": "#/$defs/id"
+        },
+        "nodeType": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "fieldRef": {
+      "type": "object",
+      "required": [
+        "kind",
+        "nodeId",
+        "nodeType",
+        "field"
+      ],
+      "properties": {
+        "kind": {
+          "const": "field"
+        },
+        "nodeId": {
+          "$ref": "#/$defs/id"
+        },
+        "nodeType": {
+          "type": "string",
+          "minLength": 1
+        },
+        "field": {
+          "$ref": "#/$defs/jsonPointer"
+        }
+      },
+      "additionalProperties": false
+    },
+    "sectionRef": {
+      "type": "object",
+      "required": [
+        "kind",
+        "sectionId"
+      ],
+      "properties": {
+        "kind": {
+          "const": "section"
+        },
+        "sectionId": {
+          "$ref": "#/$defs/id"
+        }
+      },
+      "additionalProperties": false
+    },
+    "semanticRef": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/nodeRef"
+        },
+        {
+          "$ref": "#/$defs/fieldRef"
+        },
+        {
+          "$ref": "#/$defs/sectionRef"
+        }
+      ]
+    },
+    "actor": {
+      "type": "object",
+      "required": [
+        "type",
+        "id"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "user",
+            "agent",
+            "system"
+          ]
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "runId": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "link": {
+      "type": "object",
+      "required": [
+        "id",
+        "label",
+        "url",
+        "kind",
+        "visibility"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "visibility": {
+          "enum": [
+            "public",
+            "private",
+            "hidden"
+          ]
+        },
+        "extensions": {
+          "$ref": "#/$defs/extensions"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
