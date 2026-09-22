@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://seevee.dev/schema/v1/agent-run.schema.json",
+  "title": "Seevee Agent Run",
+  "type": "object",
+  "required": [
+    "kind",
+    "schemaVersion",
+    "id",
+    "type",
+    "state",
+    "inputRevisions",
+    "commentIds",
+    "changeSetIds",
+    "checks",
+    "summary",
+    "startedAt",
+    "completedAt"
+  ],
+  "properties": {
+    "kind": {
+      "const": "seevee.agent-run"
+    },
+    "schemaVersion": {
+      "$ref": "common.schema.json#/$defs/schemaVersion"
+    },
+    "id": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "type": {
+      "type": "string",
+      "minLength": 1
+    },
+    "state": {
+      "enum": [
+        "queued",
+        "running",
+        "completed",
+        "blocked",
+        "failed",
+        "cancelled"
+      ]
+    },
+    "inputRevisions": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "common.schema.json#/$defs/revision"
+      }
+    },
+    "commentIds": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/id"
+      },
+      "uniqueItems": true
+    },
+    "changeSetIds": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/id"
+      },
+      "uniqueItems": true
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/check"
+      }
+    },
+    "summary": {
+      "type": "string"
+    },
+    "startedAt": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    },
+    "completedAt": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/timestamp"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "extensions": {
+      "$ref": "common.schema.json#/$defs/extensions"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "check": {
+      "type": "object",
+      "required": [
+        "status"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "passed",
+            "warning",
+            "failed",
+            "skipped"
+          ]
+        },
+        "message": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "diagnosticIds": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
