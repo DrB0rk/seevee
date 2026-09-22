@@ -12,6 +12,7 @@ Default document profile: ISO A4 portrait, 210 x 297 mm.
 
 - docs/DEVELOPMENT_PLAN.md — product architecture and implementation roadmap.
 - docs/SCHEMA_ARCHITECTURE.md — normative schema design and cross-document reference model.
+- schemas/README.md + schemas/v1/*.schema.json — machine-readable Draft 2020-12 contracts.
 - docs/DASHBOARD_EDITOR.md — fixed dashboard/editor UX and live-preview behavior.
 - docs/TEMPLATE_AUTHORING.md — Astro template contract, compiler lifecycle and sandbox rules.
 - docs/AGENT_CONTRACT.md — agent roles, mutation boundaries and validation workflow.
