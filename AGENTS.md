@@ -14,6 +14,7 @@ Then read the task-specific document:
 - dashboard/editor: docs/DASHBOARD_EDITOR.md
 - Astro template or rendering work: docs/TEMPLATE_AUTHORING.md
 - agent behavior, ingestion, comments, mutations or validation: docs/AGENT_CONTRACT.md
+- installer, CLI, workspace scaffold or local server lifecycle: docs/CLI_INSTALLER.md
 
 If your environment supports reusable skills, use skills/seevee-agent/SKILL.md when operating a Seevee workspace or implementing behavior governed by the runtime contracts.
 
@@ -34,6 +35,8 @@ If your environment supports reusable skills, use skills/seevee-agent/SKILL.md w
 - Ordinary styling should use presentation tokens/style presets, not source duplication.
 - Writes are revision checked. Never silently overwrite a newer revision.
 - Deterministic validation gates agent completion.
+- The user-facing executable is `seevee`; `seevee init` is non-interactive and must return terminal control after a healthy detached dashboard server is running.
+- Seevee must remain agent-agnostic: do not make the dashboard dependent on Claude Code, Codex, OMP, Cursor, or another specific agent runtime.
 
 ## Schema implementation rule
 
