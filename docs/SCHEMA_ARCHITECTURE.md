@@ -20,6 +20,8 @@ The Seevee schema system must be:
 
 Use Zod as the runtime source of truth and generate JSON Schema artifacts. Do not maintain unrelated manual TypeScript interfaces and JSON Schema files.
 
+The bootstrap machine-readable v1 specification is committed under `schemas/v1/`. Treat it as the implementation contract until the Zod package exists; once implementation starts, CI must generate/verify these artifacts from the canonical Zod modules.
+
 ## 2. Resource model
 
 A workspace contains separately revisioned resources:
@@ -568,13 +570,16 @@ Presentation controls how CV data is rendered without changing CV facts.
       "overflowPolicy": "error"
     },
     "tokens": {
-      "fontFamily": "Inter",
-      "baseFontSizePt": 9.5,
-      "lineHeight": 1.3,
-      "density": 0.92,
-      "columnGapMm": 7,
-      "primaryColor": "#111111",
-      "accentColor": "#2457d6"
+      "core": {
+        "fontFamily": "Inter",
+        "baseFontSizePt": 9.5,
+        "lineHeight": 1.3,
+        "density": 0.92,
+        "columnGapMm": 7,
+        "primaryColor": "#111111",
+        "accentColor": "#2457d6"
+      },
+      "template": {}
     },
     "sectionOverrides": {
       "sec_projects": {
@@ -663,12 +668,24 @@ A style preset is light-weight, reusable presentation state.
   "templateId": "tpl_minimal",
   "templateVersionId": "tplv_004",
   "tokens": {
-    "density": 0.88,
-    "accentColor": "#2457d6"
+    "core": {
+      "density": 0.88,
+      "accentColor": "#2457d6"
+    },
+    "template": {}
   },
   "page": {
     "preset": "A4",
-    "orientation": "portrait"
+    "orientation": "portrait",
+    "widthMm": 210,
+    "heightMm": 297,
+    "marginMm": {
+      "top": 12,
+      "right": 12,
+      "bottom": 12,
+      "left": 12
+    },
+    "bleedMm": 0
   },
   "sectionOverrides": {}
 }
@@ -815,7 +832,12 @@ Supported selector families:
   "x": 0.10,
   "y": 0.42,
   "width": 0.64,
-  "height": 0.04
+  "height": 0.04,
+  "renderContext": {
+    "cvRevision": 14,
+    "presentationRevision": 21,
+    "templateVersionId": "tplv_004"
+  }
 }
 ~~~
 
@@ -919,7 +941,7 @@ If current revision != baseRevision:
 
 Never use last-write-wins for agent mutations.
 
-## 14. Workspace document
+## 14. Workspace document (`seevee.json`)
 
 ~~~json
 {
@@ -936,6 +958,12 @@ Never use last-write-wins for agent mutations.
       "provenanceId": "provdoc_001",
       "presentationId": "pres_001",
       "commentsId": "comments_001"
+    },
+    "files": {
+      "cv": "cv.json",
+      "provenance": "provenance.json",
+      "presentation": "presentation.json",
+      "comments": "comments.json"
     },
     "sources": ["src_001"],
     "template": {
@@ -971,10 +999,10 @@ Agent-state is operational rather than canonical CV content.
   "commentIds": ["thr_001"],
   "changeSetIds": ["chg_001"],
   "checks": {
-    "schema": "passed",
-    "semanticReferences": "passed",
-    "render": "passed",
-    "overflow": "passed"
+    "schema": { "status": "passed" },
+    "semanticReferences": { "status": "passed" },
+    "render": { "status": "passed" },
+    "overflow": { "status": "passed" }
   },
   "summary": "Shortened one experience bullet while preserving factual meaning.",
   "startedAt": "...",
