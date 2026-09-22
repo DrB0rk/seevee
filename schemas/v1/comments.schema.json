@@ -1,0 +1,515 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://seevee.dev/schema/v1/comments.schema.json",
+  "title": "Seevee Comments Document",
+  "type": "object",
+  "required": [
+    "kind",
+    "schemaVersion",
+    "id",
+    "revision",
+    "createdAt",
+    "updatedAt",
+    "data"
+  ],
+  "properties": {
+    "kind": {
+      "const": "seevee.comments"
+    },
+    "schemaVersion": {
+      "$ref": "common.schema.json#/$defs/schemaVersion"
+    },
+    "id": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "revision": {
+      "$ref": "common.schema.json#/$defs/revision"
+    },
+    "createdAt": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    },
+    "updatedAt": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    },
+    "data": {
+      "$ref": "#/$defs/data"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "data": {
+      "type": "object",
+      "required": [
+        "threadOrder",
+        "threads"
+      ],
+      "properties": {
+        "threadOrder": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "uniqueItems": true
+        },
+        "threads": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/thread"
+          }
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "additionalProperties": false
+    },
+    "thread": {
+      "type": "object",
+      "required": [
+        "id",
+        "category",
+        "priority",
+        "status",
+        "target",
+        "messageOrder",
+        "messages",
+        "agentWork",
+        "resolution",
+        "createdAt",
+        "updatedAt"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "category": {
+          "anyOf": [
+            {
+              "enum": [
+                "fact",
+                "copy",
+                "style",
+                "layout",
+                "template",
+                "page",
+                "accessibility",
+                "general"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^custom:[A-Za-z0-9._-]+:[A-Za-z0-9._-]+$"
+            }
+          ]
+        },
+        "priority": {
+          "enum": [
+            "low",
+            "normal",
+            "high",
+            "blocking"
+          ]
+        },
+        "status": {
+          "enum": [
+            "open",
+            "in_progress",
+            "applied",
+            "resolved",
+            "reopened",
+            "blocked",
+            "orphaned"
+          ]
+        },
+        "target": {
+          "$ref": "#/$defs/target"
+        },
+        "messageOrder": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "uniqueItems": true
+        },
+        "messages": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "$ref": "#/$defs/message"
+          }
+        },
+        "agentWork": {
+          "$ref": "#/$defs/agentWork"
+        },
+        "resolution": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/resolution"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "createdAt": {
+          "$ref": "common.schema.json#/$defs/timestamp"
+        },
+        "updatedAt": {
+          "$ref": "common.schema.json#/$defs/timestamp"
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "additionalProperties": false
+    },
+    "target": {
+      "type": "object",
+      "required": [
+        "source",
+        "selectors"
+      ],
+      "properties": {
+        "source": {
+          "type": "object",
+          "required": [
+            "resource",
+            "resourceId",
+            "revisionAtCreation"
+          ],
+          "properties": {
+            "resource": {
+              "enum": [
+                "cv",
+                "presentation",
+                "template",
+                "provenance",
+                "workspace"
+              ]
+            },
+            "resourceId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "revisionAtCreation": {
+              "$ref": "common.schema.json#/$defs/revision"
+            }
+          },
+          "additionalProperties": false
+        },
+        "selectors": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/selector"
+          }
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "additionalProperties": false
+    },
+    "selector": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/nodeSelector"
+        },
+        {
+          "$ref": "#/$defs/fieldSelector"
+        },
+        {
+          "$ref": "#/$defs/sectionSelector"
+        },
+        {
+          "$ref": "#/$defs/textQuoteSelector"
+        },
+        {
+          "$ref": "#/$defs/renderBindingSelector"
+        },
+        {
+          "$ref": "#/$defs/pageRegionSelector"
+        }
+      ]
+    },
+    "nodeSelector": {
+      "type": "object",
+      "required": [
+        "type",
+        "nodeId",
+        "nodeType"
+      ],
+      "properties": {
+        "type": {
+          "const": "NodeSelector"
+        },
+        "nodeId": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "nodeType": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "fieldSelector": {
+      "type": "object",
+      "required": [
+        "type",
+        "nodeId",
+        "nodeType",
+        "field"
+      ],
+      "properties": {
+        "type": {
+          "const": "FieldSelector"
+        },
+        "nodeId": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "nodeType": {
+          "type": "string",
+          "minLength": 1
+        },
+        "field": {
+          "$ref": "common.schema.json#/$defs/jsonPointer"
+        }
+      },
+      "additionalProperties": false
+    },
+    "sectionSelector": {
+      "type": "object",
+      "required": [
+        "type",
+        "sectionId"
+      ],
+      "properties": {
+        "type": {
+          "const": "SectionSelector"
+        },
+        "sectionId": {
+          "$ref": "common.schema.json#/$defs/id"
+        }
+      },
+      "additionalProperties": false
+    },
+    "textQuoteSelector": {
+      "type": "object",
+      "required": [
+        "type",
+        "exact"
+      ],
+      "properties": {
+        "type": {
+          "const": "TextQuoteSelector"
+        },
+        "exact": {
+          "type": "string",
+          "minLength": 1
+        },
+        "prefix": {
+          "type": "string"
+        },
+        "suffix": {
+          "type": "string"
+        },
+        "normalization": {
+          "enum": [
+            "none",
+            "unicode-nfc",
+            "unicode-nfc-whitespace"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "renderBindingSelector": {
+      "type": "object",
+      "required": [
+        "type",
+        "templateVersionId",
+        "bindingId"
+      ],
+      "properties": {
+        "type": {
+          "const": "RenderBindingSelector"
+        },
+        "templateVersionId": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "bindingId": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "pageRegionSelector": {
+      "type": "object",
+      "required": [
+        "type",
+        "page",
+        "x",
+        "y",
+        "width",
+        "height",
+        "renderContext"
+      ],
+      "properties": {
+        "type": {
+          "const": "PageRegionSelector"
+        },
+        "page": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "x": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "y": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        },
+        "renderContext": {
+          "type": "object",
+          "required": [
+            "cvRevision",
+            "presentationRevision",
+            "templateVersionId"
+          ],
+          "properties": {
+            "cvRevision": {
+              "$ref": "common.schema.json#/$defs/revision"
+            },
+            "presentationRevision": {
+              "$ref": "common.schema.json#/$defs/revision"
+            },
+            "templateVersionId": {
+              "$ref": "common.schema.json#/$defs/id"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "message": {
+      "type": "object",
+      "required": [
+        "id",
+        "author",
+        "body",
+        "createdAt"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "author": {
+          "$ref": "common.schema.json#/$defs/actor"
+        },
+        "body": {
+          "type": "string",
+          "minLength": 1
+        },
+        "createdAt": {
+          "$ref": "common.schema.json#/$defs/timestamp"
+        },
+        "supersedesMessageId": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "additionalProperties": false
+    },
+    "agentWork": {
+      "type": "object",
+      "required": [
+        "state",
+        "claimedByRunId",
+        "changeSetIds"
+      ],
+      "properties": {
+        "state": {
+          "enum": [
+            "pending",
+            "claimed",
+            "running",
+            "applied",
+            "blocked",
+            "failed"
+          ]
+        },
+        "claimedByRunId": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "changeSetIds": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "uniqueItems": true
+        },
+        "lastError": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "resolution": {
+      "type": "object",
+      "required": [
+        "resolvedAt",
+        "resolvedBy"
+      ],
+      "properties": {
+        "resolvedAt": {
+          "$ref": "common.schema.json#/$defs/timestamp"
+        },
+        "resolvedBy": {
+          "$ref": "common.schema.json#/$defs/actor"
+        },
+        "note": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
