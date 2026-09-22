@@ -1,0 +1,377 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://seevee.dev/schema/v1/change-set.schema.json",
+  "title": "Seevee Change Set",
+  "type": "object",
+  "required": [
+    "kind",
+    "schemaVersion",
+    "id",
+    "target",
+    "baseRevision",
+    "actor",
+    "reason",
+    "operations",
+    "createdAt"
+  ],
+  "properties": {
+    "kind": {
+      "const": "seevee.change-set"
+    },
+    "schemaVersion": {
+      "$ref": "common.schema.json#/$defs/schemaVersion"
+    },
+    "id": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "target": {
+      "$ref": "#/$defs/resourceTarget"
+    },
+    "baseRevision": {
+      "$ref": "common.schema.json#/$defs/revision"
+    },
+    "actor": {
+      "$ref": "common.schema.json#/$defs/actor"
+    },
+    "reason": {
+      "$ref": "#/$defs/reason"
+    },
+    "operations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/operation"
+      }
+    },
+    "createdAt": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    },
+    "extensions": {
+      "$ref": "common.schema.json#/$defs/extensions"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "resourceTarget": {
+      "type": "object",
+      "required": [
+        "resourceKind",
+        "resourceId"
+      ],
+      "properties": {
+        "resourceKind": {
+          "enum": [
+            "seevee.cv",
+            "seevee.presentation",
+            "seevee.comments",
+            "seevee.provenance",
+            "seevee.workspace"
+          ]
+        },
+        "resourceId": {
+          "$ref": "common.schema.json#/$defs/id"
+        }
+      },
+      "additionalProperties": false
+    },
+    "reason": {
+      "type": "object",
+      "required": [
+        "summary",
+        "commentIds"
+      ],
+      "properties": {
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "commentIds": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "uniqueItems": true
+        },
+        "sourceIds": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "placement": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "position"
+          ],
+          "properties": {
+            "position": {
+              "enum": [
+                "first",
+                "last"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "position",
+            "anchorId"
+          ],
+          "properties": {
+            "position": {
+              "enum": [
+                "before",
+                "after"
+              ]
+            },
+            "anchorId": {
+              "$ref": "common.schema.json#/$defs/id"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "operation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "op",
+            "target",
+            "value"
+          ],
+          "properties": {
+            "op": {
+              "const": "field.set"
+            },
+            "target": {
+              "$ref": "common.schema.json#/$defs/fieldRef"
+            },
+            "value": true
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "op",
+            "target"
+          ],
+          "properties": {
+            "op": {
+              "const": "field.unset"
+            },
+            "target": {
+              "$ref": "common.schema.json#/$defs/fieldRef"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "op",
+            "target",
+            "expected",
+            "replacement"
+          ],
+          "properties": {
+            "op": {
+              "const": "text.replace"
+            },
+            "target": {
+              "$ref": "common.schema.json#/$defs/fieldRef"
+            },
+            "expected": {
+              "type": "string"
+            },
+            "replacement": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "op",
+            "nodeType",
+            "node",
+            "placement"
+          ],
+          "properties": {
+            "op": {
+              "const": "node.add"
+            },
+            "nodeType": {
+              "type": "string",
+              "minLength": 1
+            },
+            "node": {
+              "type": "object"
+            },
+            "sectionId": {
+              "anyOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/id"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "placement": {
+              "$ref": "#/$defs/placement"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "op",
+            "target"
+          ],
+          "properties": {
+            "op": {
+              "const": "node.remove"
+            },
+            "target": {
+              "$ref": "common.schema.json#/$defs/nodeRef"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "op",
+            "target",
+            "placement"
+          ],
+          "properties": {
+            "op": {
+              "const": "node.move"
+            },
+            "target": {
+              "$ref": "common.schema.json#/$defs/nodeRef"
+            },
+            "sectionId": {
+              "anyOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/id"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "placement": {
+              "$ref": "#/$defs/placement"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "op",
+            "section",
+            "placement"
+          ],
+          "properties": {
+            "op": {
+              "const": "section.add"
+            },
+            "section": {
+              "type": "object"
+            },
+            "placement": {
+              "$ref": "#/$defs/placement"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "op",
+            "target"
+          ],
+          "properties": {
+            "op": {
+              "const": "section.remove"
+            },
+            "target": {
+              "$ref": "common.schema.json#/$defs/sectionRef"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "op",
+            "target",
+            "placement"
+          ],
+          "properties": {
+            "op": {
+              "const": "section.move"
+            },
+            "target": {
+              "$ref": "common.schema.json#/$defs/sectionRef"
+            },
+            "placement": {
+              "$ref": "#/$defs/placement"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "op",
+            "path",
+            "value"
+          ],
+          "properties": {
+            "op": {
+              "const": "presentation.set"
+            },
+            "path": {
+              "$ref": "common.schema.json#/$defs/jsonPointer"
+            },
+            "value": true
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "op",
+            "path"
+          ],
+          "properties": {
+            "op": {
+              "const": "presentation.unset"
+            },
+            "path": {
+              "$ref": "common.schema.json#/$defs/jsonPointer"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}
