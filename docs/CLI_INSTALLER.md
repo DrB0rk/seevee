@@ -27,7 +27,7 @@ After that, the user can launch any coding/AI agent they want from the same dire
 
 ### Primary distribution: scoped npm package
 
-The unscoped npm package name `seevee` is already occupied by an unrelated package. Do not depend on owning that package name.
+Do not make the user-facing command depend on ownership or future availability of the unscoped npm package name `seevee`.
 
 Publish the CLI under a scoped package, for example:
 
@@ -101,7 +101,7 @@ A future standalone-binary distribution can be added, but it should not block th
 
 ### Package-name note
 
-Do not publish under the unrelated existing unscoped `seevee` npm package. The command name and package name are independent because npm's `bin` field controls the executable installed into PATH.
+Prefer an official scoped npm package. The package name and executable name are independent because npm's `bin` field controls the command installed into PATH.
 
 ## 3. CLI package architecture
 
