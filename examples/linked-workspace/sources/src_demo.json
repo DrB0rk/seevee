@@ -1,0 +1,45 @@
+{
+  "kind": "seevee.source",
+  "schemaVersion": "1.0.0",
+  "id": "src_demo",
+  "revision": 0,
+  "createdAt": "2026-09-23T00:00:00.000Z",
+  "updatedAt": "2026-09-23T00:00:00.000Z",
+  "data": {
+    "sourceType": "text",
+    "name": "notes.txt",
+    "contentHash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "mimeType": "text/plain",
+    "origin": {
+      "localPath": "sources/raw/notes.txt",
+      "uri": null,
+      "capturedAt": "2026-09-23T00:00:00.000Z"
+    },
+    "extraction": {
+      "status": "ready",
+      "adapter": "plain-text",
+      "blockOrder": [
+        "blk_demo"
+      ],
+      "blocks": {
+        "blk_demo": {
+          "id": "blk_demo",
+          "type": "paragraph",
+          "text": "Software Engineer at Example Labs. Built internal developer tooling for repeated engineering workflows.",
+          "childRefs": [],
+          "locator": {
+            "type": "text-range",
+            "start": 0,
+            "end": 101,
+            "quote": "Software Engineer at Example Labs. Built internal developer tooling for repeated engineering workflows."
+          },
+          "data": {},
+          "extensions": {}
+        }
+      },
+      "warnings": []
+    },
+    "metadata": {},
+    "extensions": {}
+  }
+}
