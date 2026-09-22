@@ -1,0 +1,245 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://seevee.dev/schema/v1/template-manifest.schema.json",
+  "title": "Seevee Template Manifest",
+  "type": "object",
+  "required": [
+    "kind",
+    "schemaVersion",
+    "id",
+    "templateId",
+    "name",
+    "version",
+    "entry",
+    "engine",
+    "capabilities",
+    "supportedCvSchema",
+    "supportedPresentationSchema",
+    "tokens",
+    "bindings"
+  ],
+  "properties": {
+    "kind": {
+      "const": "seevee.template-manifest"
+    },
+    "schemaVersion": {
+      "$ref": "common.schema.json#/$defs/schemaVersion"
+    },
+    "id": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "templateId": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "$ref": "common.schema.json#/$defs/schemaVersion"
+    },
+    "entry": {
+      "type": "string",
+      "minLength": 1
+    },
+    "engine": {
+      "const": "astro"
+    },
+    "capabilities": {
+      "$ref": "#/$defs/capabilities"
+    },
+    "supportedCvSchema": {
+      "type": "string",
+      "minLength": 1
+    },
+    "supportedPresentationSchema": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tokens": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/tokenDefinition"
+      }
+    },
+    "bindings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/binding"
+      }
+    },
+    "extensions": {
+      "$ref": "common.schema.json#/$defs/extensions"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "capabilities": {
+      "type": "object",
+      "required": [
+        "multiPage",
+        "customPageSize",
+        "comments",
+        "twoColumn"
+      ],
+      "properties": {
+        "multiPage": {
+          "type": "boolean"
+        },
+        "customPageSize": {
+          "type": "boolean"
+        },
+        "comments": {
+          "type": "boolean"
+        },
+        "twoColumn": {
+          "type": "boolean"
+        },
+        "accessiblePdf": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "tokenDefinition": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "default",
+            "dashboardEditable"
+          ],
+          "properties": {
+            "type": {
+              "const": "number"
+            },
+            "default": {
+              "type": "number"
+            },
+            "min": {
+              "type": "number"
+            },
+            "max": {
+              "type": "number"
+            },
+            "step": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "dashboardEditable": {
+              "type": "boolean"
+            },
+            "affectsPagination": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "default",
+            "dashboardEditable"
+          ],
+          "properties": {
+            "type": {
+              "enum": [
+                "string",
+                "font",
+                "color"
+              ]
+            },
+            "default": {
+              "type": "string"
+            },
+            "dashboardEditable": {
+              "type": "boolean"
+            },
+            "affectsPagination": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "default",
+            "dashboardEditable"
+          ],
+          "properties": {
+            "type": {
+              "const": "boolean"
+            },
+            "default": {
+              "type": "boolean"
+            },
+            "dashboardEditable": {
+              "type": "boolean"
+            },
+            "affectsPagination": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "default",
+            "options",
+            "dashboardEditable"
+          ],
+          "properties": {
+            "type": {
+              "const": "enum"
+            },
+            "default": {
+              "type": "string"
+            },
+            "options": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "dashboardEditable": {
+              "type": "boolean"
+            },
+            "affectsPagination": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "binding": {
+      "type": "object",
+      "required": [
+        "id",
+        "purpose"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "purpose": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
