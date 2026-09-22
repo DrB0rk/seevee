@@ -17,6 +17,7 @@ Default document profile: ISO A4 portrait, 210 x 297 mm.
 - docs/TEMPLATE_AUTHORING.md — Astro template contract, compiler lifecycle and sandbox rules.
 - docs/AGENT_CONTRACT.md — agent roles, mutation boundaries and validation workflow.
 - docs/CLI_INSTALLER.md — installer, `seevee` CLI, workspace scaffold and detached dashboard runtime.
+- docs/RESEARCH_REFERENCES.md — primary technical references used by the architecture.
 - AGENTS.md — repository instructions for coding agents.
 - skills/seevee-agent/ — reusable Seevee operating skill for agents.
 
