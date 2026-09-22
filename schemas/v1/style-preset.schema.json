@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://seevee.dev/schema/v1/style-preset.schema.json",
+  "title": "Seevee Style Preset",
+  "type": "object",
+  "required": [
+    "kind",
+    "schemaVersion",
+    "id",
+    "name",
+    "templateId",
+    "templateVersionId",
+    "tokens",
+    "page",
+    "sectionOverrides",
+    "createdAt",
+    "updatedAt"
+  ],
+  "properties": {
+    "kind": {
+      "const": "seevee.style-preset"
+    },
+    "schemaVersion": {
+      "$ref": "common.schema.json#/$defs/schemaVersion"
+    },
+    "id": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "templateId": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "templateVersionId": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "tokens": {
+      "$ref": "presentation.schema.json#/$defs/tokens"
+    },
+    "page": {
+      "$ref": "presentation.schema.json#/$defs/pageProfile"
+    },
+    "sectionOverrides": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "presentation.schema.json#/$defs/sectionOverride"
+      }
+    },
+    "createdAt": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    },
+    "updatedAt": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    },
+    "extensions": {
+      "$ref": "common.schema.json#/$defs/extensions"
+    }
+  },
+  "additionalProperties": false
+}
