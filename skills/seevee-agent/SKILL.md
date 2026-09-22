@@ -15,6 +15,7 @@ Use Seevee's structured documents as the source of truth. Do not treat rendered 
    - Comments, anchors, resolution, or comment-driven fixes: `references/comments.md`.
    - Astro templates, visual design, page sizing, or style presets: `references/templates-and-rendering.md`.
    - End-to-end agent procedure and completion rules: `references/workflows.md`.
+   - Workspace initialization, CLI/server lifecycle, or working alongside arbitrary external agents: `references/cli-and-workspace.md`.
 3. Read the workspace's current revisions before proposing a mutation.
 4. Use the narrowest mutation surface. Do not replace a whole canonical document for a small edit.
 5. Validate after every committed mutation category.
