@@ -73,6 +73,7 @@ seevee/
     export/
     template-sdk/
     template-compiler/
+    cli/
   templates/
     minimal/
     technical/
@@ -88,7 +89,49 @@ seevee/
     visual/
 ~~~
 
-## 5. Source ingestion
+## 5. Installation, CLI and local workspace runtime
+
+See docs/CLI_INSTALLER.md for the normative CLI/runtime contract.
+
+The product is installed as a command named `seevee`. The npm package itself should be scoped because the unscoped `seevee` package name is already used by an unrelated package; the scoped package still exposes `seevee` through its npm `bin` entry.
+
+Primary local workflow:
+
+~~~sh
+mkdir my-cv
+cd my-cv
+seevee init
+~~~
+
+`seevee init` is non-interactive. It:
+
+1. safely scaffolds or validates the current directory;
+2. creates the canonical CV/provenance/presentation/comments resources;
+3. installs/generates generic agent guidance for the workspace;
+4. starts the local dashboard server as a detached process;
+5. waits for a workspace-aware health check;
+6. opens the dashboard in the default browser;
+7. exits and returns terminal control.
+
+The user then starts any external agent they prefer in the same directory. Seevee does not require or own an agent runtime.
+
+The local server binds to loopback by default. Runtime PID/port/log/cache state belongs under `.seevee/`, never inside canonical data. The server watches validated workspace files so changes made by external agents appear in the dashboard.
+
+Required MVP lifecycle commands:
+
+- `seevee init`
+- `seevee start`
+- `seevee stop`
+- `seevee restart`
+- `seevee status`
+- `seevee open`
+- `seevee validate`
+- `seevee doctor`
+- `seevee export`
+
+Routine commands must not require interactive prompts. Status/validation/doctor/export should support machine-readable `--json`.
+
+## 6. Source ingestion
 
 Implement adapters behind one interface:
 
@@ -122,7 +165,7 @@ Normalization:
 
 Model output is always schema validated before mutation.
 
-## 6. Agent roles
+## 7. Agent roles
 
 Ingestion agent:
 - reads extracted sources, CV and provenance;
@@ -158,7 +201,7 @@ QA process:
 
 Use deterministic checks for pass/fail wherever possible.
 
-## 7. Agent mutation boundary
+## 8. Agent mutation boundary
 
 Do not give the application agent unrestricted filesystem access.
 
@@ -184,7 +227,7 @@ Expose typed tools such as:
 
 Every write includes a base revision. Stale writes fail and must be rebased.
 
-## 8. Template lifecycle
+## 9. Template lifecycle
 
 Separate source templates from style presets.
 
@@ -207,7 +250,7 @@ Data and presentation-token edits do not require recompiling source.
 
 In local development, the project may use Astro/Vite HMR for convenience. Hosted production should activate validated compiled artifacts, not execute a mutable development server as its trust boundary.
 
-## 9. Fixed dashboard/editor
+## 10. Fixed dashboard/editor
 
 The dashboard is intentionally not agent-generated.
 
@@ -239,7 +282,7 @@ Default: ISO A4 portrait, exactly 210 x 297 mm.
 
 The editor is not a generic Figma-style layout builder. Complex layout work belongs to the design agent/template; the dashboard exposes predictable presentation controls.
 
-## 10. Pagination and diagnostics
+## 11. Pagination and diagnostics
 
 Render explicit physical Page surfaces rather than one unlimited HTML canvas.
 
@@ -263,7 +306,7 @@ The renderer measures every bound semantic element against the page content box 
 
 Never hide overflow to make validation pass.
 
-## 11. PDF export
+## 12. PDF export
 
 Use a dedicated render route that excludes dashboard UI.
 
@@ -282,7 +325,7 @@ Export:
 
 Do not maintain a separate PDF-only template implementation.
 
-## 12. Live updates
+## 13. Live updates
 
 Use typed server events:
 
@@ -302,7 +345,7 @@ When a resource changes, the dashboard reloads only affected state, rerenders th
 
 Never stream half-written JSON. Canonical files use atomic replace and revision checks.
 
-## 13. Security
+## 14. Security
 
 Treat uploads, remote URLs, model output and generated source as untrusted.
 
@@ -321,7 +364,7 @@ Requirements:
 - authenticated dashboard in hosted mode;
 - explicit secret separation from workspace files.
 
-## 14. Testing strategy
+## 15. Testing strategy
 
 Schema:
 - valid/invalid fixtures per module;
@@ -366,7 +409,7 @@ Export:
 - clipping checks;
 - repeatability.
 
-## 15. Implementation phases
+## 16. Implementation phases
 
 Phase 0 — contracts:
 - implement packages/schema;
@@ -376,14 +419,25 @@ Phase 0 — contracts:
 - change-set model;
 - comment target resolver.
 
-Phase 1 — renderer skeleton:
+Phase 1 — CLI and local runtime:
+- packages/cli with npm bin `seevee`;
+- deterministic `seevee init` scaffold;
+- generic agent workspace instructions;
+- detached local server lifecycle;
+- health checks, PID/runtime state and logs;
+- browser opening;
+- start/stop/restart/status/open;
+- validate/doctor;
+- platform integration tests.
+
+Phase 2 — renderer skeleton:
 - minimal Astro template;
 - A4 page model;
 - render route;
 - layout diagnostics;
 - Playwright export.
 
-Phase 2 — fixed dashboard:
+Phase 3 — fixed dashboard:
 - workspace browser;
 - paged canvas;
 - editor controls;
@@ -391,20 +445,20 @@ Phase 2 — fixed dashboard:
 - comments overlay;
 - SSE updates.
 
-Phase 3 — ingestion:
+Phase 4 — ingestion:
 - text/Markdown/JSON;
 - PDF/DOCX;
 - provenance;
 - conflict UI;
 - structured-output agent adapter.
 
-Phase 4 — agent editing:
+Phase 5 — agent editing:
 - content mutation tools;
 - presentation tools;
 - comment-fix orchestration;
 - run/audit history.
 
-Phase 5 — template platform:
+Phase 6 — template platform:
 - manifest/SDK;
 - template validator;
 - compiler worker;
@@ -412,7 +466,7 @@ Phase 5 — template platform:
 - style presets;
 - fork workflow.
 
-Phase 6 — robustness:
+Phase 7 — robustness:
 - history/undo;
 - auth;
 - hosted persistence;
@@ -421,10 +475,15 @@ Phase 6 — robustness:
 - accessibility;
 - deployment hardening.
 
-## 16. MVP acceptance criteria
+## 17. MVP acceptance criteria
 
 The MVP is complete only when:
 
+- the official distribution installs a PATH command named `seevee`;
+- `seevee init` is zero-prompt, safely scaffolds the current directory, starts the dashboard detached, opens it and exits;
+- arbitrary external agents can operate on the local workspace without Seevee owning the agent runtime;
+- valid external file changes live-update the dashboard and invalid ones surface validation errors without replacing last-known-good state;
+- lifecycle commands can start, stop, inspect, validate and diagnose a workspace;
 - multiple source types can become a validated CV graph;
 - provenance exists for extracted factual fields;
 - the default CV renders as true A4 pages;
