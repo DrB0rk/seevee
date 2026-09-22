@@ -7,7 +7,7 @@ Date: 2026-09-23
 
 Seevee is an agent-driven CV authoring system. The user provides arbitrary source material; an ingestion agent extracts and normalizes factual information into a strict CV data model; a design agent creates or selects an Astro CV template; a fixed dashboard renders the result as physical pages; the user can make simple presentation adjustments, add comments and export PDF; agents then apply requested changes through typed, auditable mutations.
 
-The schema layer is the product's primary contract. UI, renderer, agents and exports must all use the same canonical data contracts.
+The schema layer is the product's primary contract. UI, renderer, agents and exports must all use the same canonical data contracts. The bootstrap Draft 2020-12 specification is committed under `schemas/v1/`; implementation should encode the same contracts in Zod and regenerate the JSON Schema artifacts in CI.
 
 ## 2. Core resource separation
 
@@ -17,8 +17,8 @@ Use independent, revisioned resources:
 - provenance.json — evidence and origin assertions for semantic fields.
 - presentation.json — document/page settings, template selection, tokens and layout overrides.
 - comments.json — review threads, resilient selectors and agent work state.
-- workspace.json — active resource IDs, source registry and workspace policy.
-- agent-state.json — ephemeral/non-canonical run checkpoints and diagnostics.
+- seevee.json — workspace descriptor, active resource IDs, canonical file paths and workspace policy.
+- agent-run/render-diagnostic records — ephemeral/non-canonical run summaries and diagnostics.
 - template source — versioned Astro/CSS/assets.
 - compiled template artifact — immutable executable render artifact produced after validation.
 
