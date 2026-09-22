@@ -1,0 +1,1051 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://seevee.dev/schema/v1/cv.schema.json",
+  "title": "Seevee CV Document",
+  "type": "object",
+  "required": [
+    "kind",
+    "schemaVersion",
+    "id",
+    "revision",
+    "createdAt",
+    "updatedAt",
+    "data"
+  ],
+  "properties": {
+    "kind": {
+      "const": "seevee.cv"
+    },
+    "schemaVersion": {
+      "$ref": "common.schema.json#/$defs/schemaVersion"
+    },
+    "id": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "revision": {
+      "$ref": "common.schema.json#/$defs/revision"
+    },
+    "createdAt": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    },
+    "updatedAt": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    },
+    "data": {
+      "$ref": "#/$defs/cvData"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "cvData": {
+      "type": "object",
+      "required": [
+        "locale",
+        "identity",
+        "sectionOrder",
+        "sections",
+        "entities"
+      ],
+      "properties": {
+        "locale": {
+          "type": "string",
+          "minLength": 2
+        },
+        "identity": {
+          "$ref": "#/$defs/identity"
+        },
+        "sectionOrder": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "uniqueItems": true
+        },
+        "sections": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/section"
+          }
+        },
+        "entities": {
+          "$ref": "#/$defs/entityStores"
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "additionalProperties": false
+    },
+    "identity": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "contact"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "name": {
+          "type": "object",
+          "required": [
+            "display"
+          ],
+          "properties": {
+            "given": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "middle": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "family": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "display": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        "headline": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "summary": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "contact": {
+          "type": "object",
+          "required": [
+            "links"
+          ],
+          "properties": {
+            "email": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "email"
+            },
+            "phone": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "location": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/location"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "links": {
+              "type": "array",
+              "items": {
+                "$ref": "common.schema.json#/$defs/id"
+              },
+              "uniqueItems": true
+            }
+          },
+          "additionalProperties": false
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "additionalProperties": false
+    },
+    "location": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "region": {
+          "type": "string"
+        },
+        "country": {
+          "type": "string"
+        },
+        "countryCode": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 2
+        },
+        "remote": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "section": {
+      "type": "object",
+      "required": [
+        "id",
+        "sectionType",
+        "label",
+        "visibility",
+        "itemRefs",
+        "options"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "sectionType": {
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "visibility": {
+          "enum": [
+            "visible",
+            "hidden"
+          ]
+        },
+        "itemRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/nodeRef"
+          },
+          "uniqueItems": true
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "additionalProperties": false
+    },
+    "entityStores": {
+      "type": "object",
+      "required": [
+        "links",
+        "experience",
+        "education",
+        "projects",
+        "skillGroups",
+        "skills",
+        "certifications",
+        "awards",
+        "languages",
+        "publications",
+        "volunteering",
+        "references",
+        "custom"
+      ],
+      "properties": {
+        "links": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "common.schema.json#/$defs/link"
+          }
+        },
+        "experience": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/experience"
+          }
+        },
+        "education": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/education"
+          }
+        },
+        "projects": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/project"
+          }
+        },
+        "skillGroups": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/skillGroup"
+          }
+        },
+        "skills": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/skill"
+          }
+        },
+        "certifications": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/certification"
+          }
+        },
+        "awards": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/award"
+          }
+        },
+        "languages": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/language"
+          }
+        },
+        "publications": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/publication"
+          }
+        },
+        "volunteering": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/volunteering"
+          }
+        },
+        "references": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/reference"
+          }
+        },
+        "custom": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*(?:\\.[A-Za-z0-9][A-Za-z0-9._-]*)+$"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/$defs/customEntity"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "organization": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uri"
+        },
+        "location": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "role": {
+      "type": "object",
+      "required": [
+        "title"
+      ],
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "employmentType": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "bullet": {
+      "type": "object",
+      "required": [
+        "id",
+        "text"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "additionalProperties": false
+    },
+    "bulletCollection": {
+      "type": "object",
+      "required": [
+        "bulletOrder",
+        "bullets"
+      ],
+      "properties": {
+        "bulletOrder": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "uniqueItems": true
+        },
+        "bullets": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/bullet"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "experience": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "organization",
+        "role",
+        "period",
+        "bulletOrder",
+        "bullets",
+        "technologyRefs"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "type": {
+          "const": "experience"
+        },
+        "organization": {
+          "$ref": "#/$defs/organization"
+        },
+        "role": {
+          "$ref": "#/$defs/role"
+        },
+        "period": {
+          "$ref": "common.schema.json#/$defs/dateRange"
+        },
+        "summary": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "bulletOrder": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "uniqueItems": true
+        },
+        "bullets": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/bullet"
+          }
+        },
+        "technologyRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "uniqueItems": true
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "additionalProperties": false
+    },
+    "education": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "institution",
+        "program",
+        "period",
+        "details"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "type": {
+          "const": "education"
+        },
+        "institution": {
+          "type": "object",
+          "required": [
+            "name"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "location": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "url": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uri"
+            }
+          },
+          "additionalProperties": false
+        },
+        "program": {
+          "type": "object",
+          "required": [
+            "name"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "degree": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "field": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "period": {
+          "$ref": "common.schema.json#/$defs/dateRange"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "additionalProperties": false
+    },
+    "project": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "name",
+        "bulletOrder",
+        "bullets",
+        "linkRefs",
+        "technologyRefs"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "type": {
+          "const": "project"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "summary": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "period": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/dateRange"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "linkRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "uniqueItems": true
+        },
+        "bulletOrder": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "uniqueItems": true
+        },
+        "bullets": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/bullet"
+          }
+        },
+        "technologyRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "uniqueItems": true
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "additionalProperties": false
+    },
+    "skill": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "name",
+        "category",
+        "keywords"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "type": {
+          "const": "skill"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "category": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "level": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "keywords": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "additionalProperties": false
+    },
+    "skillGroup": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "label",
+        "skillRefs"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "type": {
+          "const": "skillGroup"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "skillRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "uniqueItems": true
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "additionalProperties": false
+    },
+    "certification": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "name",
+        "issuer"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "type": {
+          "const": "certification"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "issuer": {
+          "type": "string",
+          "minLength": 1
+        },
+        "issued": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/partialDate"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "expires": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/partialDate"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "credentialId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "linkRef": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "additionalProperties": false
+    },
+    "award": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "type": {
+          "const": "award"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "issuer": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "date": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/partialDate"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "summary": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "additionalProperties": false
+    },
+    "language": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "type": {
+          "const": "language"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "proficiency": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "additionalProperties": false
+    },
+    "publication": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "title"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "type": {
+          "const": "publication"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "publisher": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "date": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/partialDate"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "linkRef": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "summary": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "additionalProperties": false
+    },
+    "volunteering": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "organization",
+        "role"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "type": {
+          "const": "volunteering"
+        },
+        "organization": {
+          "type": "string",
+          "minLength": 1
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1
+        },
+        "period": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/dateRange"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "summary": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "additionalProperties": false
+    },
+    "reference": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "type": {
+          "const": "reference"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "relationship": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "contact": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "visibility": {
+          "enum": [
+            "public",
+            "private",
+            "hidden"
+          ]
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "additionalProperties": false
+    },
+    "customEntity": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "data"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "type": {
+          "type": "string",
+          "pattern": "^custom:"
+        },
+        "data": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
