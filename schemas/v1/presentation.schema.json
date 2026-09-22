@@ -1,0 +1,330 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://seevee.dev/schema/v1/presentation.schema.json",
+  "title": "Seevee Presentation Document",
+  "type": "object",
+  "required": [
+    "kind",
+    "schemaVersion",
+    "id",
+    "revision",
+    "createdAt",
+    "updatedAt",
+    "data"
+  ],
+  "properties": {
+    "kind": {
+      "const": "seevee.presentation"
+    },
+    "schemaVersion": {
+      "$ref": "common.schema.json#/$defs/schemaVersion"
+    },
+    "id": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "revision": {
+      "$ref": "common.schema.json#/$defs/revision"
+    },
+    "createdAt": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    },
+    "updatedAt": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    },
+    "data": {
+      "$ref": "#/$defs/data"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "data": {
+      "type": "object",
+      "required": [
+        "template",
+        "page",
+        "pagination",
+        "tokens",
+        "sectionOverrides",
+        "templateOverrides"
+      ],
+      "properties": {
+        "template": {
+          "$ref": "#/$defs/templateSelection"
+        },
+        "page": {
+          "$ref": "#/$defs/pageProfile"
+        },
+        "pagination": {
+          "$ref": "#/$defs/pagination"
+        },
+        "tokens": {
+          "$ref": "#/$defs/tokens"
+        },
+        "sectionOverrides": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/sectionOverride"
+          }
+        },
+        "templateOverrides": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "additionalProperties": false
+    },
+    "templateSelection": {
+      "type": "object",
+      "required": [
+        "templateId",
+        "versionId"
+      ],
+      "properties": {
+        "templateId": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "versionId": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "stylePresetId": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "pageProfile": {
+      "type": "object",
+      "required": [
+        "preset",
+        "orientation",
+        "widthMm",
+        "heightMm",
+        "marginMm",
+        "bleedMm"
+      ],
+      "properties": {
+        "preset": {
+          "enum": [
+            "A4",
+            "Letter",
+            "Custom"
+          ]
+        },
+        "orientation": {
+          "enum": [
+            "portrait",
+            "landscape"
+          ]
+        },
+        "widthMm": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 2000
+        },
+        "heightMm": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 2000
+        },
+        "marginMm": {
+          "$ref": "#/$defs/edges"
+        },
+        "bleedMm": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        }
+      },
+      "additionalProperties": false
+    },
+    "edges": {
+      "type": "object",
+      "required": [
+        "top",
+        "right",
+        "bottom",
+        "left"
+      ],
+      "properties": {
+        "top": {
+          "type": "number",
+          "minimum": 0
+        },
+        "right": {
+          "type": "number",
+          "minimum": 0
+        },
+        "bottom": {
+          "type": "number",
+          "minimum": 0
+        },
+        "left": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "pagination": {
+      "type": "object",
+      "required": [
+        "targetPages",
+        "maxPages",
+        "overflowPolicy"
+      ],
+      "properties": {
+        "targetPages": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "maxPages": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "overflowPolicy": {
+          "enum": [
+            "error",
+            "warn",
+            "allow"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "tokens": {
+      "type": "object",
+      "required": [
+        "core",
+        "template"
+      ],
+      "properties": {
+        "core": {
+          "type": "object",
+          "properties": {
+            "fontFamily": {
+              "type": "string",
+              "minLength": 1
+            },
+            "baseFontSizePt": {
+              "type": "number",
+              "minimum": 4,
+              "maximum": 40
+            },
+            "lineHeight": {
+              "type": "number",
+              "minimum": 0.7,
+              "maximum": 3
+            },
+            "density": {
+              "type": "number",
+              "minimum": 0.5,
+              "maximum": 2
+            },
+            "primaryColor": {
+              "type": "string"
+            },
+            "accentColor": {
+              "type": "string"
+            },
+            "columnGapMm": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            }
+          },
+          "additionalProperties": false
+        },
+        "template": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/tokenValue"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "tokenValue": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        },
+        {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "sectionOverride": {
+      "type": "object",
+      "properties": {
+        "visibility": {
+          "enum": [
+            "visible",
+            "hidden"
+          ]
+        },
+        "pageBreakBefore": {
+          "type": "boolean"
+        },
+        "pageBreakAfter": {
+          "type": "boolean"
+        },
+        "keepTogether": {
+          "type": "boolean"
+        },
+        "column": {
+          "enum": [
+            "auto",
+            "left",
+            "right",
+            "full"
+          ]
+        },
+        "order": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
