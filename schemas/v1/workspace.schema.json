@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://seevee.dev/schema/v1/workspace.schema.json",
+  "title": "Seevee Workspace",
+  "type": "object",
+  "required": [
+    "kind",
+    "schemaVersion",
+    "id",
+    "revision",
+    "createdAt",
+    "updatedAt",
+    "data"
+  ],
+  "properties": {
+    "kind": {
+      "const": "seevee.workspace"
+    },
+    "schemaVersion": {
+      "$ref": "common.schema.json#/$defs/schemaVersion"
+    },
+    "id": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "revision": {
+      "$ref": "common.schema.json#/$defs/revision"
+    },
+    "createdAt": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    },
+    "updatedAt": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    },
+    "data": {
+      "$ref": "#/$defs/data"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "data": {
+      "type": "object",
+      "required": [
+        "name",
+        "activeResources",
+        "files",
+        "sources",
+        "template",
+        "policy"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "activeResources": {
+          "type": "object",
+          "required": [
+            "cvId",
+            "provenanceId",
+            "presentationId",
+            "commentsId"
+          ],
+          "properties": {
+            "cvId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "provenanceId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "presentationId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "commentsId": {
+              "$ref": "common.schema.json#/$defs/id"
+            }
+          },
+          "additionalProperties": false
+        },
+        "files": {
+          "type": "object",
+          "required": [
+            "cv",
+            "provenance",
+            "presentation",
+            "comments"
+          ],
+          "properties": {
+            "cv": {
+              "$ref": "#/$defs/relativePath"
+            },
+            "provenance": {
+              "$ref": "#/$defs/relativePath"
+            },
+            "presentation": {
+              "$ref": "#/$defs/relativePath"
+            },
+            "comments": {
+              "$ref": "#/$defs/relativePath"
+            }
+          },
+          "additionalProperties": false
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "uniqueItems": true
+        },
+        "template": {
+          "type": "object",
+          "required": [
+            "templateId",
+            "versionId"
+          ],
+          "properties": {
+            "templateId": {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            "versionId": {
+              "$ref": "common.schema.json#/$defs/id"
+            }
+          },
+          "additionalProperties": false
+        },
+        "policy": {
+          "$ref": "#/$defs/policy"
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "additionalProperties": false
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:[\\\\/])(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+    },
+    "policy": {
+      "type": "object",
+      "required": [
+        "allowAgentFactInference",
+        "requireEvidenceForNumericClaims",
+        "allowForceExportWithOverflow",
+        "autoResolveDeterministicComments"
+      ],
+      "properties": {
+        "allowAgentFactInference": {
+          "type": "boolean"
+        },
+        "requireEvidenceForNumericClaims": {
+          "type": "boolean"
+        },
+        "allowForceExportWithOverflow": {
+          "type": "boolean"
+        },
+        "autoResolveDeterministicComments": {
+          "type": "boolean"
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
