@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://seevee.dev/schema/v1/render-diagnostics.schema.json",
+  "title": "Seevee Render Diagnostics",
+  "type": "object",
+  "required": [
+    "kind",
+    "schemaVersion",
+    "id",
+    "workspaceId",
+    "cvRevision",
+    "presentationRevision",
+    "templateVersionId",
+    "pageCount",
+    "items",
+    "exportReady",
+    "createdAt"
+  ],
+  "properties": {
+    "kind": {
+      "const": "seevee.render-diagnostics"
+    },
+    "schemaVersion": {
+      "$ref": "common.schema.json#/$defs/schemaVersion"
+    },
+    "id": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "workspaceId": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "cvRevision": {
+      "$ref": "common.schema.json#/$defs/revision"
+    },
+    "presentationRevision": {
+      "$ref": "common.schema.json#/$defs/revision"
+    },
+    "templateVersionId": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "pageCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/item"
+      }
+    },
+    "exportReady": {
+      "type": "boolean"
+    },
+    "createdAt": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    },
+    "extensions": {
+      "$ref": "common.schema.json#/$defs/extensions"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "item": {
+      "type": "object",
+      "required": [
+        "id",
+        "code",
+        "severity",
+        "message",
+        "page",
+        "target"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "severity": {
+          "enum": [
+            "info",
+            "warning",
+            "error",
+            "fatal"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "page": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "target": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/semanticRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "metrics": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "extensions": {
+          "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
