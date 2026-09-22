@@ -93,7 +93,7 @@ seevee/
 
 See docs/CLI_INSTALLER.md for the normative CLI/runtime contract.
 
-The product is installed as a command named `seevee`. The npm package itself should be scoped because the unscoped `seevee` package name is already used by an unrelated package; the scoped package still exposes `seevee` through its npm `bin` entry.
+The product is installed as a command named `seevee`. Publish the npm package under an official scope and expose `seevee` through its npm `bin` entry so the command name remains stable regardless of package-scope decisions.
 
 Primary local workflow:
 
