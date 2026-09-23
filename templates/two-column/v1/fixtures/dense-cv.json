@@ -1,0 +1,194 @@
+{
+  "kind": "seevee.cv",
+  "schemaVersion": "1.0.0",
+  "id": "cv_dense",
+  "revision": 1,
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-01-01T00:00:00.000Z",
+  "data": {
+    "locale": "en-US",
+    "identity": {
+      "id": "person_dense",
+      "name": { "display": "Hedy Lamarr" },
+      "contact": [
+        { "kind": "email", "value": "hedy@example.com" }
+      ]
+    },
+    "sectionOrder": ["sec_experience"],
+    "sections": {
+      "sec_experience": {
+        "id": "sec_experience",
+        "type": "experience",
+        "title": "Experience",
+        "visible": true,
+        "collapsible": false,
+        "defaultCollapsed": false,
+        "nodeOrder": [
+          "exp_one", "exp_two", "exp_three", "exp_four", "exp_five",
+          "exp_six", "exp_seven", "exp_eight", "exp_nine", "exp_ten"
+        ]
+      }
+    },
+    "entities": {
+      "experience": {
+        "exp_one": {
+          "id": "exp_one",
+          "type": "experience",
+          "organization": { "id": "org_1", "type": "organization", "name": "Co 1" },
+          "role": { "id": "role_1", "type": "role", "title": "Engineer 1" },
+          "period": { "start": { "precision": "year", "year": 2020 } },
+          "bulletOrder": ["b1", "b2", "b3", "b4", "b5", "b6"],
+          "bullets": {
+            "b1": { "id": "b1", "text": "Did a thing" },
+            "b2": { "id": "b2", "text": "Did another thing" },
+            "b3": { "id": "b3", "text": "Did a third thing" },
+            "b4": { "id": "b4", "text": "Did a fourth thing" },
+            "b5": { "id": "b5", "text": "Did a fifth thing" },
+            "b6": { "id": "b6", "text": "Did a sixth thing" }
+          },
+          "technologyRefs": []
+        },
+        "exp_two": {
+          "id": "exp_two",
+          "type": "experience",
+          "organization": { "id": "org_2", "type": "organization", "name": "Co 2" },
+          "role": { "id": "role_2", "type": "role", "title": "Engineer 2" },
+          "period": { "start": { "precision": "year", "year": 2019 } },
+          "bulletOrder": ["c1", "c2", "c3", "c4", "c5"],
+          "bullets": {
+            "c1": { "id": "c1", "text": "Work item" },
+            "c2": { "id": "c2", "text": "Work item" },
+            "c3": { "id": "c3", "text": "Work item" },
+            "c4": { "id": "c4", "text": "Work item" },
+            "c5": { "id": "c5", "text": "Work item" }
+          },
+          "technologyRefs": []
+        },
+        "exp_three": {
+          "id": "exp_three",
+          "type": "experience",
+          "organization": { "id": "org_3", "type": "organization", "name": "Co 3" },
+          "role": { "id": "role_3", "type": "role", "title": "Engineer 3" },
+          "period": { "start": { "precision": "year", "year": 2018 } },
+          "bulletOrder": ["d1", "d2", "d3", "d4", "d5", "d6", "d7"],
+          "bullets": {
+            "d1": { "id": "d1", "text": "Bullet 1" },
+            "d2": { "id": "d2", "text": "Bullet 2" },
+            "d3": { "id": "d3", "text": "Bullet 3" },
+            "d4": { "id": "d4", "text": "Bullet 4" },
+            "d5": { "id": "d5", "text": "Bullet 5" },
+            "d6": { "id": "d6", "text": "Bullet 6" },
+            "d7": { "id": "d7", "text": "Bullet 7" }
+          },
+          "technologyRefs": []
+        },
+        "exp_four": {
+          "id": "exp_four",
+          "type": "experience",
+          "organization": { "id": "org_4", "type": "organization", "name": "Co 4" },
+          "role": { "id": "role_4", "type": "role", "title": "Engineer 4" },
+          "period": { "start": { "precision": "year", "year": 2017 } },
+          "bulletOrder": ["e1", "e2", "e3", "e4"],
+          "bullets": {
+            "e1": { "id": "e1", "text": "Item" },
+            "e2": { "id": "e2", "text": "Item" },
+            "e3": { "id": "e3", "text": "Item" },
+            "e4": { "id": "e4", "text": "Item" }
+          },
+          "technologyRefs": []
+        },
+        "exp_five": {
+          "id": "exp_five",
+          "type": "experience",
+          "organization": { "id": "org_5", "type": "organization", "name": "Co 5" },
+          "role": { "id": "role_5", "type": "role", "title": "Engineer 5" },
+          "period": { "start": { "precision": "year", "year": 2016 } },
+          "bulletOrder": ["f1", "f2", "f3"],
+          "bullets": {
+            "f1": { "id": "f1", "text": "Item" },
+            "f2": { "id": "f2", "text": "Item" },
+            "f3": { "id": "f3", "text": "Item" }
+          },
+          "technologyRefs": []
+        },
+        "exp_six": {
+          "id": "exp_six",
+          "type": "experience",
+          "organization": { "id": "org_6", "type": "organization", "name": "Co 6" },
+          "role": { "id": "role_6", "type": "role", "title": "Engineer 6" },
+          "period": { "start": { "precision": "year", "year": 2015 } },
+          "bulletOrder": ["g1", "g2", "g3", "g4", "g5", "g6"],
+          "bullets": {
+            "g1": { "id": "g1", "text": "Item" },
+            "g2": { "id": "g2", "text": "Item" },
+            "g3": { "id": "g3", "text": "Item" },
+            "g4": { "id": "g4", "text": "Item" },
+            "g5": { "id": "g5", "text": "Item" },
+            "g6": { "id": "g6", "text": "Item" }
+          },
+          "technologyRefs": []
+        },
+        "exp_seven": {
+          "id": "exp_seven",
+          "type": "experience",
+          "organization": { "id": "org_7", "type": "organization", "name": "Co 7" },
+          "role": { "id": "role_7", "type": "role", "title": "Engineer 7" },
+          "period": { "start": { "precision": "year", "year": 2014 } },
+          "bulletOrder": ["h1", "h2", "h3", "h4"],
+          "bullets": {
+            "h1": { "id": "h1", "text": "Item" },
+            "h2": { "id": "h2", "text": "Item" },
+            "h3": { "id": "h3", "text": "Item" },
+            "h4": { "id": "h4", "text": "Item" }
+          },
+          "technologyRefs": []
+        },
+        "exp_eight": {
+          "id": "exp_eight",
+          "type": "experience",
+          "organization": { "id": "org_8", "type": "organization", "name": "Co 8" },
+          "role": { "id": "role_8", "type": "role", "title": "Engineer 8" },
+          "period": { "start": { "precision": "year", "year": 2013 } },
+          "bulletOrder": ["i1", "i2", "i3"],
+          "bullets": {
+            "i1": { "id": "i1", "text": "Item" },
+            "i2": { "id": "i2", "text": "Item" },
+            "i3": { "id": "i3", "text": "Item" }
+          },
+          "technologyRefs": []
+        },
+        "exp_nine": {
+          "id": "exp_nine",
+          "type": "experience",
+          "organization": { "id": "org_9", "type": "organization", "name": "Co 9" },
+          "role": { "id": "role_9", "type": "role", "title": "Engineer 9" },
+          "period": { "start": { "precision": "year", "year": 2012 } },
+          "bulletOrder": ["j1", "j2", "j3", "j4"],
+          "bullets": {
+            "j1": { "id": "j1", "text": "Item" },
+            "j2": { "id": "j2", "text": "Item" },
+            "j3": { "id": "j3", "text": "Item" },
+            "j4": { "id": "j4", "text": "Item" }
+          },
+          "technologyRefs": []
+        },
+        "exp_ten": {
+          "id": "exp_ten",
+          "type": "experience",
+          "organization": { "id": "org_10", "type": "organization", "name": "Co 10" },
+          "role": { "id": "role_10", "type": "role", "title": "Engineer 10" },
+          "period": { "start": { "precision": "year", "year": 2011 } },
+          "bulletOrder": ["k1", "k2", "k3", "k4", "k5"],
+          "bullets": {
+            "k1": { "id": "k1", "text": "Item" },
+            "k2": { "id": "k2", "text": "Item" },
+            "k3": { "id": "k3", "text": "Item" },
+            "k4": { "id": "k4", "text": "Item" },
+            "k5": { "id": "k5", "text": "Item" }
+          },
+          "technologyRefs": []
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,34 @@
+---
+// Section heading subcomponent. Pulled out so the policy scan has a
+// separate file under src/components/ and so future templates can reuse
+// the same heading style without duplicating markup.
+
+import { Section } from '@seevee/template-sdk';
+import type { CvReadModel, SectionId } from '@seevee/template-sdk';
+
+interface SectionHeadingProps {
+  cv: CvReadModel;
+  sectionId: SectionId;
+}
+
+const { cv, sectionId } = Astro.props as SectionHeadingProps;
+---
+
+<Section cv={cv} sectionId={sectionId}>
+  <h2 class="classic-section-title-slot">
+    <slot />
+  </h2>
+</Section>
+
+<style>
+  .classic-section-title-slot {
+    font-family: var(--classic-font-family, 'Inter, system-ui, sans-serif');
+    font-size: calc(var(--classic-base-font-size, 11) * 1.2 * 1pt);
+    line-height: 1.4;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 4mm 0 2mm 0;
+    color: var(--classic-accent-color, #1f2937);
+    border-bottom: 0.2mm solid var(--classic-accent-color, #1f2937);
+  }
+</style>

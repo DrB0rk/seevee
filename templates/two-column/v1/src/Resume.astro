@@ -1,0 +1,397 @@
+---
+// Two-Column — sidebar (skills/contact/education) + main column
+// (summary/experience/projects). Reusable across CV shapes that have
+// enough material to fill both columns.
+//
+// The dashboard passes `cv`, `presentation`, and `profile` via Astro.props.
+// We accept unknown and validate with the canonical schema so the
+// template never asserts `any` on untrusted input.
+
+import { z } from 'zod';
+
+import {
+  Page,
+  Section,
+  Item,
+  Field,
+  getSection,
+  getItem,
+  deriveCv,
+} from '@seevee/template-sdk';
+import type {
+  CvReadModel,
+  CvSection,
+  CvItem,
+  ItemId,
+  SectionId,
+  PageProfile,
+  PresentationReadModel,
+} from '@seevee/template-sdk';
+import {
+  cvDocumentSchema,
+  presentationDocumentSchema,
+  pageProfileSchema,
+} from '@seevee/schema';
+import type { CvDocument, PresentationDocument } from '@seevee/schema';
+
+const propsSchema = z.object({
+  cv: cvDocumentSchema,
+  presentation: presentationDocumentSchema.optional(),
+  profile: pageProfileSchema,
+});
+
+type Props = z.infer<typeof propsSchema>;
+type CvEntitySection = CvSection & { readonly nodeOrder?: readonly string[] };
+
+const props = propsSchema.parse(Astro.props) as Props;
+const cv: CvReadModel = deriveCv(props.cv as CvDocument);
+const presentation = props.presentation as PresentationDocument | undefined;
+const profile: PageProfile = props.profile as PageProfile;
+
+// Sidebar and main column each pick their own canonical sections.
+const SIDEBAR_IDS = ['skills', 'education'] as const;
+const MAIN_IDS = ['summary', 'experience', 'projects'] as const;
+
+type SidebarId = (typeof SIDEBAR_IDS)[number];
+type MainId = (typeof MAIN_IDS)[number];
+
+function visibleSection(id: SidebarId | MainId): CvEntitySection | null {
+  const section = getSection(cv, id as SectionId);
+  if (section === null) return null;
+  if (!section.visible) return null;
+  return section as CvEntitySection;
+}
+
+const sidebarSections = SIDEBAR_IDS
+  .map((id) => ({ id, section: visibleSection(id) }))
+  .filter(
+    (entry): entry is { id: SidebarId; section: CvEntitySection } =>
+      entry.section !== null,
+  );
+
+const mainSections = MAIN_IDS
+  .map((id) => ({ id, section: visibleSection(id) }))
+  .filter(
+    (entry): entry is { id: MainId; section: CvEntitySection } =>
+      entry.section !== null,
+  );
+
+const identity = props.cv.data.identity;
+const contact = identity.contact;
+
+// Token defaults (declared in template.json — keep these in sync).
+const accentColor = '#0f172a';
+const fontFamily = 'Inter, system-ui, sans-serif';
+const baseFontSize = 10.5;
+const lineHeight = 1.35;
+const sidebarRatio = 0.34;
+const columnGap = 5;
+
+function safeItem(itemId: ItemId, sectionId: SectionId): CvItem | null {
+  return getItem(cv, itemId, sectionId);
+}
+---
+
+<Page
+  profile={profile}
+  presentation={presentation as PresentationReadModel | undefined}
+>
+  <aside class="tw-sidebar" data-seevee-identity="root">
+    <header class="tw-identity">
+      <h1 class="tw-name">{identity.name.display}</h1>
+      {contact.length > 0 && (
+        <ul class="tw-contact">
+          {contact.map((channel) => (
+            <li class="tw-contact-item">{channel.value}</li>
+          ))}
+        </ul>
+      )}
+    </header>
+
+    {sidebarSections.map(({ id, section }) => (
+      <Section cv={cv} sectionId={id as SectionId}>
+        <h2 class="tw-section-title tw-section-title--sidebar">{section.title}</h2>
+
+        {id === 'skills' && (
+          <ul class="tw-skills">
+            {(section.nodeOrder ?? []).map((entityId) => (
+              <Item cv={cv} itemId={entityId as ItemId} sectionId={id as SectionId}>
+                <span class="tw-skill-name">
+                  <Field
+                    cv={cv}
+                    itemId={entityId as ItemId}
+                    sectionId={id as SectionId}
+                    fieldPath="/name"
+                    fallback=""
+                  />
+                </span>
+              </Item>
+            ))}
+          </ul>
+        )}
+
+        {id === 'education' && (
+          <ol class="tw-education">
+            {(section.nodeOrder ?? []).map((entityId) => (
+              <Item cv={cv} itemId={entityId as ItemId} sectionId={id as SectionId}>
+                <div class="tw-edu-institution">
+                  <Field
+                    cv={cv}
+                    itemId={entityId as ItemId}
+                    sectionId={id as SectionId}
+                    fieldPath="/institution/name"
+                    fallback=""
+                  />
+                </div>
+                <div class="tw-edu-degree">
+                  <Field
+                    cv={cv}
+                    itemId={entityId as ItemId}
+                    sectionId={id as SectionId}
+                    fieldPath="/degree/title"
+                    fallback=""
+                  />
+                </div>
+                <div class="tw-edu-period">
+                  <Field
+                    cv={cv}
+                    itemId={entityId as ItemId}
+                    sectionId={id as SectionId}
+                    fieldPath="/period/start/year"
+                    fallback=""
+                  />
+                  {' – '}
+                  <Field
+                    cv={cv}
+                    itemId={entityId as ItemId}
+                    sectionId={id as SectionId}
+                    fieldPath="/period/end/year"
+                    fallback=""
+                  />
+                </div>
+              </Item>
+            ))}
+          </ol>
+        )}
+      </Section>
+    ))}
+  </aside>
+
+  <main class="tw-main">
+    {mainSections.map(({ id, section }) => (
+      <Section cv={cv} sectionId={id as SectionId}>
+        <h2 class="tw-section-title tw-section-title--main">{section.title}</h2>
+
+        {id === 'summary' && (
+          <p class="tw-summary">
+            <Field
+              cv={cv}
+              itemId={(section.nodeOrder?.[0] ?? identity.id) as ItemId}
+              sectionId={id as SectionId}
+              fieldPath="/text"
+              fallback=""
+            />
+          </p>
+        )}
+
+        {id === 'experience' && (
+          <ol class="tw-experience">
+            {(section.nodeOrder ?? []).map((entityId) => {
+              const item = safeItem(entityId as ItemId, id as SectionId);
+              if (item === null) return null;
+              return (
+                <Item cv={cv} itemId={entityId as ItemId} sectionId={id as SectionId}>
+                  <div class="tw-role-head">
+                    <span class="tw-role-title">
+                      <Field
+                        cv={cv}
+                        itemId={entityId as ItemId}
+                        sectionId={id as SectionId}
+                        fieldPath="/role/title"
+                        fallback=""
+                      />
+                    </span>
+                    <span class="tw-role-employer">
+                      <Field
+                        cv={cv}
+                        itemId={entityId as ItemId}
+                        sectionId={id as SectionId}
+                        fieldPath="/organization/name"
+                        fallback=""
+                      />
+                    </span>
+                  </div>
+                  <div class="tw-role-period">
+                    <Field
+                      cv={cv}
+                      itemId={entityId as ItemId}
+                      sectionId={id as SectionId}
+                      fieldPath="/period/start/year"
+                      fallback=""
+                    />
+                    {' – '}
+                    <Field
+                      cv={cv}
+                      itemId={entityId as ItemId}
+                      sectionId={id as SectionId}
+                      fieldPath="/period/end/year"
+                      fallback=""
+                    />
+                  </div>
+                  <p class="tw-role-summary">
+                    <Field
+                      cv={cv}
+                      itemId={entityId as ItemId}
+                      sectionId={id as SectionId}
+                      fieldPath="/summary"
+                      fallback=""
+                    />
+                  </p>
+                </Item>
+              );
+            })}
+          </ol>
+        )}
+
+        {id === 'projects' && (
+          <ol class="tw-projects">
+            {(section.nodeOrder ?? []).map((entityId) => (
+              <Item cv={cv} itemId={entityId as ItemId} sectionId={id as SectionId}>
+                <h3 class="tw-project-name">
+                  <Field
+                    cv={cv}
+                    itemId={entityId as ItemId}
+                    sectionId={id as SectionId}
+                    fieldPath="/name"
+                    fallback=""
+                  />
+                </h3>
+                <p class="tw-project-summary">
+                  <Field
+                    cv={cv}
+                    itemId={entityId as ItemId}
+                    sectionId={id as SectionId}
+                    fieldPath="/summary"
+                    fallback=""
+                  />
+                </p>
+              </Item>
+            ))}
+          </ol>
+        )}
+      </Section>
+    ))}
+  </main>
+</Page>
+
+<style
+  define:vars={{
+    accentColor,
+    fontFamily,
+    baseFontSize: `${String(baseFontSize)}pt`,
+    lineHeight: String(lineHeight),
+    sidebarRatio: String(sidebarRatio),
+    columnGap: `${String(columnGap)}mm`,
+  }}
+>
+  /* Two-Column layout — sidebar + main column. */
+  :global([data-seevee-page="true"]) {
+    display: grid;
+    grid-template-columns:
+      calc(var(--sidebarRatio) * (100% - var(--columnGap)))
+      calc((1 - var(--sidebarRatio)) * (100% - var(--columnGap)));
+    column-gap: var(--columnGap);
+    font-family: var(--fontFamily);
+    font-size: var(--baseFontSize);
+    line-height: var(--lineHeight);
+  }
+  .tw-sidebar {
+    background: #f8fafc;
+    padding: 6mm 4mm;
+    border-right: 0.2mm solid #e2e8f0;
+  }
+  .tw-main {
+    padding: 6mm 0;
+  }
+  .tw-identity {
+    margin-bottom: 5mm;
+  }
+  .tw-name {
+    font-size: calc(var(--baseFontSize) * 1.8);
+    margin: 0 0 2mm 0;
+    color: var(--accentColor);
+    line-height: 1.1;
+  }
+  .tw-contact {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: calc(var(--baseFontSize) - 0.5);
+    line-height: var(--lineHeight);
+  }
+  .tw-contact-item {
+    margin-bottom: 1mm;
+    word-break: break-all;
+  }
+  .tw-section-title {
+    color: var(--accentColor);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 4mm 0 2mm 0;
+    border-bottom: 0.2mm solid var(--accentColor);
+    line-height: var(--lineHeight);
+  }
+  .tw-section-title--sidebar {
+    font-size: calc(var(--baseFontSize) * 1.05);
+  }
+  .tw-section-title--main {
+    font-size: calc(var(--baseFontSize) * 1.3);
+  }
+  .tw-summary,
+  .tw-role-summary,
+  .tw-project-summary {
+    margin: 1mm 0 3mm 0;
+    line-height: var(--lineHeight);
+  }
+  .tw-skills {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1mm;
+    font-size: var(--baseFontSize);
+  }
+  .tw-education {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .tw-education > [data-seevee-item] {
+    margin-bottom: 3mm;
+  }
+  .tw-edu-institution {
+    font-weight: 600;
+    font-size: var(--baseFontSize);
+  }
+  .tw-edu-degree,
+  .tw-edu-period {
+    font-size: calc(var(--baseFontSize) - 0.5);
+    color: #475569;
+  }
+  .tw-experience > [data-seevee-item],
+  .tw-projects > [data-seevee-item] {
+    margin-bottom: 3mm;
+  }
+  .tw-role-head {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 600;
+    line-height: var(--lineHeight);
+  }
+  .tw-role-period {
+    font-size: calc(var(--baseFontSize) - 0.5);
+    color: #475569;
+    margin-bottom: 1mm;
+  }
+</style>

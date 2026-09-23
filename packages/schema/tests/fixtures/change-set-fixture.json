@@ -1,0 +1,17 @@
+{
+  "kind": "seevee.change-set",
+  "schemaVersion": "1.0.0",
+  "id": "cs_1",
+  "target": { "resourceKind": "seevee.cv", "resourceId": "cv_main" },
+  "baseRevision": 0,
+  "actor": { "kind": "user", "display": "Ada" },
+  "reason": { "summary": "Initial composition", "commentIds": [] },
+  "operations": [
+    {
+      "op": "field.set",
+      "target": { "nodeId": "person_main", "field": "/data/identity/name/display" },
+      "value": "Ada Lovelace"
+    }
+  ],
+  "createdAt": "2026-01-01T00:00:00.000Z"
+}

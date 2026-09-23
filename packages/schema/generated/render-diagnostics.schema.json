@@ -1,0 +1,155 @@
+{
+  "type": "object",
+  "properties": {
+    "kind": {
+      "type": "string",
+      "const": "seevee.render-diagnostics"
+    },
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 160,
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+    },
+    "workspaceId": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 160,
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+    },
+    "cvRevision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "presentationRevision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "templateVersionId": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 160,
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+    },
+    "pageCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 160,
+            "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "info",
+              "warn",
+              "error",
+              "fatal"
+            ]
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1
+          },
+          "message": {
+            "type": "string"
+          },
+          "nodeIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 160,
+              "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "overflowPoints": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "nodeId": {
+                  "type": "string",
+                  "minLength": 3,
+                  "maxLength": 160,
+                  "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                },
+                "amount": {
+                  "type": "number"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "px",
+                    "mm",
+                    "pt"
+                  ]
+                }
+              },
+              "required": [
+                "nodeId",
+                "amount",
+                "unit"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "id",
+          "severity",
+          "code",
+          "message"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "exportReady": {
+      "type": "boolean"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "extensions": {
+      "type": "object",
+      "additionalProperties": {}
+    }
+  },
+  "required": [
+    "kind",
+    "schemaVersion",
+    "id",
+    "workspaceId",
+    "cvRevision",
+    "presentationRevision",
+    "templateVersionId",
+    "pageCount",
+    "items",
+    "exportReady",
+    "createdAt"
+  ],
+  "additionalProperties": false,
+  "$id": "https://seevee.dev/schema/v1/render-diagnostics.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

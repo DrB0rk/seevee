@@ -1,0 +1,45 @@
+---
+/**
+ * Right contextual inspector per `.dev/specs/DASHBOARD_EDITOR.md` §3 —
+ * Context / Typography / Layout / Comments / Diagnostics panels. The
+ * Studio only renders the section chrome; the panels hydrate client-side
+ * from the matching API endpoints.
+ */
+import DiagnosticsPanel from './DiagnosticsPanel.astro';
+import CommentThread from './CommentThread.astro';
+
+interface Props {
+  serverVersion: string;
+  pid: number;
+  startedAt: string;
+}
+const { serverVersion, pid, startedAt } = Astro.props as Props;
+---
+
+<aside class="inspector" aria-label="Inspector">
+  <nav class="inspector-tabs" role="tablist">
+    <button type="button" class="inspector-tab is-active" role="tab" aria-selected="true" data-tab="context">Context</button>
+    <button type="button" class="inspector-tab" role="tab" data-tab="typography">Typography</button>
+    <button type="button" class="inspector-tab" role="tab" data-tab="layout">Layout</button>
+    <button type="button" class="inspector-tab" role="tab" data-tab="comments">Comments</button>
+    <button type="button" class="inspector-tab" role="tab" data-tab="diagnostics">Diagnostics</button>
+  </nav>
+  <div class="inspector-content">
+    <section class="inspector-panel" data-panel="context">
+      <h3 class="inspector-panel-title">Page profile</h3>
+      <dl class="inspector-list">
+        <dt>Server</dt><dd class="mono">v{serverVersion}</dd>
+        <dt>PID</dt><dd class="mono">{pid}</dd>
+        <dt>Started</dt><dd class="mono">{startedAt}</dd>
+        <dt>Profile</dt><dd>A4 portrait (default)</dd>
+        <dt>Margins</dt><dd>12 mm (top/right/bottom/left)</dd>
+      </dl>
+    </section>
+    <section class="inspector-panel" data-panel="diagnostics" hidden>
+      <DiagnosticsPanel />
+    </section>
+    <section class="inspector-panel" data-panel="comments" hidden>
+      <CommentThread />
+    </section>
+  </div>
+</aside>

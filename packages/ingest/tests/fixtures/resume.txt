@@ -1,0 +1,12 @@
+Experience
+Company A
+Role B
+Senior engineer leading the platform team.
+
+Skills
+TypeScript, Rust, Postgres
+Distributed systems
+
+Education
+University of Example
+BSc Computer Science

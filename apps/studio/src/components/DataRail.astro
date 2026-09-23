@@ -1,0 +1,80 @@
+---
+/**
+ * Left rail — per `.dev/specs/DASHBOARD_EDITOR.md` §3 the rail shows
+ * Sources / CV structure / Templates / History / Agent runs. The Studio
+ * fetches the CV list through `/api/cv` and renders it client-side via
+ * a tiny inline script so the initial server render stays cheap.
+ */
+---
+
+<aside class="rail rail-left" aria-label="Workspace data">
+  <nav class="rail-tabs" role="tablist">
+    <button type="button" class="rail-tab is-active" role="tab" aria-selected="true" data-tab="cvs">CVs</button>
+    <button type="button" class="rail-tab" role="tab" data-tab="sources">Sources</button>
+    <button type="button" class="rail-tab" role="tab" data-tab="templates">Templates</button>
+    <button type="button" class="rail-tab" role="tab" data-tab="history">History</button>
+    <button type="button" class="rail-tab" role="tab" data-tab="agent-runs">Agent runs</button>
+  </nav>
+  <div class="rail-content" id="data-rail-content" data-loaded="false">
+    <ul class="rail-list" id="data-rail-cvs" aria-busy="true">
+      <li class="rail-list-empty">Loading CVs…</li>
+    </ul>
+  </div>
+</aside>
+
+<script>
+  // Tiny client-side hydration: fetch /api/cv and paint the rail. SSE
+  // events from /api/events re-fetch when a cv.updated event arrives.
+  const cvsList = document.getElementById('data-rail-cvs');
+  const content = document.getElementById('data-rail-content');
+
+  async function loadCvs() {
+    if (!cvsList || !content) return;
+    cvsList.setAttribute('aria-busy', 'true');
+    try {
+      const res = await fetch('/api/cv');
+      if (!res.ok) {
+        cvsList.innerHTML = '<li class="rail-list-empty">Failed to load CVs.</li>';
+        content.dataset.loaded = 'error';
+        return;
+      }
+      const items = (await res.json()) as Array<
+        | { ok: true; cv: { id: string; name: string; headline: string | null; revision: number } }
+        | { ok: false; path: string; status: number; reason: string }
+      >;
+      if (items.length === 0) {
+        cvsList.innerHTML = '<li class="rail-list-empty">No CVs yet.</li>';
+        content.dataset.loaded = 'empty';
+        return;
+      }
+      const rows: string[] = [];
+      for (const item of items) {
+        if (item.ok) {
+          rows.push(
+            `<li class="rail-list-item"><button type="button" class="rail-item-button" data-cv-id="${item.cv.id}"><span class="rail-item-name">${escapeHtml(item.cv.name)}</span><span class="rail-item-meta mono">rev ${item.cv.revision}</span></button></li>`,
+          );
+        } else {
+          rows.push(
+            `<li class="rail-list-item rail-list-item-error"><span class="rail-item-name">${escapeHtml(item.path)}</span><span class="rail-item-meta">${escapeHtml(item.reason)}</span></li>`,
+          );
+        }
+      }
+      cvsList.innerHTML = rows.join('');
+      content.dataset.loaded = 'true';
+      cvsList.removeAttribute('aria-busy');
+    } catch (err) {
+      cvsList.innerHTML = `<li class="rail-list-empty">${escapeHtml(err instanceof Error ? err.message : 'network error')}</li>`;
+      content.dataset.loaded = 'error';
+    }
+  }
+
+  function escapeHtml(s: string): string {
+    return s
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  loadCvs();
+</script>

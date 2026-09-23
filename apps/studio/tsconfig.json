@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/dot/config-1.0.json",
+  "extends": "astro/tsconfigs/strict",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "composite": false,
+    "lib": ["ES2024"],
+    "types": ["astro/client", "node"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.astro", "src/**/*.d.ts"],
+  "exclude": ["dist", "node_modules", "tests", ".astro"]
+}

@@ -1,0 +1,46 @@
+{
+  "kind": "seevee.comments",
+  "schemaVersion": "1.0.0",
+  "id": "cmts_main",
+  "revision": 1,
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-01-01T00:00:00.000Z",
+  "data": {
+    "threadOrder": ["thr_1"],
+    "threads": {
+      "thr_1": {
+        "id": "thr_1",
+        "category": "fact",
+        "priority": "normal",
+        "status": "open",
+        "target": {
+          "source": {
+            "resource": "cv",
+            "resourceId": "cv_main",
+            "revisionAtCreation": 1
+          },
+          "selectors": [
+            { "type": "NodeSelector", "nodeId": "exp_acme", "nodeType": "experience" }
+          ]
+        },
+        "messageOrder": ["msg_1"],
+        "messages": {
+          "msg_1": {
+            "id": "msg_1",
+            "author": { "kind": "user", "display": "Reviewer" },
+            "createdAt": "2026-01-01T00:00:00.000Z",
+            "body": "Strengthen this bullet."
+          }
+        },
+        "agentWork": {
+          "state": "pending",
+          "claimedByRunId": null,
+          "changeSetIds": []
+        },
+        "resolution": null,
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "updatedAt": "2026-01-01T00:00:00.000Z"
+      }
+    }
+  }
+}

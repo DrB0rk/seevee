@@ -1,0 +1,46 @@
+---
+/**
+ * Top toolbar — workspace name + sync state + template + export per
+ * `.dev/specs/DASHBOARD_EDITOR.md` §4.
+ */
+interface Props {
+  workspaceName: string;
+  workspaceId: string;
+}
+
+const { workspaceName, workspaceId } = Astro.props as Props;
+---
+
+<header class="toolbar" role="banner">
+  <div class="toolbar-section toolbar-brand">
+    <span class="toolbar-brand-mark" aria-hidden="true">SV</span>
+    <span class="toolbar-brand-name">{workspaceName}</span>
+    <span class="toolbar-brand-id mono">{workspaceId}</span>
+  </div>
+  <div class="toolbar-section toolbar-status">
+    <span class="status-indicator" data-state="clean">
+      <span class="status-indicator-dot" aria-hidden="true"></span>
+      <span class="status-indicator-label">Saved</span>
+    </span>
+    <button type="button" class="toolbar-button" disabled>Undo</button>
+    <button type="button" class="toolbar-button" disabled>Redo</button>
+  </div>
+  <div class="toolbar-section toolbar-template">
+    <label class="toolbar-select" for="template-picker">
+      <span class="toolbar-select-label">Template</span>
+      <select id="template-picker" name="template">
+        <option value="minimal">Minimal</option>
+        <option value="technical">Technical</option>
+        <option value="editorial">Editorial</option>
+      </select>
+    </label>
+  </div>
+  <div class="toolbar-section toolbar-actions">
+    <button type="button" class="toolbar-button toolbar-button-secondary" data-action="export-pdf">
+      Export PDF
+    </button>
+    <button type="button" class="toolbar-button toolbar-button-primary" data-action="run-agent">
+      Run agent
+    </button>
+  </div>
+</header>

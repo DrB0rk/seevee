@@ -1,0 +1,28 @@
+{
+  "name": "seevee",
+  "version": "0.1.0-alpha.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "scripts": {
+    "build": "pnpm -r run build",
+    "typecheck": "pnpm -r run typecheck",
+    "lint": "pnpm -r run lint",
+    "test": "pnpm -r run test",
+    "test:unit": "pnpm -r run test:unit",
+    "schema:generate": "pnpm --filter @seevee/schema run generate",
+    "schema:drift": "pnpm --filter @seevee/schema run drift-check",
+    "dev": "pnpm -r --parallel run dev",
+    "clean": "pnpm -r run clean"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.4.0",
+    "eslint-plugin-perfectionist": "^4.0.0",
+    "typescript": "^5.7.0"
+  }
+}

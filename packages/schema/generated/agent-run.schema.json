@@ -1,0 +1,160 @@
+{
+  "type": "object",
+  "properties": {
+    "kind": {
+      "type": "string",
+      "const": "seevee.agent-run"
+    },
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 160,
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "ingestion",
+        "cv-editor",
+        "design",
+        "comment-fix",
+        "qa"
+      ]
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "running",
+        "completed",
+        "failed",
+        "cancelled"
+      ]
+    },
+    "inputRevisions": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "propertyNames": {
+        "enum": [
+          "seevee.cv",
+          "seevee.presentation",
+          "seevee.comments",
+          "seevee.provenance",
+          "seevee.workspace"
+        ]
+      }
+    },
+    "commentIds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 3,
+        "maxLength": 160,
+        "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+      }
+    },
+    "changeSetIds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 3,
+        "maxLength": 160,
+        "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+      }
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 160,
+            "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "schema-valid",
+              "semantic-valid",
+              "render-success",
+              "no-overflow",
+              "no-clipping",
+              "template-policy",
+              "migration-safe",
+              "unresolved-comments"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pass",
+              "fail",
+              "warn",
+              "skipped"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "status"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "summary": {
+      "type": "string"
+    },
+    "startedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completedAt": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "date-time"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "extensions": {
+      "type": "object",
+      "additionalProperties": {}
+    }
+  },
+  "required": [
+    "kind",
+    "schemaVersion",
+    "id",
+    "type",
+    "state",
+    "inputRevisions",
+    "commentIds",
+    "changeSetIds",
+    "checks",
+    "summary",
+    "startedAt",
+    "completedAt"
+  ],
+  "additionalProperties": false,
+  "$id": "https://seevee.dev/schema/v1/agent-run.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

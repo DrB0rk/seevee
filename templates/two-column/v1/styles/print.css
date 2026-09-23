@@ -1,0 +1,18 @@
+/* Print rules for the Two-Column template. */
+
+@page {
+  size: A4;
+  margin: 16mm 16mm 16mm 16mm;
+}
+
+@media print {
+  .tw-sidebar {
+    break-inside: auto;
+  }
+  .tw-section-title {
+    break-after: avoid;
+  }
+  [data-seevee-item] {
+    break-inside: avoid;
+  }
+}

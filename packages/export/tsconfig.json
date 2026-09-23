@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/dot/config-1.0.json",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist",
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    "types": ["node"],
+    "lib": ["ES2024"],
+    "noEmit": true,
+    "skipLibCheck": true,
+    "composite": false
+  },
+  "include": [
+    "src/**/*.ts",
+    "tests/**/*.ts"
+  ],
+  "exclude": [
+    "dist",
+    "node_modules"
+  ]
+}

@@ -1,0 +1,241 @@
+/* Seevee Studio — application shell stylesheet.
+ *
+ * Per `.dev/specs/DASHBOARD_VISUAL_DESIGN.md` the dashboard is dark chrome
+ * surrounding bright physical paper. Geometry follows §3 (52 / 48 / 264 /
+ * 336 / 28 px panels). Tokens map to the §4 palette.
+ */
+
+:root {
+  --app-background: #0F1113;
+  --panel-background: #15181B;
+  --panel-elevated: #1B1F23;
+  --control-background: #20252A;
+  --control-hover: #272D33;
+  --separator: #2D333A;
+  --text-primary: #F2F4F6;
+  --text-secondary: #AAB1B9;
+  --text-muted: #747D86;
+  --accent: #4C8DFF;
+  --accent-hover: #6AA0FF;
+  --danger: #E86666;
+  --warning: #D6A84B;
+  --success: #65B889;
+  --canvas-pasteboard: #0B0D0F;
+  --paper: #FFFFFF;
+  --paper-edge: #D7DBDF;
+
+  --font-ui: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+
+  --top-bar-height: 52px;
+  --rail-width: 48px;
+  --left-panel-width: 264px;
+  --inspector-width: 336px;
+  --status-bar-height: 28px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--app-background);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.mono { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-secondary); }
+
+.dashboard-shell {
+  display: grid;
+  grid-template-columns: var(--left-panel-width) 1fr var(--inspector-width);
+  grid-template-rows: var(--top-bar-height) 1fr var(--status-bar-height);
+  grid-template-areas:
+    "toolbar toolbar toolbar"
+    "rail canvas inspector"
+    "status status status";
+  height: 100vh;
+  width: 100vw;
+}
+
+/* Top toolbar ------------------------------------------------------- */
+.toolbar {
+  grid-area: toolbar;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 12px;
+  background: var(--panel-background);
+  border-bottom: 1px solid var(--separator);
+}
+.toolbar-section { display: flex; align-items: center; gap: 8px; }
+.toolbar-brand { gap: 8px; }
+.toolbar-brand-mark {
+  width: 28px; height: 28px; border-radius: 5px;
+  background: var(--accent); color: var(--app-background);
+  display: grid; place-items: center; font-weight: 700; font-size: 12px;
+}
+.toolbar-brand-name { font-weight: 600; }
+.toolbar-brand-id { color: var(--text-muted); }
+.toolbar-status { gap: 6px; }
+.status-indicator {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 8px; background: var(--control-background); border-radius: 5px;
+}
+.status-indicator-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--success);
+}
+.toolbar-button {
+  height: 30px; padding: 0 12px;
+  background: var(--control-background); color: var(--text-primary);
+  border: 1px solid var(--separator); border-radius: 5px;
+  font: inherit; cursor: pointer;
+}
+.toolbar-button:hover:not(:disabled) { background: var(--control-hover); }
+.toolbar-button:disabled { color: var(--text-muted); cursor: not-allowed; }
+.toolbar-button-primary { background: var(--accent); color: var(--app-background); border-color: var(--accent); }
+.toolbar-button-primary:hover:not(:disabled) { background: var(--accent-hover); }
+.toolbar-select {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--control-background); padding: 4px 8px; border-radius: 5px;
+  border: 1px solid var(--separator);
+}
+.toolbar-select select {
+  background: transparent; color: var(--text-primary); border: none;
+  font: inherit; outline: none;
+}
+
+/* Data rail --------------------------------------------------------- */
+.rail {
+  grid-area: rail;
+  background: var(--panel-background);
+  border-right: 1px solid var(--separator);
+  display: flex; flex-direction: column;
+  margin-left: calc(var(--rail-width) * -1);
+  width: calc(var(--left-panel-width) + var(--rail-width));
+}
+.rail-tabs {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 12px 0; width: var(--rail-width);
+  border-right: 1px solid var(--separator);
+}
+.rail-tab {
+  background: transparent; color: var(--text-secondary); border: none;
+  font: inherit; padding: 10px 4px; cursor: pointer; text-align: center;
+  border-left: 2px solid transparent;
+}
+.rail-tab.is-active {
+  color: var(--text-primary); border-left-color: var(--accent);
+}
+.rail-content {
+  flex: 1; overflow: auto; padding: 12px;
+  width: var(--left-panel-width);
+  margin-left: var(--rail-width);
+}
+.rail-list { list-style: none; margin: 0; padding: 0; }
+.rail-list-empty { color: var(--text-muted); font-size: 12px; }
+.rail-list-item { padding: 2px 0; }
+.rail-item-button {
+  display: flex; flex-direction: column; gap: 2px;
+  width: 100%; padding: 8px 10px; border-radius: 5px;
+  background: transparent; border: 1px solid transparent;
+  color: var(--text-primary); cursor: pointer; text-align: left;
+}
+.rail-item-button:hover { background: var(--control-hover); }
+.rail-item-name { font-weight: 500; }
+.rail-item-meta { color: var(--text-muted); font-size: 11px; }
+
+/* Canvas ------------------------------------------------------------- */
+.dashboard-canvas {
+  grid-area: canvas;
+  background: var(--canvas-pasteboard);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.canvas-pane { display: flex; flex-direction: column; height: 100%; }
+.canvas-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px; border-bottom: 1px solid var(--separator);
+  background: var(--panel-background);
+}
+.canvas-toolbar-group { display: flex; align-items: center; gap: 6px; }
+.canvas-button {
+  height: 28px; min-width: 28px; padding: 0 8px;
+  background: var(--control-background); color: var(--text-primary);
+  border: 1px solid var(--separator); border-radius: 5px;
+  font: inherit; cursor: pointer;
+}
+.canvas-button:hover { background: var(--control-hover); }
+.canvas-zoom { padding: 0 6px; color: var(--text-secondary); }
+.canvas-select {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--control-background); padding: 4px 8px; border-radius: 5px;
+}
+.canvas-select select { background: transparent; color: var(--text-primary); border: none; font: inherit; outline: none; }
+.canvas-page-count { color: var(--text-muted); }
+.canvas-pasteboard {
+  flex: 1; overflow: auto; padding: 32px;
+  display: flex; flex-direction: column; align-items: center; gap: 24px;
+}
+.paper {
+  width: 210mm; min-height: 297mm;
+  background: var(--paper); color: #111;
+  border-radius: 1px;
+  box-shadow: 0 0 0 1px var(--paper-edge), 0 8px 24px rgba(0,0,0,0.45);
+  display: flex; flex-direction: column;
+  padding: 12mm;
+}
+.paper-content { flex: 1; font-family: var(--font-ui); }
+.paper-placeholder { color: #555; }
+.paper-footer {
+  display: flex; justify-content: flex-end;
+  padding-top: 4mm; border-top: 1px solid var(--paper-edge);
+  color: #555; font-size: 10px;
+}
+
+/* Inspector ---------------------------------------------------------- */
+.inspector {
+  grid-area: inspector;
+  background: var(--panel-background);
+  border-left: 1px solid var(--separator);
+  display: flex; flex-direction: column;
+}
+.inspector-tabs {
+  display: flex; gap: 2px; padding: 8px 8px 0;
+  border-bottom: 1px solid var(--separator);
+}
+.inspector-tab {
+  background: transparent; color: var(--text-secondary);
+  border: 1px solid transparent; border-bottom: none;
+  border-top-left-radius: 5px; border-top-right-radius: 5px;
+  padding: 6px 10px; font: inherit; cursor: pointer;
+}
+.inspector-tab.is-active {
+  background: var(--panel-elevated); color: var(--text-primary);
+  border-color: var(--separator);
+}
+.inspector-content { flex: 1; overflow: auto; padding: 12px; }
+.inspector-panel { display: flex; flex-direction: column; gap: 12px; }
+.inspector-panel-title { margin: 0; font-size: 14px; }
+.inspector-list { display: grid; grid-template-columns: 96px 1fr; gap: 4px 12px; margin: 0; }
+.inspector-list dt { color: var(--text-muted); font-size: 11px; }
+.inspector-list dd { margin: 0; color: var(--text-primary); }
+
+/* Status bar --------------------------------------------------------- */
+.dashboard-status {
+  grid-area: status;
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 12px;
+  background: var(--panel-background);
+  border-top: 1px solid var(--separator);
+  color: var(--text-muted); font-size: 11px;
+}
+.status-pill { color: var(--text-secondary); }
+
+/* Empty-state utility classes --------------------------------------- */
+.thread-placeholder, .diagnostics-placeholder {
+  color: var(--text-muted); font-size: 12px;
+}

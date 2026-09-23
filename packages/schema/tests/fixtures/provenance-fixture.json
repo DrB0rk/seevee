@@ -1,0 +1,37 @@
+{
+  "kind": "seevee.provenance",
+  "schemaVersion": "1.0.0",
+  "id": "prov_main",
+  "revision": 1,
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-01-01T00:00:00.000Z",
+  "data": {
+    "sources": {
+      "src_changelog": {
+        "id": "src_changelog",
+        "sourceType": "url",
+        "name": "Seevee Changelog",
+        "contentHash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        "ingestedAt": "2026-01-01T00:00:00.000Z",
+        "metadata": { "url": "https://example.com/seevee-changelog" }
+      }
+    },
+    "assertions": {
+      "asr_1": {
+        "id": "asr_1",
+        "target": { "nodeId": "exp_acme" },
+        "evidence": [
+          {
+            "locators": [
+              { "type": "page", "page": 1 }
+            ],
+            "note": "Changelog entry"
+          }
+        ],
+        "claimType": "direct",
+        "confidence": "high",
+        "verifiedByUser": true
+      }
+    }
+  }
+}

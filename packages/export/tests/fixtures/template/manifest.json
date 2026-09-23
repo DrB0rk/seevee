@@ -1,0 +1,20 @@
+{
+  "kind": "seevee.template-manifest",
+  "schemaVersion": "1.0.0",
+  "id": "tpl_one",
+  "templateId": "tpl_minimal",
+  "name": "Minimal",
+  "version": "1.0.0",
+  "entry": "src/pages/index.astro",
+  "engine": "astro",
+  "capabilities": {
+    "multiPage": false,
+    "customPageSize": false,
+    "comments": false,
+    "twoColumn": false
+  },
+  "supportedCvSchema": "1.0.0",
+  "supportedPresentationSchema": "1.0.0",
+  "tokens": {},
+  "bindings": {}
+}

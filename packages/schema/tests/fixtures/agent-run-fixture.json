@@ -1,0 +1,14 @@
+{
+  "kind": "seevee.agent-run",
+  "schemaVersion": "1.0.0",
+  "id": "run_one",
+  "type": "ingestion",
+  "state": "running",
+  "inputRevisions": { "seevee.cv": 1 },
+  "commentIds": [],
+  "changeSetIds": [],
+  "checks": [],
+  "summary": "Initial ingestion",
+  "startedAt": "2026-01-01T00:00:00.000Z",
+  "completedAt": null
+}

@@ -1,0 +1,30 @@
+{
+  "kind": "seevee.cv",
+  "schemaVersion": "1.0.0",
+  "id": "cv_sparse",
+  "revision": 1,
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-01-01T00:00:00.000Z",
+  "data": {
+    "locale": "en-US",
+    "identity": {
+      "id": "person_sparse",
+      "name": { "display": "Ada Lovelace" },
+      "contact": [
+        { "kind": "email", "value": "ada@example.com" }
+      ]
+    },
+    "sectionOrder": ["sec_summary"],
+    "sections": {
+      "sec_summary": {
+        "id": "sec_summary",
+        "type": "summary",
+        "title": "Summary",
+        "visible": true,
+        "collapsible": false,
+        "defaultCollapsed": false
+      }
+    },
+    "entities": {}
+  }
+}

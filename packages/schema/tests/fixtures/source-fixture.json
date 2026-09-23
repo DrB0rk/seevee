@@ -1,0 +1,24 @@
+{
+  "kind": "seevee.source",
+  "schemaVersion": "1.0.0",
+  "id": "src_one",
+  "revision": 1,
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-01-01T00:00:00.000Z",
+  "data": {
+    "origin": {
+      "id": "src_one",
+      "type": "file",
+      "name": "resume.pdf",
+      "contentHash": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "ingestedAt": "2026-01-01T00:00:00.000Z",
+      "metadata": {}
+    },
+    "extraction": {
+      "adaptedAt": "2026-01-01T00:00:00.000Z",
+      "adapter": "pdf-parser",
+      "language": "en"
+    },
+    "blocks": {}
+  }
+}

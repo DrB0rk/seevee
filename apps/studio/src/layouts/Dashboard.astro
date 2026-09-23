@@ -1,0 +1,41 @@
+---
+/**
+ * Dashboard layout — fixed three-pane application shell.
+ *
+ * Implements the geometry described in `.dev/specs/DASHBOARD_VISUAL_DESIGN.md`
+ * §3 (52 px top bar, 48 px activity rail, 264 px left panel, 336 px
+ * inspector, 28 px status bar). Each slot is its own component so the
+ * layout stays declarative and the panels remain individually re-renderable
+ * when SSE events arrive.
+ */
+import '../styles/dashboard.css';
+import TopToolbar from '../components/TopToolbar.astro';
+import DataRail from '../components/DataRail.astro';
+import Inspector from '../components/Inspector.astro';
+import PageCanvas from '../components/PageCanvas.astro';
+
+interface Props {
+  workspaceName: string;
+  workspaceId: string;
+  serverVersion: string;
+  pid: number;
+  startedAt: string;
+}
+
+const { workspaceName, workspaceId, serverVersion, pid, startedAt } = Astro.props as Props;
+---
+
+<div class="dashboard-shell">
+  <TopToolbar workspaceName={workspaceName} workspaceId={workspaceId} />
+  <DataRail />
+  <main class="dashboard-canvas" aria-label="CV canvas">
+    <PageCanvas />
+  </main>
+  <Inspector serverVersion={serverVersion} pid={pid} startedAt={startedAt} />
+  <footer class="dashboard-status">
+    <span class="status-pill">Seevee Studio v{serverVersion}</span>
+    <span class="status-pill mono">pid {pid}</span>
+    <span class="status-pill mono">workspace {workspaceId}</span>
+    <span class="status-pill mono">started {startedAt}</span>
+  </footer>
+</div>

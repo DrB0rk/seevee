@@ -1,0 +1,243 @@
+{
+  "type": "object",
+  "properties": {
+    "kind": {
+      "type": "string",
+      "const": "seevee.provenance"
+    },
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 160,
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "data": {
+      "type": "object",
+      "properties": {
+        "sources": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              },
+              "sourceType": {
+                "type": "string",
+                "minLength": 1
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "contentHash": {
+                "type": "string",
+                "pattern": "^sha256:[A-Fa-f0-9]{64}$"
+              },
+              "ingestedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "metadata": {
+                "type": "object",
+                "additionalProperties": {}
+              },
+              "extensions": {
+                "type": "object",
+                "additionalProperties": {}
+              }
+            },
+            "required": [
+              "id",
+              "sourceType",
+              "name",
+              "contentHash",
+              "ingestedAt",
+              "metadata"
+            ],
+            "additionalProperties": false
+          },
+          "propertyNames": {
+            "minLength": 3,
+            "maxLength": 160,
+            "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+          }
+        },
+        "assertions": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              },
+              "target": {
+                "type": "object",
+                "properties": {
+                  "nodeId": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "sectionId": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "field": {
+                    "type": "string"
+                  },
+                  "pointer": {
+                    "type": "string",
+                    "pattern": "^(?:\\/(?:[^~/]|~0|~1)*)*$"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "locators": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "page",
+                              "page-text",
+                              "text-range",
+                              "xpath",
+                              "css-selector"
+                            ]
+                          },
+                          "page": {
+                            "type": "integer",
+                            "minimum": 1
+                          },
+                          "quote": {
+                            "type": "string"
+                          },
+                          "start": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "end": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "xpath": {
+                            "type": "string"
+                          },
+                          "cssSelector": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "type"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "note": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "locators"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "claimType": {
+                "type": "string",
+                "enum": [
+                  "direct",
+                  "inferred",
+                  "summarized"
+                ]
+              },
+              "confidence": {
+                "type": "string",
+                "enum": [
+                  "high",
+                  "medium",
+                  "low"
+                ]
+              },
+              "verifiedByUser": {
+                "type": "boolean"
+              },
+              "extensions": {
+                "type": "object",
+                "additionalProperties": {}
+              }
+            },
+            "required": [
+              "id",
+              "target",
+              "evidence",
+              "claimType",
+              "confidence",
+              "verifiedByUser"
+            ],
+            "additionalProperties": false
+          },
+          "propertyNames": {
+            "minLength": 3,
+            "maxLength": 160,
+            "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+          }
+        },
+        "extensions": {
+          "type": "object",
+          "additionalProperties": {}
+        }
+      },
+      "required": [
+        "sources",
+        "assertions"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "kind",
+    "schemaVersion",
+    "id",
+    "revision",
+    "createdAt",
+    "updatedAt",
+    "data"
+  ],
+  "additionalProperties": false,
+  "$id": "https://seevee.dev/schema/v1/provenance.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

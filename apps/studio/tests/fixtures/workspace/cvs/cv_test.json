@@ -1,0 +1,72 @@
+{
+  "kind": "seevee.cv",
+  "schemaVersion": "1.0.0",
+  "id": "cv_test",
+  "revision": 1,
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-01-01T00:00:00.000Z",
+  "data": {
+    "locale": "en-GB",
+    "identity": {
+      "id": "person_test",
+      "name": { "display": "Ada Lovelace" },
+      "headline": "Mathematician",
+      "summary": "First programmer.",
+      "contact": [{ "kind": "email", "value": "ada@example.com" }]
+    },
+    "sectionOrder": ["sec_summary", "sec_experience"],
+    "sections": {
+      "sec_summary": {
+        "id": "sec_summary",
+        "type": "summary",
+        "title": "Summary",
+        "visible": true,
+        "collapsible": false,
+        "defaultCollapsed": false
+      },
+      "sec_experience": {
+        "id": "sec_experience",
+        "type": "experience",
+        "title": "Experience",
+        "visible": true,
+        "collapsible": false,
+        "defaultCollapsed": false,
+        "nodeOrder": ["exp_acme"]
+      }
+    },
+    "entities": {
+      "experience": {
+        "exp_acme": {
+          "id": "exp_acme",
+          "type": "experience",
+          "organization": { "id": "org_acme", "type": "organization", "name": "Acme" },
+          "role": { "id": "role_one", "type": "role", "title": "Senior Engineer" },
+          "period": { "start": { "precision": "year", "year": 2020 } },
+          "bulletOrder": ["bul_1"],
+          "bullets": {
+            "bul_1": { "id": "bul_1", "text": "Shipped Seevee v0.1." }
+          },
+          "technologyRefs": []
+        }
+      },
+      "skills": {},
+      "skillGroups": {},
+      "certifications": {},
+      "awards": {},
+      "languages": {},
+      "publications": {},
+      "volunteering": {},
+      "references": {},
+      "education": {},
+      "projects": {},
+      "organizations": {
+        "org_acme": { "id": "org_acme", "type": "organization", "name": "Acme" }
+      },
+      "roles": {
+        "role_one": { "id": "role_one", "type": "role", "title": "Senior Engineer" }
+      },
+      "bulletCollections": {},
+      "custom": {}
+    }
+  }
+}

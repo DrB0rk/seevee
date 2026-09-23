@@ -1,0 +1,30 @@
+{
+  "name": "@seevee/studio",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Seevee local self-hosted studio dashboard — Astro app that owns /, /api/* and the SSE event bus for a workspace.",
+  "type": "module",
+  "main": "./dist/server/entry.mjs",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "start": "node ./dist/server/entry.mjs",
+    "typecheck": "astro check --no-sync && tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "lint": "echo \"lint skipped\"",
+    "clean": "rm -rf dist .astro *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@astrojs/node": "^9.4.0",
+    "@seevee/schema": "workspace:*",
+    "astro": "^5.14.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.0",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  }
+}

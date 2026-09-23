@@ -1,0 +1,16 @@
+{
+  "kind": "seevee.style-preset",
+  "schemaVersion": "1.0.0",
+  "id": "sp_one",
+  "revision": 1,
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-01-01T00:00:00.000Z",
+  "data": {
+    "name": "Minimal Light",
+    "templateId": "tpl_minimal",
+    "templateVersionId": "v_one",
+    "tokens": {},
+    "page": { "preset": "A4", "orientation": "portrait" },
+    "sectionOverrides": {}
+  }
+}

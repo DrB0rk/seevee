@@ -1,0 +1,50 @@
+---
+/**
+ * Studio index — the fixed dashboard shell. The component tree matches
+ * `.dev/specs/DASHBOARD_EDITOR.md` §3: top toolbar, left data rail,
+ * centered page canvas, right inspector.
+ */
+import Dashboard from '../layouts/Dashboard.astro';
+import { loadWorkspaceContext, NoWorkspaceError } from '../lib/workspace.js';
+
+let workspaceName = 'No workspace';
+let workspaceId = 'unbound';
+let serverVersion = '0.1.0';
+let pid = process.pid;
+let startedAt = new Date().toISOString();
+
+try {
+  const ctx = await loadWorkspaceContext();
+  workspaceName = ctx.workspace.data.name;
+  workspaceId = ctx.workspace.id;
+} catch (err) {
+  if (!(err instanceof NoWorkspaceError)) throw err;
+  // Continue rendering with placeholder identity; the health route
+  // exposes the same fallback so the CLI does not stall.
+}
+
+try {
+  const res = await fetch(new URL('/api/health', Astro.url));
+  if (res.ok) {
+    const payload = (await res.json()) as {
+      serverVersion?: string;
+      pid?: number;
+      startedAt?: string;
+    };
+    if (typeof payload.serverVersion === 'string') serverVersion = payload.serverVersion;
+    if (typeof payload.pid === 'number') pid = payload.pid;
+    if (typeof payload.startedAt === 'string') startedAt = payload.startedAt;
+  }
+} catch {
+  // Astro fetch to a self URL is supported in server output mode but
+  // can race the server boot. Fall back to the locals above.
+}
+---
+
+<Dashboard
+  workspaceName={workspaceName}
+  workspaceId={workspaceId}
+  serverVersion={serverVersion}
+  pid={pid}
+  startedAt={startedAt}
+/>

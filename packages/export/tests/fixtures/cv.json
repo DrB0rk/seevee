@@ -1,0 +1,71 @@
+{
+  "kind": "seevee.cv",
+  "schemaVersion": "1.0.0",
+  "id": "cv_main",
+  "revision": 1,
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-01-01T00:00:00.000Z",
+  "data": {
+    "locale": "en-US",
+    "identity": {
+      "id": "person_main",
+      "name": { "display": "Ada Lovelace" },
+      "contact": [
+        { "kind": "email", "value": "ada@example.com" }
+      ]
+    },
+    "sectionOrder": ["sec_summary", "sec_experience", "sec_skills"],
+    "sections": {
+      "sec_summary": {
+        "id": "sec_summary",
+        "type": "summary",
+        "title": "Summary",
+        "visible": true,
+        "collapsible": false,
+        "defaultCollapsed": false
+      },
+      "sec_experience": {
+        "id": "sec_experience",
+        "type": "experience",
+        "title": "Experience",
+        "visible": true,
+        "collapsible": false,
+        "defaultCollapsed": false,
+        "nodeOrder": ["exp_acme"]
+      },
+      "sec_skills": {
+        "id": "sec_skills",
+        "type": "skills",
+        "title": "Skills",
+        "visible": true,
+        "collapsible": false,
+        "defaultCollapsed": false,
+        "nodeOrder": ["skl_typescript"]
+      }
+    },
+    "entities": {
+      "experience": {
+        "exp_acme": {
+          "id": "exp_acme",
+          "type": "experience",
+          "organization": { "id": "org_acme", "type": "organization", "name": "Acme" },
+          "role": { "id": "role_senior", "type": "role", "title": "Senior Engineer" },
+          "period": { "start": { "precision": "year", "year": 2020 } },
+          "bulletOrder": ["bul_1"],
+          "bullets": {
+            "bul_1": { "id": "bul_1", "text": "Shipped Seevee v0.1" }
+          },
+          "technologyRefs": ["skl_typescript"]
+        }
+      },
+      "skills": {
+        "skl_typescript": {
+          "id": "skl_typescript",
+          "type": "skill",
+          "name": "TypeScript",
+          "keywords": ["ts", "typescript"]
+        }
+      }
+    }
+  }
+}

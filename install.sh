@@ -1,152 +1,155 @@
-#!/bin/sh
-set -eu
+#!/usr/bin/env sh
+# install.sh — Seevee self-install
+# Usage: curl -fsSL https://raw.githubusercontent.com/DrB0rk/seevee/main/install.sh | sh
+#        curl -fsSL https://raw.githubusercontent.com/DrB0rk/seevee/main/install.sh | sh -s -- --version 0.2.0
+set -e
 
-REPO="DrB0rk/seevee"
-VERSION="latest"
-INSTALL_ROOT="${SEEVE_INSTALL_DIR:-$HOME/.local/share/seevee}"
-BIN_DIR="${SEEVE_BIN_DIR:-$HOME/.local/bin}"
-
-usage() {
-  cat <<'EOF'
-Seevee installer
-
-Usage:
-  curl -fsSL https://raw.githubusercontent.com/DrB0rk/seevee/main/install.sh | sh
-  curl -fsSL https://raw.githubusercontent.com/DrB0rk/seevee/main/install.sh | sh -s -- --version v0.2.0
-
-Options:
-  --version <tag>       GitHub release tag to install (default: latest)
-  --install-dir <path>  Versioned application root
-  --bin-dir <path>      Directory for the seevee launcher
-  -h, --help            Show this help
-EOF
-}
-
-while [ "$#" -gt 0 ]; do
+# ---------------------------------------------------------------------------
+# Parse flags
+# ---------------------------------------------------------------------------
+VERSION=""
+while [ $# -gt 0 ]; do
   case "$1" in
-    --version)
-      [ "$#" -ge 2 ] || { echo "seevee installer: --version requires a value" >&2; exit 2; }
-      VERSION="$2"; shift 2 ;;
-    --install-dir)
-      [ "$#" -ge 2 ] || { echo "seevee installer: --install-dir requires a value" >&2; exit 2; }
-      INSTALL_ROOT="$2"; shift 2 ;;
-    --bin-dir)
-      [ "$#" -ge 2 ] || { echo "seevee installer: --bin-dir requires a value" >&2; exit 2; }
-      BIN_DIR="$2"; shift 2 ;;
-    -h|--help)
-      usage; exit 0 ;;
-    *)
-      echo "seevee installer: unknown option: $1" >&2
-      usage >&2
-      exit 2 ;;
+    --version) VERSION="$2"; shift 2 ;;
+    --help) echo "usage: $0 [--version <v>]"; exit 0 ;;
+    *) shift ;;
   esac
 done
 
-command -v curl >/dev/null 2>&1 || { echo "seevee installer: curl is required" >&2; exit 1; }
-command -v tar >/dev/null 2>&1 || { echo "seevee installer: tar is required" >&2; exit 1; }
+# ---------------------------------------------------------------------------
+# Detect OS / arch
+# ---------------------------------------------------------------------------
+OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
+ARCH="$(uname -m)"
 
-case "$(uname -s)" in
-  Linux) OS="linux" ;;
-  Darwin) OS="darwin" ;;
+case "$ARCH" in
+  x86_64) ARCH="x64" ;;
+  aarch64|arm64) ARCH="arm64" ;;
   *)
-    echo "seevee installer: unsupported operating system: $(uname -s)" >&2
-    echo "On Windows, use install.ps1 once Windows release support is available." >&2
-    exit 1 ;;
+    echo "install.sh: unsupported architecture: $ARCH" >&2
+    exit 1
+    ;;
 esac
 
-case "$(uname -m)" in
-  x86_64|amd64) ARCH="x64" ;;
-  arm64|aarch64) ARCH="arm64" ;;
+case "$OS" in
+  linux) PLATFORM="linux-$ARCH" ;;
+  darwin) PLATFORM="darwin-$ARCH" ;;
+  mingw*|msys*|cygwin*)
+    echo "install.sh: use install.ps1 on Windows" >&2
+    exit 1
+    ;;
   *)
-    echo "seevee installer: unsupported architecture: $(uname -m)" >&2
-    exit 1 ;;
+    echo "install.sh: unsupported OS: $OS" >&2
+    exit 1
+    ;;
 esac
 
-ASSET="seevee-${OS}-${ARCH}.tar.gz"
-if [ "$VERSION" = "latest" ]; then
-  BASE="https://github.com/${REPO}/releases/latest/download"
-else
-  case "$VERSION" in
-    *[!A-Za-z0-9._-]*)
-      echo "seevee installer: invalid release tag: $VERSION" >&2
-      exit 2 ;;
-  esac
-  BASE="https://github.com/${REPO}/releases/download/${VERSION}"
+# ---------------------------------------------------------------------------
+# Resolve version
+# ---------------------------------------------------------------------------
+if [ -z "$VERSION" ]; then
+  VERSION="$(curl -fsSL "https://api.github.com/repos/DrB0rk/seevee/releases?per_page=1" 2>/dev/null | \
+    sed -n 's/"tag_name": "v\?\([^"]*\)"/\1/p' | head -1)"
 fi
-
-TMP="$(mktemp -d 2>/dev/null || mktemp -d -t seevee)"
-cleanup() { rm -rf "$TMP"; }
-trap cleanup EXIT INT TERM HUP
-
-echo "seevee: downloading ${ASSET}..."
-curl -fL --retry 3 --retry-delay 1 "${BASE}/${ASSET}" -o "${TMP}/${ASSET}"
-curl -fL --retry 3 --retry-delay 1 "${BASE}/SHA256SUMS" -o "${TMP}/SHA256SUMS"
-
-EXPECTED="$(awk -v f="$ASSET" '$2 == f || $2 == "*" f { print $1; exit }' "${TMP}/SHA256SUMS")"
-[ -n "$EXPECTED" ] || { echo "seevee installer: no checksum published for $ASSET" >&2; exit 1; }
-
-if command -v sha256sum >/dev/null 2>&1; then
-  ACTUAL="$(sha256sum "${TMP}/${ASSET}" | awk '{print $1}')"
-elif command -v shasum >/dev/null 2>&1; then
-  ACTUAL="$(shasum -a 256 "${TMP}/${ASSET}" | awk '{print $1}')"
-else
-  echo "seevee installer: sha256sum or shasum is required for integrity verification" >&2
-  exit 1
-fi
-
-[ "$EXPECTED" = "$ACTUAL" ] || {
-  echo "seevee installer: checksum verification failed" >&2
-  exit 1
-}
-
-mkdir -p "${TMP}/extract"
-tar -xzf "${TMP}/${ASSET}" -C "${TMP}/extract"
-
-[ -f "${TMP}/extract/VERSION" ] || {
-  echo "seevee installer: release bundle is missing VERSION" >&2
-  exit 1
-}
-[ -x "${TMP}/extract/bin/seevee" ] || {
-  echo "seevee installer: release bundle is missing executable bin/seevee" >&2
-  exit 1
-}
-
-RESOLVED_VERSION="$(cat "${TMP}/extract/VERSION")"
-case "$RESOLVED_VERSION" in
+VERSION="${VERSION#v}"
+case "$VERSION" in
   ""|*[!A-Za-z0-9._-]*)
-    echo "seevee installer: invalid VERSION in release bundle" >&2
-    exit 1 ;;
+    echo "install.sh: invalid release version: $VERSION" >&2
+    exit 2
+    ;;
 esac
-
-DEST="${INSTALL_ROOT}/${RESOLVED_VERSION}"
-mkdir -p "$INSTALL_ROOT" "$BIN_DIR"
-STAGE="${INSTALL_ROOT}/.${RESOLVED_VERSION}.installing.$$"
-rm -rf "$STAGE"
-mkdir -p "$STAGE"
-cp -R "${TMP}/extract/." "$STAGE/"
-
-if [ -d "$DEST" ]; then
-  rm -rf "$STAGE"
-else
-  mv "$STAGE" "$DEST"
-fi
-
-ln -sfn "${DEST}/bin/seevee" "${BIN_DIR}/seevee"
-
-if ! "${BIN_DIR}/seevee" --version >/dev/null 2>&1; then
-  echo "seevee installer: installed launcher failed self-check" >&2
+if [ -z "$VERSION" ]; then
+  echo "install.sh: could not resolve latest version" >&2
   exit 1
 fi
 
-echo "seevee: installed ${RESOLVED_VERSION}"
-echo "seevee: launcher: ${BIN_DIR}/seevee"
+ARCHIVE="seevee-${PLATFORM}.tar.gz"
+DOWNLOAD_URL="https://github.com/DrB0rk/seevee/releases/download/v${VERSION}/${ARCHIVE}"
+CHECKSUM_URL="https://github.com/DrB0rk/seevee/releases/download/v${VERSION}/SHA256SUMS"
 
-case ":${PATH}:" in
-  *":${BIN_DIR}:"*) ;;
-  *)
-    echo "seevee: ${BIN_DIR} is not currently in PATH."
-    echo "seevee: add it to your shell PATH, then run: seevee init"
-    exit 0 ;;
-esac
+# ---------------------------------------------------------------------------
+# Temp directory — cleaned up on exit
+# ---------------------------------------------------------------------------
+TMPDIR="$(mktemp -d)"
+cleanup() { rm -rf "$TMPDIR"; }
+trap cleanup EXIT INT TERM
 
-echo "seevee: run 'seevee init' inside a directory to create/open a workspace."
+# ---------------------------------------------------------------------------
+# Download
+# ---------------------------------------------------------------------------
+echo "Downloading Seevee v${VERSION} for ${PLATFORM}..." >&2
+curl -fSL "$DOWNLOAD_URL" -o "$TMPDIR/${ARCHIVE}" 2>/dev/null \
+  || { echo "install.sh: archive not found: ${ARCHIVE}" >&2; exit 1; }
+
+# ---------------------------------------------------------------------------
+# Verify checksum
+# ---------------------------------------------------------------------------
+echo "Verifying checksum..." >&2
+curl -fsSL "$CHECKSUM_URL" -o "$TMPDIR/SHA256SUMS" 2>/dev/null \
+  || { echo "install.sh: SHA256SUMS not found" >&2; exit 1; }
+
+# Compute archive checksum locally
+if command -v sha256sum >/dev/null 2>&1; then
+  DOWNLOADED_SHA="$(sha256sum "$TMPDIR/${ARCHIVE}" | cut -d' ' -f1)"
+elif command -v shasum >/dev/null 2>&1; then
+  DOWNLOADED_SHA="$(shasum -a 256 "$TMPDIR/${ARCHIVE}" | cut -d' ' -f1)"
+else
+  echo "install.sh: sha256sum or shasum is required" >&2
+  exit 1
+fi
+EXPECTED_SHA="$(grep " ${ARCHIVE}$" "$TMPDIR/SHA256SUMS" | cut -d' ' -f1 | tr '[:lower:]' '[:upper:]')"
+DOWNLOADED_UPPER="$(echo "$DOWNLOADED_SHA" | tr '[:lower:]' '[:upper:]')"
+
+if [ "$DOWNLOADED_UPPER" != "$EXPECTED_SHA" ]; then
+  echo "install.sh: SHA256 mismatch — archive corrupted or tampered" >&2
+  exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# Install
+# ---------------------------------------------------------------------------
+INSTALL_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/seevee/v${VERSION}"
+mkdir -p "$INSTALL_DIR"
+echo "Installing to ${INSTALL_DIR}..." >&2
+
+tar -xzf "$TMPDIR/${ARCHIVE}" -C "$INSTALL_DIR" --strip-components=1
+
+# ---------------------------------------------------------------------------
+# Stable launcher
+# ---------------------------------------------------------------------------
+LAUNCHER_DIR="${SEEVE_BIN_DIR:-$HOME/.local/bin}"
+LAUNCHER="$LAUNCHER_DIR/seevee"
+mkdir -p "$LAUNCHER_DIR"
+
+# Detect if launcher already exists and points to a different version
+if [ -f "$LAUNCHER" ]; then
+  CURRENT_VERSION="$(cat "$INSTALL_DIR/VERSION" 2>/dev/null || echo "")"
+  echo "Replacing existing seevee installation." >&2
+fi
+
+# Write launcher script
+cat > "$LAUNCHER" <<LAUNCHER_EOF
+#!/usr/bin/env sh
+# Seevee launcher — managed by install.sh. Do not edit directly.
+exec "$INSTALL_DIR/bin/seevee" "\$@"
+LAUNCHER_EOF
+chmod +x "$LAUNCHER"
+
+# ---------------------------------------------------------------------------
+# Verify installation
+# ---------------------------------------------------------------------------
+if ! "$LAUNCHER" --version >/dev/null 2>&1; then
+  echo "install.sh: installation verification failed" >&2
+  exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# PATH hint (only when ~/.local/bin is not on PATH)
+# ---------------------------------------------------------------------------
+if ! echo "$PATH" | tr ':' '\n' | grep -qx "$LAUNCHER_DIR"; then
+  echo "" >&2
+  echo "Installed. Add to PATH if needed:" >&2
+  echo "  export PATH=\"$LAUNCHER_DIR:\$PATH\"" >&2
+fi
+
+echo "Seevee v${VERSION} installed successfully." >&2

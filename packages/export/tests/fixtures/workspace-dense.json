@@ -1,0 +1,77 @@
+{
+  "kind": "seevee.workspace",
+  "schemaVersion": "1.0.0",
+  "id": "ws_main",
+  "revision": 1,
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-01-01T00:00:00.000Z",
+  "data": {
+    "name": "My CV Workspace",
+    "active": {
+      "cvId": "cv_dense",
+      "presentationId": "pres_main"
+    },
+    "policy": {
+      "allowAgentFactInference": false,
+      "requireEvidenceForNumericClaims": true,
+      "allowForceExportWithOverflow": false,
+      "autoResolveDeterministicComments": false
+    },
+    "resources": {
+      "cvs": {
+        "cv_main": {
+          "id": "cv_main",
+          "relativePath": "cvs/cv_main.json",
+          "revision": 1,
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        "cv_dense": {
+          "id": "cv_dense",
+          "relativePath": "cvs/cv_dense.json",
+          "revision": 1,
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        }
+      },
+      "presentations": {
+        "pres_main": {
+          "id": "pres_main",
+          "relativePath": "presentations/pres_main.json",
+          "templateId": "tpl_minimal",
+          "versionId": "tpl_minimal_v1",
+          "revision": 1,
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        }
+      },
+      "provenance": {
+        "prov_main": {
+          "id": "prov_main",
+          "relativePath": "provenance/prov_main.json",
+          "cvId": "cv_main",
+          "revision": 1,
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        }
+      },
+      "comments": {
+        "cmts_main": {
+          "id": "cmts_main",
+          "relativePath": "comments/cmts_main.json",
+          "cvId": "cv_main",
+          "revision": 1,
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        }
+      },
+      "sources": {},
+      "templates": {
+        "tpl_minimal": {
+          "id": "tpl_minimal",
+          "relativePath": "templates/local/tpl_minimal",
+          "currentVersionId": "tpl_minimal_v1",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        }
+      },
+      "stylePresets": {},
+      "changeSets": {},
+      "agentRuns": {}
+    }
+  }
+}

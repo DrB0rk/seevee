@@ -1,0 +1,46 @@
+{
+  "name": "@seevee/schema",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./common": "./src/common/index.ts",
+    "./cv": "./src/cv/index.ts",
+    "./workspace": "./src/workspace/index.ts",
+    "./comments": "./src/comments/index.ts",
+    "./provenance": "./src/provenance/index.ts",
+    "./presentation": "./src/presentation/index.ts",
+    "./source": "./src/source/index.ts",
+    "./change-set": "./src/change-set/index.ts",
+    "./template-manifest": "./src/template-manifest/index.ts",
+    "./style-preset": "./src/style-preset/index.ts",
+    "./agent-run": "./src/agent-run/index.ts",
+    "./render-diagnostics": "./src/render-diagnostics/index.ts",
+    "./semantic": "./src/semantic/index.ts",
+    "./migrations": "./src/migrations/index.ts",
+    "./generated": "./generated/index.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "echo \"lint skipped\"",
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "generate": "tsx scripts/generate.ts",
+    "drift-check": "tsx scripts/drift-check.ts",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "zod": "^3.24.0",
+    "zod-to-json-schema": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0",
+    "tsx": "^4.19.0",
+    "vitest": "^2.1.0",
+    "ajv": "^8.17.0",
+    "ajv-formats": "^3.0.0"
+  }
+}

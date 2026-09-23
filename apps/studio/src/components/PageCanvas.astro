@@ -1,0 +1,35 @@
+---
+/**
+ * Centered page canvas. Hosts a single A4 page surface per
+ * `.dev/specs/DASHBOARD_EDITOR.md` §3. The active physical page is
+ * rendered by the `PhysicalPage` component; multi-page output from the
+ * renderer stacks vertically.
+ */
+import PhysicalPage from './PhysicalPage.astro';
+---
+
+<section class="canvas-pane">
+  <div class="canvas-toolbar">
+    <div class="canvas-toolbar-group">
+      <button type="button" class="canvas-button" data-canvas-action="zoom-out">−</button>
+      <span class="canvas-zoom mono" id="canvas-zoom-readout">100%</span>
+      <button type="button" class="canvas-button" data-canvas-action="zoom-in">+</button>
+      <button type="button" class="canvas-button" data-canvas-action="fit-width">Fit width</button>
+      <button type="button" class="canvas-button" data-canvas-action="fit-page">Fit page</button>
+    </div>
+    <div class="canvas-toolbar-group">
+      <label class="canvas-select" for="page-profile">
+        <span class="canvas-select-label">Profile</span>
+        <select id="page-profile" name="profile">
+          <option value="A4" selected>A4 portrait</option>
+          <option value="Letter">Letter portrait</option>
+          <option value="custom">Custom</option>
+        </select>
+      </label>
+      <span class="canvas-page-count mono" id="canvas-page-count">1 page</span>
+    </div>
+  </div>
+  <div class="canvas-pasteboard" id="canvas-pasteboard">
+    <PhysicalPage pageNumber={1} />
+  </div>
+</section>

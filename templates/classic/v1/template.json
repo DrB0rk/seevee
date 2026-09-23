@@ -1,0 +1,94 @@
+{
+  "kind": "seevee.template-manifest",
+  "schemaVersion": "1.0.0",
+  "id": "tplclassic0000000000000000001",
+  "templateId": "classic",
+  "name": "Classic",
+  "version": "1.0.0",
+  "entry": "src/Resume.astro",
+  "engine": "astro",
+  "capabilities": {
+    "multiPage": true,
+    "customPageSize": false,
+    "comments": true,
+    "twoColumn": false
+  },
+  "supportedCvSchema": "1.0.0",
+  "supportedPresentationSchema": "1.0.0",
+  "tokens": {
+    "accent-color": {
+      "type": "color",
+      "default": "#1f2937",
+      "dashboardEditable": true,
+      "affectsPagination": false
+    },
+    "font-family": {
+      "type": "string",
+      "default": "Inter, system-ui, sans-serif",
+      "dashboardEditable": true,
+      "affectsPagination": true
+    },
+    "base-font-size": {
+      "type": "number",
+      "default": 11,
+      "min": 9,
+      "max": 14,
+      "step": 0.5,
+      "dashboardEditable": true,
+      "affectsPagination": true
+    },
+    "line-height": {
+      "type": "number",
+      "default": 1.4,
+      "min": 1.0,
+      "max": 2.0,
+      "step": 0.05,
+      "dashboardEditable": true,
+      "affectsPagination": true
+    }
+  },
+  "bindings": {
+    "identity": {
+      "id": "identity",
+      "selector": "[data-seevee-identity]",
+      "kind": "section",
+      "description": "Identity (name + contact) header at the top of every page."
+    },
+    "summary": {
+      "id": "summary",
+      "selector": "[data-seevee-section=\"summary\"]",
+      "kind": "section",
+      "description": "Summary block rendered immediately after the identity."
+    },
+    "experience": {
+      "id": "experience",
+      "selector": "[data-seevee-section=\"experience\"]",
+      "kind": "collection",
+      "description": "Experience items rendered in section.nodeOrder."
+    },
+    "education": {
+      "id": "education",
+      "selector": "[data-seevee-section=\"education\"]",
+      "kind": "collection",
+      "description": "Education items rendered in section.nodeOrder."
+    },
+    "skills": {
+      "id": "skills",
+      "selector": "[data-seevee-section=\"skills\"]",
+      "kind": "collection",
+      "description": "Skill groups rendered as inline tags."
+    },
+    "projects": {
+      "id": "projects",
+      "selector": "[data-seevee-section=\"projects\"]",
+      "kind": "collection",
+      "description": "Project items rendered in section.nodeOrder."
+    }
+  },
+  "extensions": {},
+  "designIntent": {
+    "sector": "general",
+    "voice": "minimal",
+    "constraints": ["single-column", "ats-friendly", "section-canonical-order"]
+  }
+}

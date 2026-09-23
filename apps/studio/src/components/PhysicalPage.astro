@@ -1,0 +1,23 @@
+---
+/**
+ * Single physical page surface — A4 portrait by default per
+ * `.dev/specs/DASHBOARD_EDITOR.md` §2. The CV content comes from the
+ * selected template (not the Studio), so this component only paints the
+ * paper rectangle with the page number overlay.
+ */
+interface Props {
+  pageNumber: number;
+}
+const { pageNumber } = Astro.props as Props;
+---
+
+<article class="paper" data-page-number={pageNumber} aria-label={`Page ${pageNumber}`}>
+  <div class="paper-content">
+    <p class="paper-placeholder">
+      Page {pageNumber} — CV render surface. The template's body fills this area at runtime.
+    </p>
+  </div>
+  <footer class="paper-footer">
+    <span class="paper-footer-page mono">p. {pageNumber}</span>
+  </footer>
+</article>

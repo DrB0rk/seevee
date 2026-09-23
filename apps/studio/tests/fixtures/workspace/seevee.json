@@ -1,0 +1,76 @@
+{
+  "kind": "seevee.workspace",
+  "schemaVersion": "1.0.0",
+  "id": "ws_test",
+  "revision": 1,
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-01-01T00:00:00.000Z",
+  "data": {
+    "name": "Studio test workspace",
+    "active": { "cvId": "cv_test", "presentationId": "pres_test" },
+    "policy": {
+      "allowAgentFactInference": false,
+      "requireEvidenceForNumericClaims": true,
+      "allowForceExportWithOverflow": false,
+      "autoResolveDeterministicComments": false
+    },
+    "resources": {
+      "cvs": {
+        "cv_test": {
+          "id": "cv_test",
+          "relativePath": "cvs/cv_test.json",
+          "revision": 1,
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        }
+      },
+      "presentations": {
+        "pres_test": {
+          "id": "pres_test",
+          "relativePath": "presentations/pres_test.json",
+          "templateId": "tpl_minimal",
+          "versionId": "tpl_minimal_v1",
+          "revision": 1,
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        }
+      },
+      "provenance": {
+        "prov_test": {
+          "id": "prov_test",
+          "relativePath": "provenance/prov_test.json",
+          "cvId": "cv_test",
+          "revision": 1,
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        }
+      },
+      "comments": {
+        "cmts_test": {
+          "id": "cmts_test",
+          "relativePath": "comments/cmts_test.json",
+          "cvId": "cv_test",
+          "revision": 1,
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        }
+      },
+      "sources": {
+        "src_test": {
+          "id": "src_test",
+          "relativePath": "sources/src_test.json",
+          "type": "source",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        }
+      },
+      "templates": {
+        "tpl_minimal": {
+          "id": "tpl_minimal",
+          "relativePath": "templates/tpl_minimal",
+          "currentVersionId": "tpl_minimal_v1",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        }
+      },
+      "stylePresets": {},
+      "changeSets": {},
+      "agentRuns": {}
+    },
+    "extensions": {}
+  }
+}

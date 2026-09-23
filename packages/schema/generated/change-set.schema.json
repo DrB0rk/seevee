@@ -1,0 +1,705 @@
+{
+  "type": "object",
+  "properties": {
+    "kind": {
+      "type": "string",
+      "const": "seevee.change-set"
+    },
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 160,
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+    },
+    "target": {
+      "type": "object",
+      "properties": {
+        "resourceKind": {
+          "type": "string",
+          "enum": [
+            "seevee.cv",
+            "seevee.presentation",
+            "seevee.comments",
+            "seevee.provenance",
+            "seevee.workspace"
+          ]
+        },
+        "resourceId": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "resourceKind",
+        "resourceId"
+      ],
+      "additionalProperties": false
+    },
+    "baseRevision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "actor": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "user",
+            "agent",
+            "system",
+            "unknown"
+          ]
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "display": {
+          "type": "string"
+        },
+        "extensions": {
+          "type": "object",
+          "additionalProperties": {}
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "additionalProperties": false
+    },
+    "reason": {
+      "type": "object",
+      "properties": {
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "commentIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 160,
+            "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+          }
+        },
+        "sourceIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 160,
+            "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+          }
+        }
+      },
+      "required": [
+        "summary",
+        "commentIds"
+      ],
+      "additionalProperties": false
+    },
+    "operations": {
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "target": {
+                "type": "object",
+                "properties": {
+                  "nodeId": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "field": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "pointer": {
+                    "type": "string",
+                    "pattern": "^(?:\\/(?:[^~/]|~0|~1)*)*$"
+                  }
+                },
+                "required": [
+                  "nodeId",
+                  "field"
+                ],
+                "additionalProperties": false
+              },
+              "op": {
+                "type": "string",
+                "const": "field.set"
+              },
+              "value": {}
+            },
+            "required": [
+              "target",
+              "op"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "target": {
+                "type": "object",
+                "properties": {
+                  "nodeId": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "field": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "pointer": {
+                    "type": "string",
+                    "pattern": "^(?:\\/(?:[^~/]|~0|~1)*)*$"
+                  }
+                },
+                "required": [
+                  "nodeId",
+                  "field"
+                ],
+                "additionalProperties": false
+              },
+              "op": {
+                "type": "string",
+                "const": "field.unset"
+              }
+            },
+            "required": [
+              "target",
+              "op"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "target": {
+                "type": "object",
+                "properties": {
+                  "nodeId": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "field": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "pointer": {
+                    "type": "string",
+                    "pattern": "^(?:\\/(?:[^~/]|~0|~1)*)*$"
+                  }
+                },
+                "required": [
+                  "nodeId",
+                  "field"
+                ],
+                "additionalProperties": false
+              },
+              "op": {
+                "type": "string",
+                "const": "text.replace"
+              },
+              "expected": {
+                "type": "string"
+              },
+              "replacement": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "target",
+              "op",
+              "expected",
+              "replacement"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "const": "node.add"
+              },
+              "nodeType": {
+                "type": "string",
+                "minLength": 1
+              },
+              "node": {
+                "type": "object",
+                "additionalProperties": {}
+              },
+              "sectionId": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "placement": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "position": {
+                        "type": "string",
+                        "enum": [
+                          "first",
+                          "last"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "position"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "position": {
+                        "type": "string",
+                        "enum": [
+                          "before",
+                          "after"
+                        ]
+                      },
+                      "anchorId": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 160,
+                        "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                      }
+                    },
+                    "required": [
+                      "position",
+                      "anchorId"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            },
+            "required": [
+              "op",
+              "nodeType",
+              "node",
+              "placement"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "const": "node.remove"
+              },
+              "nodeId": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              }
+            },
+            "required": [
+              "op",
+              "nodeId"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "const": "node.move"
+              },
+              "nodeId": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              },
+              "toSectionId": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              },
+              "placement": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "position": {
+                        "type": "string",
+                        "enum": [
+                          "first",
+                          "last"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "position"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "position": {
+                        "type": "string",
+                        "enum": [
+                          "before",
+                          "after"
+                        ]
+                      },
+                      "anchorId": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 160,
+                        "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                      }
+                    },
+                    "required": [
+                      "position",
+                      "anchorId"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            },
+            "required": [
+              "op",
+              "nodeId",
+              "placement"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "const": "section.add"
+              },
+              "section": {
+                "type": "object",
+                "additionalProperties": {}
+              },
+              "placement": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "position": {
+                        "type": "string",
+                        "enum": [
+                          "first",
+                          "last"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "position"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "position": {
+                        "type": "string",
+                        "enum": [
+                          "before",
+                          "after"
+                        ]
+                      },
+                      "anchorId": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 160,
+                        "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                      }
+                    },
+                    "required": [
+                      "position",
+                      "anchorId"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            },
+            "required": [
+              "op",
+              "section",
+              "placement"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "const": "section.remove"
+              },
+              "sectionId": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              }
+            },
+            "required": [
+              "op",
+              "sectionId"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "const": "section.reorder"
+              },
+              "sectionId": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              },
+              "placement": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "position": {
+                        "type": "string",
+                        "enum": [
+                          "first",
+                          "last"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "position"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "position": {
+                        "type": "string",
+                        "enum": [
+                          "before",
+                          "after"
+                        ]
+                      },
+                      "anchorId": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 160,
+                        "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                      }
+                    },
+                    "required": [
+                      "position",
+                      "anchorId"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            },
+            "required": [
+              "op",
+              "sectionId",
+              "placement"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "const": "presentation.token.set"
+              },
+              "tokenKey": {
+                "type": "string",
+                "minLength": 1
+              },
+              "value": {}
+            },
+            "required": [
+              "op",
+              "tokenKey"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "const": "presentation.page.set"
+              },
+              "page": {
+                "type": "object",
+                "additionalProperties": {}
+              }
+            },
+            "required": [
+              "op",
+              "page"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "const": "presentation.section.override"
+              },
+              "sectionId": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              },
+              "override": {
+                "type": "object",
+                "additionalProperties": {}
+              }
+            },
+            "required": [
+              "op",
+              "sectionId",
+              "override"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "const": "comment.add"
+              },
+              "thread": {
+                "type": "object",
+                "additionalProperties": {}
+              }
+            },
+            "required": [
+              "op",
+              "thread"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "const": "comment.resolve"
+              },
+              "threadId": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              },
+              "note": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "op",
+              "threadId"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "const": "comment.addMessage"
+              },
+              "threadId": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              },
+              "message": {
+                "type": "object",
+                "additionalProperties": {}
+              }
+            },
+            "required": [
+              "op",
+              "threadId",
+              "message"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "minItems": 1
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "extensions": {
+      "type": "object",
+      "additionalProperties": {}
+    }
+  },
+  "required": [
+    "kind",
+    "schemaVersion",
+    "id",
+    "target",
+    "baseRevision",
+    "actor",
+    "reason",
+    "operations",
+    "createdAt"
+  ],
+  "additionalProperties": false,
+  "$id": "https://seevee.dev/schema/v1/change-set.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

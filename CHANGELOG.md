@@ -6,27 +6,27 @@ This project uses Semantic Versioning. See `.dev/VERSIONING.md` for the project 
 
 ## [Unreleased]
 
+## [0.1.0-alpha.0] - 2026-09-23
+
 ### Added
 
-- Architecture-first Seevee project specification.
-- Modular Draft 2020-12 CV/workspace schemas.
-- Multi-CV workspace model.
-- Workspace-agent skill and CV guidance.
-- GitHub Release installer bootstrap.
-- Dashboard/editor and template architecture.
-- Maintainer development control plane under `.dev/`.
+- Runtime packages for schema validation, migrations, CLI workspace lifecycle, agent tools, source ingestion, template compilation, page layout, and PDF export orchestration.
+- Astro Studio dashboard shell with workspace APIs and file watching.
+- Classic and two-column template sources, plus cross-platform release bundle and checksum scripts.
+- Unix and Windows installers for GitHub Release bundles.
+- Package tests, typechecking, schema generation/drift checks, and CI workflows.
 
 ### Changed
 
-- Repository-maintainer documentation is isolated from workspace/CV-agent instructions.
-- CV templates are explicitly unrestricted in visual design within runtime safety boundaries.
-- Page-count preferences are optional rather than universal constraints.
+- Bundle manifests resolve compiled ESM entry points and package version from the canonical root `VERSION`.
+- Windows bundle uses a `.cmd` launcher that invokes Node instead of labeling JavaScript as an `.exe`.
+- README and implementation status now identify the remaining placeholder paths.
 
 ### Fixed
 
 - JSON Pointer schema now supports nested paths such as `/role/title`.
 - Workspace resources explicitly index source documents.
 
-## [0.1.0-alpha.0] - Unreleased
+### Incomplete
 
-Initial pre-release baseline. No production runtime release has been published yet.
+- Studio preview rendering, PDF export, agent execution, and image recognition remain placeholders. See `.dev/IMPLEMENTATION_STATUS.md`.

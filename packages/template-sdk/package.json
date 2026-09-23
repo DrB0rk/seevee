@@ -1,0 +1,39 @@
+{
+  "name": "@seevee/template-sdk",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Public typed API exposed to Seevee source templates — CV/Presentation read models, semantic bindings, page/section component helpers, diagnostics.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./types": "./src/types.ts",
+    "./bindings": "./src/bindings.ts",
+    "./cv-helpers": "./src/cv-helpers.ts",
+    "./page-helpers": "./src/page-helpers.ts",
+    "./diagnostics": "./src/diagnostics.ts",
+    "./field-path": "./src/field-path.ts",
+    "./safety": "./src/safety.ts"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "echo \"lint skipped\"",
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@seevee/schema": "workspace:*",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0",
+    "tsx": "^4.19.0",
+    "vitest": "^2.1.0"
+  }
+}

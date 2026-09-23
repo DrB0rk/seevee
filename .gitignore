@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.turbo/
+*.tsbuildinfo
+.astro/
+.env*.local
+
+# Seevee runtime state
+.seevee/
+workspace-state.json
+
+# Logs
+*.log
+*.log.*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test coverage
+coverage/
+
+# Release bundles
+release/
+*.zip
+*.tar.gz
+!release/.gitkeep
+
+# Checksums
+SHA256SUMS

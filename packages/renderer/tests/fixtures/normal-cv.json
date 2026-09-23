@@ -1,0 +1,90 @@
+{
+  "kind": "seevee.cv",
+  "schemaVersion": "1.0.0",
+  "id": "cv_normal",
+  "revision": 1,
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-01-01T00:00:00.000Z",
+  "data": {
+    "locale": "en-US",
+    "identity": {
+      "id": "person_normal",
+      "name": { "display": "Grace Hopper" },
+      "contact": [
+        { "kind": "email", "value": "grace@example.com" }
+      ]
+    },
+    "sectionOrder": ["sec_summary", "sec_experience", "sec_skills"],
+    "sections": {
+      "sec_summary": {
+        "id": "sec_summary",
+        "type": "summary",
+        "title": "Summary",
+        "visible": true,
+        "collapsible": false,
+        "defaultCollapsed": false
+      },
+      "sec_experience": {
+        "id": "sec_experience",
+        "type": "experience",
+        "title": "Experience",
+        "visible": true,
+        "collapsible": false,
+        "defaultCollapsed": false,
+        "nodeOrder": ["exp_acme", "exp_widgets"]
+      },
+      "sec_skills": {
+        "id": "sec_skills",
+        "type": "skills",
+        "title": "Skills",
+        "visible": true,
+        "collapsible": false,
+        "defaultCollapsed": false,
+        "nodeOrder": ["skl_typescript", "skl_python"]
+      }
+    },
+    "entities": {
+      "experience": {
+        "exp_acme": {
+          "id": "exp_acme",
+          "type": "experience",
+          "organization": { "id": "org_acme", "type": "organization", "name": "Acme" },
+          "role": { "id": "role_senior", "type": "role", "title": "Senior Engineer" },
+          "period": { "start": { "precision": "year", "year": 2020 } },
+          "bulletOrder": ["bul_1", "bul_2"],
+          "bullets": {
+            "bul_1": { "id": "bul_1", "text": "Shipped Seevee v0.1" },
+            "bul_2": { "id": "bul_2", "text": "Mentored three engineers" }
+          },
+          "technologyRefs": ["skl_typescript"]
+        },
+        "exp_widgets": {
+          "id": "exp_widgets",
+          "type": "experience",
+          "organization": { "id": "org_widgets", "type": "organization", "name": "Widgets Inc" },
+          "role": { "id": "role_staff", "type": "role", "title": "Staff Engineer" },
+          "period": { "start": { "precision": "year", "year": 2018 }, "end": { "precision": "year", "year": 2020 } },
+          "bulletOrder": ["bul_3"],
+          "bullets": {
+            "bul_3": { "id": "bul_3", "text": "Led platform rewrite" }
+          },
+          "technologyRefs": []
+        }
+      },
+      "skills": {
+        "skl_typescript": {
+          "id": "skl_typescript",
+          "type": "skill",
+          "name": "TypeScript",
+          "keywords": ["ts", "typescript"]
+        },
+        "skl_python": {
+          "id": "skl_python",
+          "type": "skill",
+          "name": "Python",
+          "keywords": ["py"]
+        }
+      }
+    }
+  }
+}

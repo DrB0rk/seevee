@@ -1,0 +1,543 @@
+{
+  "type": "object",
+  "properties": {
+    "kind": {
+      "type": "string",
+      "const": "seevee.workspace"
+    },
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 160,
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "data": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "active": {
+          "type": "object",
+          "properties": {
+            "cvId": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 160,
+              "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+            },
+            "presentationId": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 160,
+              "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+            },
+            "extensions": {
+              "type": "object",
+              "additionalProperties": {}
+            }
+          },
+          "required": [
+            "cvId",
+            "presentationId"
+          ],
+          "additionalProperties": false
+        },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "cvs": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "relativePath": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^(?!\\/)(?![A-Za-z]:[\\\\/])(?!.*(?:^|\\/)..(?:\\/|$)).+$"
+                  },
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "updatedAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "id",
+                  "relativePath",
+                  "revision",
+                  "updatedAt"
+                ],
+                "additionalProperties": false
+              },
+              "propertyNames": {
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              }
+            },
+            "presentations": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "relativePath": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^(?!\\/)(?![A-Za-z]:[\\\\/])(?!.*(?:^|\\/)..(?:\\/|$)).+$"
+                  },
+                  "templateId": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "versionId": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "updatedAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "id",
+                  "relativePath",
+                  "templateId",
+                  "versionId",
+                  "revision",
+                  "updatedAt"
+                ],
+                "additionalProperties": false
+              },
+              "propertyNames": {
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              }
+            },
+            "provenance": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "relativePath": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^(?!\\/)(?![A-Za-z]:[\\\\/])(?!.*(?:^|\\/)..(?:\\/|$)).+$"
+                  },
+                  "cvId": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "updatedAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "id",
+                  "relativePath",
+                  "cvId",
+                  "revision",
+                  "updatedAt"
+                ],
+                "additionalProperties": false
+              },
+              "propertyNames": {
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              }
+            },
+            "comments": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "relativePath": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^(?!\\/)(?![A-Za-z]:[\\\\/])(?!.*(?:^|\\/)..(?:\\/|$)).+$"
+                  },
+                  "cvId": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "updatedAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "id",
+                  "relativePath",
+                  "cvId",
+                  "revision",
+                  "updatedAt"
+                ],
+                "additionalProperties": false
+              },
+              "propertyNames": {
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              }
+            },
+            "sources": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "relativePath": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^(?!\\/)(?![A-Za-z]:[\\\\/])(?!.*(?:^|\\/)..(?:\\/|$)).+$"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "source",
+                      "template-source",
+                      "template-asset",
+                      "export",
+                      "change-set",
+                      "agent-run"
+                    ]
+                  },
+                  "updatedAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "id",
+                  "relativePath",
+                  "type",
+                  "updatedAt"
+                ],
+                "additionalProperties": false
+              },
+              "propertyNames": {
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              }
+            },
+            "templates": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "relativePath": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^(?!\\/)(?![A-Za-z]:[\\\\/])(?!.*(?:^|\\/)..(?:\\/|$)).+$"
+                  },
+                  "currentVersionId": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "updatedAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "id",
+                  "relativePath",
+                  "currentVersionId",
+                  "updatedAt"
+                ],
+                "additionalProperties": false
+              },
+              "propertyNames": {
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              }
+            },
+            "stylePresets": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "relativePath": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^(?!\\/)(?![A-Za-z]:[\\\\/])(?!.*(?:^|\\/)..(?:\\/|$)).+$"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "source",
+                      "template-source",
+                      "template-asset",
+                      "export",
+                      "change-set",
+                      "agent-run"
+                    ]
+                  },
+                  "updatedAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "id",
+                  "relativePath",
+                  "type",
+                  "updatedAt"
+                ],
+                "additionalProperties": false
+              },
+              "propertyNames": {
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              }
+            },
+            "changeSets": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "relativePath": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^(?!\\/)(?![A-Za-z]:[\\\\/])(?!.*(?:^|\\/)..(?:\\/|$)).+$"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "source",
+                      "template-source",
+                      "template-asset",
+                      "export",
+                      "change-set",
+                      "agent-run"
+                    ]
+                  },
+                  "updatedAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "id",
+                  "relativePath",
+                  "type",
+                  "updatedAt"
+                ],
+                "additionalProperties": false
+              },
+              "propertyNames": {
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              }
+            },
+            "agentRuns": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "relativePath": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^(?!\\/)(?![A-Za-z]:[\\\\/])(?!.*(?:^|\\/)..(?:\\/|$)).+$"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "source",
+                      "template-source",
+                      "template-asset",
+                      "export",
+                      "change-set",
+                      "agent-run"
+                    ]
+                  },
+                  "updatedAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "id",
+                  "relativePath",
+                  "type",
+                  "updatedAt"
+                ],
+                "additionalProperties": false
+              },
+              "propertyNames": {
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              }
+            }
+          },
+          "required": [
+            "cvs",
+            "presentations",
+            "provenance",
+            "comments",
+            "sources",
+            "templates",
+            "stylePresets",
+            "changeSets",
+            "agentRuns"
+          ],
+          "additionalProperties": false
+        },
+        "policy": {
+          "type": "object",
+          "properties": {
+            "allowAgentFactInference": {
+              "type": "boolean"
+            },
+            "requireEvidenceForNumericClaims": {
+              "type": "boolean"
+            },
+            "allowForceExportWithOverflow": {
+              "type": "boolean"
+            },
+            "autoResolveDeterministicComments": {
+              "type": "boolean"
+            },
+            "extensions": {
+              "type": "object",
+              "additionalProperties": {}
+            }
+          },
+          "required": [
+            "allowAgentFactInference",
+            "requireEvidenceForNumericClaims",
+            "allowForceExportWithOverflow",
+            "autoResolveDeterministicComments"
+          ],
+          "additionalProperties": false
+        },
+        "extensions": {
+          "type": "object",
+          "additionalProperties": {}
+        }
+      },
+      "required": [
+        "name",
+        "active",
+        "resources",
+        "policy"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "kind",
+    "schemaVersion",
+    "id",
+    "revision",
+    "createdAt",
+    "updatedAt",
+    "data"
+  ],
+  "additionalProperties": false,
+  "$id": "https://seevee.dev/schema/v1/workspace.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

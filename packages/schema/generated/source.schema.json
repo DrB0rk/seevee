@@ -1,0 +1,222 @@
+{
+  "type": "object",
+  "properties": {
+    "kind": {
+      "type": "string",
+      "const": "seevee.source"
+    },
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 160,
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "data": {
+      "type": "object",
+      "properties": {
+        "origin": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 160,
+              "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+            },
+            "type": {
+              "type": "string",
+              "minLength": 1
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "contentHash": {
+              "type": "string",
+              "pattern": "^sha256:[A-Fa-f0-9]{64}$"
+            },
+            "ingestedAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "metadata": {
+              "type": "object",
+              "additionalProperties": {}
+            },
+            "extensions": {
+              "type": "object",
+              "additionalProperties": {}
+            }
+          },
+          "required": [
+            "id",
+            "type",
+            "name",
+            "contentHash",
+            "ingestedAt",
+            "metadata"
+          ],
+          "additionalProperties": false
+        },
+        "extraction": {
+          "type": "object",
+          "properties": {
+            "adaptedAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "adapter": {
+              "type": "string",
+              "minLength": 1
+            },
+            "warnings": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "language": {
+              "type": "string",
+              "minLength": 2
+            }
+          },
+          "required": [
+            "adaptedAt",
+            "adapter"
+          ],
+          "additionalProperties": false
+        },
+        "blocks": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "paragraph",
+                  "heading",
+                  "list",
+                  "list-item",
+                  "table",
+                  "table-row",
+                  "image",
+                  "code",
+                  "divider",
+                  "unknown"
+                ]
+              },
+              "text": {
+                "type": "string"
+              },
+              "sourceLocators": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "start": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "end": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "sourceId": {
+                      "type": "string",
+                      "minLength": 3,
+                      "maxLength": 160,
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                    }
+                  },
+                  "required": [
+                    "start",
+                    "end",
+                    "sourceId"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "children": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 3,
+                      "maxLength": 160,
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "metadata": {
+                "type": "object",
+                "additionalProperties": {}
+              }
+            },
+            "required": [
+              "id",
+              "type"
+            ],
+            "additionalProperties": false
+          },
+          "propertyNames": {
+            "minLength": 3,
+            "maxLength": 160,
+            "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+          }
+        },
+        "extensions": {
+          "type": "object",
+          "additionalProperties": {}
+        }
+      },
+      "required": [
+        "origin",
+        "extraction",
+        "blocks"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "kind",
+    "schemaVersion",
+    "id",
+    "revision",
+    "createdAt",
+    "updatedAt",
+    "data"
+  ],
+  "additionalProperties": false,
+  "$id": "https://seevee.dev/schema/v1/source.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

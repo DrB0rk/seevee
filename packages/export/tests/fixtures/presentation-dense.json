@@ -1,0 +1,20 @@
+{
+  "kind": "seevee.presentation",
+  "schemaVersion": "1.0.0",
+  "id": "pres_main",
+  "revision": 1,
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-01-01T00:00:00.000Z",
+  "data": {
+    "cvId": "cv_dense",
+    "template": { "templateId": "tpl_minimal", "versionId": "tpl_minimal_v1" },
+    "page": { "preset": "A4", "orientation": "portrait" },
+    "pagination": { "targetMin": 1, "targetMax": 2, "breakBehavior": "auto" },
+    "tokens": {
+      "color_primary": { "type": "color", "value": "#000000" },
+      "size_body": { "type": "number", "value": 10.5 }
+    },
+    "sectionOverrides": {},
+    "templateOverrides": {}
+  }
+}

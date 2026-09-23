@@ -1,0 +1,23 @@
+{
+  "kind": "seevee.cv",
+  "schemaVersion": "1.0.0",
+  "id": "cvfixtureempty0000000001",
+  "revision": 0,
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-01-01T00:00:00.000Z",
+  "data": {
+    "locale": "en-US",
+    "identity": {
+      "id": "identityfixtureempty1",
+      "name": {
+        "given": "Test",
+        "family": "User",
+        "display": "Test User"
+      },
+      "contact": []
+    },
+    "sectionOrder": [],
+    "sections": {},
+    "entities": {}
+  }
+}

@@ -1,0 +1,2684 @@
+{
+  "type": "object",
+  "properties": {
+    "kind": {
+      "type": "string",
+      "const": "seevee.cv"
+    },
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 160,
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "data": {
+      "type": "object",
+      "properties": {
+        "locale": {
+          "type": "string",
+          "minLength": 2
+        },
+        "identity": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 160,
+              "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+            },
+            "name": {
+              "type": "object",
+              "properties": {
+                "given": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "middle": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "family": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "display": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "pronunciation": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "display"
+              ],
+              "additionalProperties": false
+            },
+            "contact": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "email",
+                      "phone",
+                      "website",
+                      "linkedin",
+                      "github",
+                      "mastodon",
+                      "orcid",
+                      "other"
+                    ]
+                  },
+                  "value": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "label": {
+                    "type": "string"
+                  },
+                  "primary": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "value"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "location": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "region": {
+                  "type": "string"
+                },
+                "country": {
+                  "type": "string",
+                  "minLength": 2
+                },
+                "countryCode": {
+                  "type": "string",
+                  "minLength": 2,
+                  "maxLength": 2
+                },
+                "remote": {
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": false
+            },
+            "headline": {
+              "type": "string"
+            },
+            "pronouns": {
+              "type": "string"
+            },
+            "summary": {
+              "type": "string"
+            },
+            "links": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "rel": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "href": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "mime": {
+                    "type": "string"
+                  },
+                  "extensions": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "rel",
+                  "href"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "id",
+            "name",
+            "contact"
+          ],
+          "additionalProperties": false
+        },
+        "sectionOrder": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 160,
+            "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+          }
+        },
+        "sections": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "summary",
+                  "experience",
+                  "education",
+                  "projects",
+                  "skills",
+                  "certifications",
+                  "awards",
+                  "languages",
+                  "publications",
+                  "volunteering",
+                  "references",
+                  "custom"
+                ]
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "visible": {
+                "type": "boolean",
+                "default": true
+              },
+              "collapsible": {
+                "type": "boolean",
+                "default": false
+              },
+              "defaultCollapsed": {
+                "type": "boolean",
+                "default": false
+              },
+              "nodeOrder": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 3,
+                  "maxLength": 160,
+                  "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                }
+              },
+              "extensions": {
+                "type": "object",
+                "additionalProperties": {}
+              }
+            },
+            "required": [
+              "id",
+              "type",
+              "title"
+            ],
+            "additionalProperties": false
+          },
+          "propertyNames": {
+            "minLength": 3,
+            "maxLength": 160,
+            "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+          }
+        },
+        "entities": {
+          "type": "object",
+          "properties": {
+            "experience": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "type": {
+                    "type": "string",
+                    "const": "experience"
+                  },
+                  "organization": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 160,
+                        "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                      },
+                      "type": {
+                        "type": "string",
+                        "const": "organization"
+                      },
+                      "name": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "legalName": {
+                        "type": "string"
+                      },
+                      "url": {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      "location": {
+                        "type": "object",
+                        "properties": {
+                          "city": {
+                            "type": "string"
+                          },
+                          "region": {
+                            "type": "string"
+                          },
+                          "country": {
+                            "type": "string",
+                            "minLength": 2
+                          },
+                          "countryCode": {
+                            "type": "string",
+                            "minLength": 2,
+                            "maxLength": 2
+                          },
+                          "remote": {
+                            "type": "boolean"
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      "extensions": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "type",
+                      "name"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "role": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 160,
+                        "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                      },
+                      "type": {
+                        "type": "string",
+                        "const": "role"
+                      },
+                      "title": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "level": {
+                        "type": "string"
+                      },
+                      "employmentType": {
+                        "type": "string",
+                        "enum": [
+                          "full-time",
+                          "part-time",
+                          "contract",
+                          "internship",
+                          "freelance",
+                          "volunteer",
+                          "apprenticeship",
+                          "other"
+                        ]
+                      },
+                      "extensions": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "type",
+                      "title"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "period": {
+                    "type": "object",
+                    "properties": {
+                      "start": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "precision": {
+                                "type": "string",
+                                "const": "year"
+                              },
+                              "year": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9999
+                              }
+                            },
+                            "required": [
+                              "precision",
+                              "year"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "precision": {
+                                "type": "string",
+                                "const": "month"
+                              },
+                              "year": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9999
+                              },
+                              "month": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 12
+                              }
+                            },
+                            "required": [
+                              "precision",
+                              "year",
+                              "month"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "precision": {
+                                "type": "string",
+                                "const": "day"
+                              },
+                              "year": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9999
+                              },
+                              "month": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 12
+                              },
+                              "day": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 31
+                              }
+                            },
+                            "required": [
+                              "precision",
+                              "year",
+                              "month",
+                              "day"
+                            ],
+                            "additionalProperties": false
+                          }
+                        ]
+                      },
+                      "end": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "precision": {
+                                "type": "string",
+                                "const": "year"
+                              },
+                              "year": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9999
+                              }
+                            },
+                            "required": [
+                              "precision",
+                              "year"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "precision": {
+                                "type": "string",
+                                "const": "month"
+                              },
+                              "year": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9999
+                              },
+                              "month": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 12
+                              }
+                            },
+                            "required": [
+                              "precision",
+                              "year",
+                              "month"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "precision": {
+                                "type": "string",
+                                "const": "day"
+                              },
+                              "year": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9999
+                              },
+                              "month": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 12
+                              },
+                              "day": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 31
+                              }
+                            },
+                            "required": [
+                              "precision",
+                              "year",
+                              "month",
+                              "day"
+                            ],
+                            "additionalProperties": false
+                          }
+                        ]
+                      },
+                      "ongoing": {
+                        "type": "boolean"
+                      },
+                      "label": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "start"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "summary": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "bulletOrder": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 3,
+                      "maxLength": 160,
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                    }
+                  },
+                  "bullets": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 3,
+                          "maxLength": 160,
+                          "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                        },
+                        "text": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "tags": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "evidence": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 3,
+                            "maxLength": 160,
+                            "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                          }
+                        },
+                        "extensions": {
+                          "type": "object",
+                          "additionalProperties": {}
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "text"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "propertyNames": {
+                      "minLength": 3,
+                      "maxLength": 160,
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                    }
+                  },
+                  "technologyRefs": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 3,
+                      "maxLength": 160,
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                    }
+                  },
+                  "locationOverride": {
+                    "type": "object",
+                    "properties": {
+                      "city": {
+                        "type": "string"
+                      },
+                      "region": {
+                        "type": "string"
+                      },
+                      "country": {
+                        "type": "string",
+                        "minLength": 2
+                      },
+                      "countryCode": {
+                        "type": "string",
+                        "minLength": 2,
+                        "maxLength": 2
+                      },
+                      "remote": {
+                        "type": "boolean"
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "linkRefs": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 3,
+                      "maxLength": 160,
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                    }
+                  },
+                  "extensions": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "id",
+                  "type",
+                  "organization",
+                  "role",
+                  "period",
+                  "bulletOrder",
+                  "bullets",
+                  "technologyRefs"
+                ],
+                "additionalProperties": false
+              },
+              "propertyNames": {
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              }
+            },
+            "education": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "type": {
+                    "type": "string",
+                    "const": "education"
+                  },
+                  "institution": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "location": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "url": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "format": "uri"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "program": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "degree": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "field": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "period": {
+                    "type": "object",
+                    "properties": {
+                      "start": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "precision": {
+                                "type": "string",
+                                "const": "year"
+                              },
+                              "year": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9999
+                              }
+                            },
+                            "required": [
+                              "precision",
+                              "year"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "precision": {
+                                "type": "string",
+                                "const": "month"
+                              },
+                              "year": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9999
+                              },
+                              "month": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 12
+                              }
+                            },
+                            "required": [
+                              "precision",
+                              "year",
+                              "month"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "precision": {
+                                "type": "string",
+                                "const": "day"
+                              },
+                              "year": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9999
+                              },
+                              "month": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 12
+                              },
+                              "day": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 31
+                              }
+                            },
+                            "required": [
+                              "precision",
+                              "year",
+                              "month",
+                              "day"
+                            ],
+                            "additionalProperties": false
+                          }
+                        ]
+                      },
+                      "end": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "precision": {
+                                "type": "string",
+                                "const": "year"
+                              },
+                              "year": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9999
+                              }
+                            },
+                            "required": [
+                              "precision",
+                              "year"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "precision": {
+                                "type": "string",
+                                "const": "month"
+                              },
+                              "year": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9999
+                              },
+                              "month": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 12
+                              }
+                            },
+                            "required": [
+                              "precision",
+                              "year",
+                              "month"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "precision": {
+                                "type": "string",
+                                "const": "day"
+                              },
+                              "year": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9999
+                              },
+                              "month": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 12
+                              },
+                              "day": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 31
+                              }
+                            },
+                            "required": [
+                              "precision",
+                              "year",
+                              "month",
+                              "day"
+                            ],
+                            "additionalProperties": false
+                          }
+                        ]
+                      },
+                      "ongoing": {
+                        "type": "boolean"
+                      },
+                      "label": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "start"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "details": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "grade": {
+                    "type": "string"
+                  },
+                  "linkRefs": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 3,
+                      "maxLength": 160,
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                    }
+                  },
+                  "extensions": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "id",
+                  "type",
+                  "institution",
+                  "program",
+                  "period",
+                  "details"
+                ],
+                "additionalProperties": false
+              },
+              "propertyNames": {
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              }
+            },
+            "projects": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "type": {
+                    "type": "string",
+                    "const": "project"
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "summary": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "period": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "start": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "precision": {
+                                    "type": "string",
+                                    "const": "year"
+                                  },
+                                  "year": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 9999
+                                  }
+                                },
+                                "required": [
+                                  "precision",
+                                  "year"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "precision": {
+                                    "type": "string",
+                                    "const": "month"
+                                  },
+                                  "year": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 9999
+                                  },
+                                  "month": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 12
+                                  }
+                                },
+                                "required": [
+                                  "precision",
+                                  "year",
+                                  "month"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "precision": {
+                                    "type": "string",
+                                    "const": "day"
+                                  },
+                                  "year": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 9999
+                                  },
+                                  "month": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 12
+                                  },
+                                  "day": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 31
+                                  }
+                                },
+                                "required": [
+                                  "precision",
+                                  "year",
+                                  "month",
+                                  "day"
+                                ],
+                                "additionalProperties": false
+                              }
+                            ]
+                          },
+                          "end": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "precision": {
+                                    "type": "string",
+                                    "const": "year"
+                                  },
+                                  "year": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 9999
+                                  }
+                                },
+                                "required": [
+                                  "precision",
+                                  "year"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "precision": {
+                                    "type": "string",
+                                    "const": "month"
+                                  },
+                                  "year": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 9999
+                                  },
+                                  "month": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 12
+                                  }
+                                },
+                                "required": [
+                                  "precision",
+                                  "year",
+                                  "month"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "precision": {
+                                    "type": "string",
+                                    "const": "day"
+                                  },
+                                  "year": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 9999
+                                  },
+                                  "month": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 12
+                                  },
+                                  "day": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 31
+                                  }
+                                },
+                                "required": [
+                                  "precision",
+                                  "year",
+                                  "month",
+                                  "day"
+                                ],
+                                "additionalProperties": false
+                              }
+                            ]
+                          },
+                          "ongoing": {
+                            "type": "boolean"
+                          },
+                          "label": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "start"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "linkRefs": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 3,
+                      "maxLength": 160,
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                    }
+                  },
+                  "bulletOrder": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 3,
+                      "maxLength": 160,
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                    }
+                  },
+                  "bullets": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 3,
+                          "maxLength": 160,
+                          "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                        },
+                        "text": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "tags": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "evidence": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 3,
+                            "maxLength": 160,
+                            "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                          }
+                        },
+                        "extensions": {
+                          "type": "object",
+                          "additionalProperties": {}
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "text"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "propertyNames": {
+                      "minLength": 3,
+                      "maxLength": 160,
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                    }
+                  },
+                  "technologyRefs": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 3,
+                      "maxLength": 160,
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                    }
+                  },
+                  "role": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 160,
+                        "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                      },
+                      "type": {
+                        "type": "string",
+                        "const": "role"
+                      },
+                      "title": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "level": {
+                        "type": "string"
+                      },
+                      "employmentType": {
+                        "type": "string",
+                        "enum": [
+                          "full-time",
+                          "part-time",
+                          "contract",
+                          "internship",
+                          "freelance",
+                          "volunteer",
+                          "apprenticeship",
+                          "other"
+                        ]
+                      },
+                      "extensions": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "type",
+                      "title"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "extensions": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "id",
+                  "type",
+                  "name",
+                  "linkRefs",
+                  "technologyRefs"
+                ],
+                "additionalProperties": false
+              },
+              "propertyNames": {
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              }
+            },
+            "skills": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "type": {
+                    "type": "string",
+                    "const": "skill"
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "category": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "level": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "keywords": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "extensions": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "id",
+                  "type",
+                  "name",
+                  "keywords"
+                ],
+                "additionalProperties": false
+              },
+              "propertyNames": {
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              }
+            },
+            "skillGroups": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "type": {
+                    "type": "string",
+                    "const": "skill-group"
+                  },
+                  "label": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "skillRefs": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 3,
+                      "maxLength": 160,
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                    }
+                  },
+                  "extensions": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "id",
+                  "type",
+                  "label",
+                  "skillRefs"
+                ],
+                "additionalProperties": false
+              },
+              "propertyNames": {
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              }
+            },
+            "certifications": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "type": {
+                    "type": "string",
+                    "const": "certification"
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "issuer": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "issued": {
+                    "anyOf": [
+                      {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "precision": {
+                                "type": "string",
+                                "const": "year"
+                              },
+                              "year": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9999
+                              }
+                            },
+                            "required": [
+                              "precision",
+                              "year"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "precision": {
+                                "type": "string",
+                                "const": "month"
+                              },
+                              "year": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9999
+                              },
+                              "month": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 12
+                              }
+                            },
+                            "required": [
+                              "precision",
+                              "year",
+                              "month"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "precision": {
+                                "type": "string",
+                                "const": "day"
+                              },
+                              "year": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9999
+                              },
+                              "month": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 12
+                              },
+                              "day": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 31
+                              }
+                            },
+                            "required": [
+                              "precision",
+                              "year",
+                              "month",
+                              "day"
+                            ],
+                            "additionalProperties": false
+                          }
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "expires": {
+                    "anyOf": [
+                      {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "precision": {
+                                "type": "string",
+                                "const": "year"
+                              },
+                              "year": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9999
+                              }
+                            },
+                            "required": [
+                              "precision",
+                              "year"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "precision": {
+                                "type": "string",
+                                "const": "month"
+                              },
+                              "year": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9999
+                              },
+                              "month": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 12
+                              }
+                            },
+                            "required": [
+                              "precision",
+                              "year",
+                              "month"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "precision": {
+                                "type": "string",
+                                "const": "day"
+                              },
+                              "year": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9999
+                              },
+                              "month": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 12
+                              },
+                              "day": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 31
+                              }
+                            },
+                            "required": [
+                              "precision",
+                              "year",
+                              "month",
+                              "day"
+                            ],
+                            "additionalProperties": false
+                          }
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "credentialId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "linkRef": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 160,
+                        "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "extensions": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "id",
+                  "type",
+                  "name",
+                  "issuer"
+                ],
+                "additionalProperties": false
+              },
+              "propertyNames": {
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              }
+            },
+            "awards": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "type": {
+                    "type": "string",
+                    "const": "award"
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "issuer": {
+                    "type": "string"
+                  },
+                  "date": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "precision": {
+                            "type": "string",
+                            "const": "year"
+                          },
+                          "year": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 9999
+                          }
+                        },
+                        "required": [
+                          "precision",
+                          "year"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "precision": {
+                            "type": "string",
+                            "const": "month"
+                          },
+                          "year": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 9999
+                          },
+                          "month": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 12
+                          }
+                        },
+                        "required": [
+                          "precision",
+                          "year",
+                          "month"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "precision": {
+                            "type": "string",
+                            "const": "day"
+                          },
+                          "year": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 9999
+                          },
+                          "month": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 12
+                          },
+                          "day": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 31
+                          }
+                        },
+                        "required": [
+                          "precision",
+                          "year",
+                          "month",
+                          "day"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "linkRef": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 160,
+                        "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "extensions": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "id",
+                  "type",
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              "propertyNames": {
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              }
+            },
+            "languages": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "type": {
+                    "type": "string",
+                    "const": "language"
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "proficiency": {
+                    "type": "string",
+                    "enum": [
+                      "A1",
+                      "A2",
+                      "B1",
+                      "B2",
+                      "C1",
+                      "C2",
+                      "native",
+                      "conversational",
+                      "professional",
+                      "basic"
+                    ]
+                  },
+                  "cefr": {
+                    "type": "string",
+                    "enum": [
+                      "A1",
+                      "A2",
+                      "B1",
+                      "B2",
+                      "C1",
+                      "C2"
+                    ]
+                  },
+                  "extensions": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "id",
+                  "type",
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              "propertyNames": {
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              }
+            },
+            "publications": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "type": {
+                    "type": "string",
+                    "const": "publication"
+                  },
+                  "title": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "authors": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "venue": {
+                    "type": "string"
+                  },
+                  "date": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "precision": {
+                            "type": "string",
+                            "const": "year"
+                          },
+                          "year": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 9999
+                          }
+                        },
+                        "required": [
+                          "precision",
+                          "year"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "precision": {
+                            "type": "string",
+                            "const": "month"
+                          },
+                          "year": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 9999
+                          },
+                          "month": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 12
+                          }
+                        },
+                        "required": [
+                          "precision",
+                          "year",
+                          "month"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "precision": {
+                            "type": "string",
+                            "const": "day"
+                          },
+                          "year": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 9999
+                          },
+                          "month": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 12
+                          },
+                          "day": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 31
+                          }
+                        },
+                        "required": [
+                          "precision",
+                          "year",
+                          "month",
+                          "day"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
+                  },
+                  "doi": {
+                    "type": "string"
+                  },
+                  "linkRef": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 160,
+                        "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "abstract": {
+                    "type": "string"
+                  },
+                  "extensions": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "id",
+                  "type",
+                  "title",
+                  "authors"
+                ],
+                "additionalProperties": false
+              },
+              "propertyNames": {
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              }
+            },
+            "volunteering": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "type": {
+                    "type": "string",
+                    "const": "volunteering"
+                  },
+                  "organization": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 160,
+                        "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                      },
+                      "type": {
+                        "type": "string",
+                        "const": "organization"
+                      },
+                      "name": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "legalName": {
+                        "type": "string"
+                      },
+                      "url": {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      "location": {
+                        "type": "object",
+                        "properties": {
+                          "city": {
+                            "type": "string"
+                          },
+                          "region": {
+                            "type": "string"
+                          },
+                          "country": {
+                            "type": "string",
+                            "minLength": 2
+                          },
+                          "countryCode": {
+                            "type": "string",
+                            "minLength": 2,
+                            "maxLength": 2
+                          },
+                          "remote": {
+                            "type": "boolean"
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      "extensions": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "type",
+                      "name"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "role": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 160,
+                        "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                      },
+                      "type": {
+                        "type": "string",
+                        "const": "role"
+                      },
+                      "title": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "level": {
+                        "type": "string"
+                      },
+                      "employmentType": {
+                        "type": "string",
+                        "enum": [
+                          "full-time",
+                          "part-time",
+                          "contract",
+                          "internship",
+                          "freelance",
+                          "volunteer",
+                          "apprenticeship",
+                          "other"
+                        ]
+                      },
+                      "extensions": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "type",
+                      "title"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "period": {
+                    "type": "object",
+                    "properties": {
+                      "start": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "precision": {
+                                "type": "string",
+                                "const": "year"
+                              },
+                              "year": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9999
+                              }
+                            },
+                            "required": [
+                              "precision",
+                              "year"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "precision": {
+                                "type": "string",
+                                "const": "month"
+                              },
+                              "year": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9999
+                              },
+                              "month": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 12
+                              }
+                            },
+                            "required": [
+                              "precision",
+                              "year",
+                              "month"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "precision": {
+                                "type": "string",
+                                "const": "day"
+                              },
+                              "year": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9999
+                              },
+                              "month": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 12
+                              },
+                              "day": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 31
+                              }
+                            },
+                            "required": [
+                              "precision",
+                              "year",
+                              "month",
+                              "day"
+                            ],
+                            "additionalProperties": false
+                          }
+                        ]
+                      },
+                      "end": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "precision": {
+                                "type": "string",
+                                "const": "year"
+                              },
+                              "year": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9999
+                              }
+                            },
+                            "required": [
+                              "precision",
+                              "year"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "precision": {
+                                "type": "string",
+                                "const": "month"
+                              },
+                              "year": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9999
+                              },
+                              "month": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 12
+                              }
+                            },
+                            "required": [
+                              "precision",
+                              "year",
+                              "month"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "precision": {
+                                "type": "string",
+                                "const": "day"
+                              },
+                              "year": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9999
+                              },
+                              "month": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 12
+                              },
+                              "day": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 31
+                              }
+                            },
+                            "required": [
+                              "precision",
+                              "year",
+                              "month",
+                              "day"
+                            ],
+                            "additionalProperties": false
+                          }
+                        ]
+                      },
+                      "ongoing": {
+                        "type": "boolean"
+                      },
+                      "label": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "start"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "summary": {
+                    "type": "string"
+                  },
+                  "linkRefs": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 3,
+                      "maxLength": 160,
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                    }
+                  },
+                  "extensions": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "id",
+                  "type",
+                  "organization",
+                  "role",
+                  "period"
+                ],
+                "additionalProperties": false
+              },
+              "propertyNames": {
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              }
+            },
+            "references": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "type": {
+                    "type": "string",
+                    "const": "reference"
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "relationship": {
+                    "type": "string"
+                  },
+                  "contactChannels": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "email",
+                            "phone",
+                            "website",
+                            "linkedin",
+                            "github",
+                            "mastodon",
+                            "orcid",
+                            "other"
+                          ]
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "label": {
+                          "type": "string"
+                        },
+                        "primary": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "context": {
+                    "type": "string"
+                  },
+                  "extensions": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "id",
+                  "type",
+                  "name",
+                  "contactChannels"
+                ],
+                "additionalProperties": false
+              },
+              "propertyNames": {
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              }
+            },
+            "organizations": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "type": {
+                    "type": "string",
+                    "const": "organization"
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "legalName": {
+                    "type": "string"
+                  },
+                  "url": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "location": {
+                    "type": "object",
+                    "properties": {
+                      "city": {
+                        "type": "string"
+                      },
+                      "region": {
+                        "type": "string"
+                      },
+                      "country": {
+                        "type": "string",
+                        "minLength": 2
+                      },
+                      "countryCode": {
+                        "type": "string",
+                        "minLength": 2,
+                        "maxLength": 2
+                      },
+                      "remote": {
+                        "type": "boolean"
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "extensions": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "id",
+                  "type",
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              "propertyNames": {
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              }
+            },
+            "roles": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "type": {
+                    "type": "string",
+                    "const": "role"
+                  },
+                  "title": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "level": {
+                    "type": "string"
+                  },
+                  "employmentType": {
+                    "type": "string",
+                    "enum": [
+                      "full-time",
+                      "part-time",
+                      "contract",
+                      "internship",
+                      "freelance",
+                      "volunteer",
+                      "apprenticeship",
+                      "other"
+                    ]
+                  },
+                  "extensions": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "id",
+                  "type",
+                  "title"
+                ],
+                "additionalProperties": false
+              },
+              "propertyNames": {
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              }
+            },
+            "bulletCollections": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "type": {
+                    "type": "string",
+                    "const": "bullet-collection"
+                  },
+                  "bullets": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 3,
+                          "maxLength": 160,
+                          "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                        },
+                        "text": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "tags": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "evidence": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 3,
+                            "maxLength": 160,
+                            "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                          }
+                        },
+                        "extensions": {
+                          "type": "object",
+                          "additionalProperties": {}
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "text"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "propertyNames": {
+                      "minLength": 3,
+                      "maxLength": 160,
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                    }
+                  },
+                  "bulletOrder": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 3,
+                      "maxLength": 160,
+                      "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                    }
+                  }
+                },
+                "required": [
+                  "id",
+                  "type",
+                  "bullets",
+                  "bulletOrder"
+                ],
+                "additionalProperties": false
+              },
+              "propertyNames": {
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              }
+            },
+            "custom": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 160,
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                  },
+                  "type": {
+                    "type": "string",
+                    "const": "customEntity"
+                  },
+                  "label": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "data": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  },
+                  "extensions": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "id",
+                  "type",
+                  "label",
+                  "data"
+                ],
+                "additionalProperties": false
+              },
+              "propertyNames": {
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              }
+            },
+            "extensions": {
+              "type": "object",
+              "additionalProperties": {}
+            }
+          },
+          "additionalProperties": false
+        },
+        "extensions": {
+          "type": "object",
+          "additionalProperties": {}
+        }
+      },
+      "required": [
+        "locale",
+        "identity",
+        "sectionOrder",
+        "sections",
+        "entities"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "kind",
+    "schemaVersion",
+    "id",
+    "revision",
+    "createdAt",
+    "updatedAt",
+    "data"
+  ],
+  "additionalProperties": false,
+  "$id": "https://seevee.dev/schema/v1/cv.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

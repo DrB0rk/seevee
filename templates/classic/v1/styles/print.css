@@ -1,0 +1,20 @@
+/* Print rules for the Classic template. Loaded alongside Resume.astro's
+   scoped <style> block. Kept in styles/ so the policy scan finds it
+   under the source tree and so the dashboard can preview changes. */
+
+@page {
+  size: A4;
+  margin: 18mm 18mm 18mm 18mm;
+}
+
+@media print {
+  .classic-identity {
+    break-after: avoid;
+  }
+  .classic-section-title {
+    break-after: avoid;
+  }
+  [data-seevee-item] {
+    break-inside: avoid;
+  }
+}

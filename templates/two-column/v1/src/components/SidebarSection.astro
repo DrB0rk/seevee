@@ -1,0 +1,33 @@
+---
+// Sidebar section wrapper. Pulled out of Resume.astro so the policy
+// scan finds a separate file under src/components/.
+
+import { Section } from '@seevee/template-sdk';
+import type { CvReadModel, SectionId } from '@seevee/template-sdk';
+
+interface SidebarSectionProps {
+  cv: CvReadModel;
+  sectionId: SectionId;
+  title: string;
+}
+
+const { cv, sectionId, title } = Astro.props as SidebarSectionProps;
+---
+
+<Section cv={cv} sectionId={sectionId}>
+  <h2 class="tw-section-title tw-section-title--sidebar">{title}</h2>
+  <slot />
+</Section>
+
+<style>
+  .tw-section-title {
+    color: var(--tw-accent-color, #0f172a);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 4mm 0 2mm 0;
+    border-bottom: 0.2mm solid var(--tw-accent-color, #0f172a);
+    font-family: var(--tw-font-family, 'Inter, system-ui, sans-serif');
+    font-size: calc(var(--tw-base-font-size, 10.5) * 1.05 * 1pt);
+    line-height: 1.35;
+  }
+</style>

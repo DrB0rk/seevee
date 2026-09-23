@@ -1,0 +1,53 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & publish release bundles
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Schema drift check
+        run: pnpm schema:drift
+
+      - name: Build all bundles
+        run: ./scripts/bundle-all.sh dist/release
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/release/seevee-linux-x64.tar.gz
+            dist/release/seevee-linux-arm64.tar.gz
+            dist/release/seevee-darwin-x64.tar.gz
+            dist/release/seevee-darwin-arm64.tar.gz
+            dist/release/seevee-windows-x64.zip
+            dist/release/SHA256SUMS
+          fail_on_unmatched_files: true
+          prerelease: true

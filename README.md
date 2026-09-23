@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img alt="Status" src="https://img.shields.io/badge/status-architecture%20%26%20design-4C8DFF?style=flat-square" />
+  <img alt="Status" src="https://img.shields.io/badge/status-pre--release%20runtime-4C8DFF?style=flat-square" />
   <img alt="CV data" src="https://img.shields.io/badge/CV%20data-modular%20JSON-22272E?style=flat-square" />
   <img alt="Templates" src="https://img.shields.io/badge/templates-Astro-BC52EE?style=flat-square&logo=astro&logoColor=white" />
   <img alt="Schema" src="https://img.shields.io/badge/schema-JSON%20Schema%202020--12-22272E?style=flat-square" />
@@ -17,7 +17,7 @@ Seevee is a local, agent-driven CV studio.
 
 Give an agent source material, let it normalize your information into structured JSON, and render that information through interchangeable Astro templates. The fixed Seevee dashboard gives you physical-page preview, comments, provenance, history, diagnostics, and PDF export without dictating what your CV has to look like.
 
-> **Project status:** the repository currently contains the architecture, schemas, installer contract, agent skill, research, and UX specification. The production runtime/release bundles are not implemented yet.
+> **Project status:** a working pre-release runtime is under development. The schema, CLI, ingestion, agent tool boundary, dashboard shell, renderer primitives, and template compiler have implementations and passing package tests. Dashboard rendering, PDF export, live agent execution, and image recognition are still incomplete. Release bundles are not yet validated for publication.
 
 ## The idea
 
@@ -61,7 +61,7 @@ seevee init
 
 <code>seevee init</code> is non-interactive. It will scaffold the directory, start the local dashboard server in the background, health-check it, open the browser, and return terminal control. You can then open **any agent you want** in the same directory.
 
-The installer script is already defined in this repository, but it will only become usable once matching GitHub Release runtime bundles are published.
+The installer scripts are present, but a usable install requires validated, platform-correct GitHub Release bundles. No production runtime release has been published yet.
 
 ## Workspace model
 
