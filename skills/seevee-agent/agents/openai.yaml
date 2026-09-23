@@ -1,3 +1,3 @@
 interface:
-  display_name: "Seevee Agent"
-  short_description: "Operate Seevee CV data, comments, templates, and exports safely."
+  display_name: "Seevee Workspace Agent"
+  short_description: "Create, tailor, review, and render CVs inside an end-user Seevee workspace."
