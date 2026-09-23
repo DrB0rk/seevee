@@ -5,7 +5,7 @@ description: Operate inside an end-user Seevee CV workspace safely and consisten
 
 # Seevee Workspace Agent
 
-Use this skill only for an end-user Seevee workspace. If you are modifying the Seevee application repository itself, stop and follow that repository's root `AGENTS.md` instead.
+Use this skill only for an end-user Seevee workspace. If you are modifying the Seevee application repository itself, stop and follow that repository's `.dev/AGENTS.md` instead.
 
 Use Seevee's structured documents as the source of truth. Do not treat rendered HTML or PDF output as canonical data.
 
