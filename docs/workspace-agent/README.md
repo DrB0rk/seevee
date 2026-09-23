@@ -9,7 +9,7 @@ These agents work on CV content, sources, comments, presentations, and user-owne
 The canonical operational bundle is:
 
 ~~~text
-skills/seevee-agent/
+skills/seevee-workspace-agent/
 ├── SKILL.md
 ├── agents/openai.yaml
 └── references/
@@ -25,7 +25,7 @@ It is advisory writing/review knowledge, not product validation logic.
 
 ## Never copy repository developer instructions into user workspaces
 
-Do not copy this repository's root `AGENTS.md` into a user's workspace. It is specifically for developing Seevee.
+Do not copy this repository's root `.dev/AGENTS.md` into a user's workspace. It is specifically for developing Seevee.
 
 The workspace guide produced by `seevee init` must instead direct agents to:
 
