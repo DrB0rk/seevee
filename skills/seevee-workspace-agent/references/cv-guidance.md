@@ -2,7 +2,7 @@
 
 Use this reference when creating, tailoring, reviewing, or restructuring CV content.
 
-If operating inside the Seevee repository/workspace and `docs/AGENT_CV_GUIDANCE.md` is available, read that document for the full researched sector/locale guidance and source list. This skill reference contains the core rules needed when the skill is used standalone.
+If operating inside the Seevee repository/workspace and `docs/workspace-agent/CV_GUIDANCE.md` is available, read that document for the full researched sector/locale guidance and source list. This skill reference contains the core rules needed when the skill is used standalone.
 
 ## Authority and scope
 
