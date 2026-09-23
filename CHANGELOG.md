@@ -6,6 +6,12 @@ This project uses Semantic Versioning. See `.dev/VERSIONING.md` for the project 
 
 ## [Unreleased]
 
+## [0.1.0-alpha.1] - 2026-09-23
+
+### Fixed
+
+- Launch the compiled dashboard daemon from release bundles, and save its startup output to the workspace log.
+
 ## [0.1.0-alpha.0] - 2026-09-23
 
 ### Added

@@ -95,3 +95,18 @@ else
 fi
 
 echo "verify_bundle.sh: bundle OK"
+
+# ---------------------------------------------------------------------------
+# 5. Smoke-test workspace initialization and the detached daemon.
+# ---------------------------------------------------------------------------
+SMOKE_WORKSPACE="$WORK/smoke workspace"
+mkdir -p "$SMOKE_WORKSPACE"
+"$LAUNCHER" init "$SMOKE_WORKSPACE" --no-open
+STATUS="$(cd "$SMOKE_WORKSPACE" && "$LAUNCHER" status --json)"
+if ! printf '%s' "$STATUS" | grep -q '"running": true'; then
+  echo "verify_bundle.sh: initialized dashboard did not report healthy" >&2
+  printf '%s\n' "$STATUS" >&2
+  exit 1
+fi
+(cd "$SMOKE_WORKSPACE" && "$LAUNCHER" stop)
+echo "verify_bundle.sh: init, daemon health, and stop OK"

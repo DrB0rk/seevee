@@ -11,8 +11,10 @@
  */
 
 import { spawn } from 'node:child_process';
-import { join } from 'node:path';
-import { writeFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+import { closeSync, openSync } from 'node:fs';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 
 import {
   DEFAULT_PREFERRED_PORT,
@@ -123,7 +125,7 @@ export interface StartResult {
 export async function start(opts: StartOptions): Promise<StartResult> {
   const host = opts.host ?? '127.0.0.1';
   const preferredPort = opts.port ?? DEFAULT_PREFERRED_PORT;
-  const logFile = join(opts.workspace.runtimeDir, 'server.log');
+  const logFile = opts.workspace.logFile;
 
   // 1. Reuse a healthy persisted runtime.
   try {
@@ -144,28 +146,35 @@ export async function start(opts: StartOptions): Promise<StartResult> {
     if (err instanceof PortUnavailableError) throw new DaemonStartError(err.message, logFile);
     throw err;
   }
-  // 3. Spawn detached. The long-running server runs in `runtime/daemon-server.ts`,
-  //    not the CLI entry — invoking it directly via node + the tsx loader keeps
-  //    the CLI process free to exit and gives daemon-server full control of the
-  //    event loop (port binding, signal handling). The `--import tsx` hook
-  //    resolves tsx via Node's loader resolution, so detached spawn works
-  //    without inheriting the parent shell's PATH.
-  const serverEntry = new URL('./daemon-server.ts', import.meta.url).pathname;
-  // Spawn detached via `node` directly. The `--import tsx` loader is injected
-  // through NODE_OPTIONS (not argv) so daemon-server's positional parser keeps
-  // a clean [root, host, port, workspaceId] argv. cwd is the CLI package root
-  // so node can resolve the local `tsx` package.
-  const child = spawn(
-    process.execPath,
-    [serverEntry, opts.workspace.root, host, String(port), opts.workspaceId],
-    {
-      cwd: new URL('../../', import.meta.url).pathname,
-      detached: true,
-      stdio: 'ignore',
-      windowsHide: true,
-      env: { ...process.env, NODE_OPTIONS: '--import tsx' },
-    },
+  // 3. Spawn detached. Development runs use TypeScript through tsx; release
+  // bundles contain compiled JavaScript and no tsx runtime dependency.
+  const sourceMode = import.meta.url.endsWith('.ts');
+  const serverEntry = fileURLToPath(
+    new URL(sourceMode ? './daemon-server.ts' : './daemon-server.js', import.meta.url),
   );
+  const cliRoot = fileURLToPath(new URL(sourceMode ? '../../' : '../../../', import.meta.url));
+  const childEnv = { ...process.env };
+  if (sourceMode) {
+    childEnv.NODE_OPTIONS = [process.env.NODE_OPTIONS, '--import tsx'].filter(Boolean).join(' ');
+  }
+  await mkdir(dirname(logFile), { recursive: true });
+  const logFd = openSync(logFile, 'a');
+  let child;
+  try {
+    child = spawn(
+      process.execPath,
+      [serverEntry, opts.workspace.root, host, String(port), opts.workspaceId],
+      {
+        cwd: cliRoot,
+        detached: true,
+        stdio: ['ignore', logFd, logFd],
+        windowsHide: true,
+        env: childEnv,
+      },
+    );
+  } finally {
+    closeSync(logFd);
+  }
   child.unref();
   if (typeof child.pid !== 'number') {
     throw new DaemonStartError('spawn returned no pid', logFile);

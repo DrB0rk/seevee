@@ -49,7 +49,10 @@ assert "VERSION file present"  test -f "$BUNDLE_DIR/VERSION"
 assert "VERSION non-empty"     test -s "$BUNDLE_DIR/VERSION"
 assert "bin/ directory"        test -d "$BUNDLE_DIR/bin"
 assert "bin/seevee present"    test -f "$BUNDLE_DIR/bin/seevee"
-assert "bin/seevee executable" test -x "$BUNDLE_DIR/bin/seevee"
+case "$(basename "$BUNDLE_DIR")" in
+  *windows-*) assert "Windows command launcher present" test -f "$BUNDLE_DIR/bin/seevee.cmd" ;;
+  *)          assert "bin/seevee executable" test -x "$BUNDLE_DIR/bin/seevee" ;;
+esac
 assert "runtime/ directory"    test -d "$BUNDLE_DIR/runtime"
 assert "runtime/cli/"          test -d "$BUNDLE_DIR/runtime/cli"
 assert "runtime/schema/"       test -d "$BUNDLE_DIR/runtime/schema"
@@ -57,6 +60,7 @@ assert "runtime/template-sdk/" test -d "$BUNDLE_DIR/runtime/template-sdk"
 assert "runtime/renderer/"     test -d "$BUNDLE_DIR/runtime/renderer"
 assert "runtime/node_modules/" test -d "$BUNDLE_DIR/runtime/node_modules"
 assert "runtime/cli/dist/cli.js present" test -f "$BUNDLE_DIR/runtime/cli/dist/cli.js"
+assert "compiled dashboard daemon present" test -f "$BUNDLE_DIR/runtime/cli/dist/runtime/daemon-server.js"
 
 # The @seevee/cli launcher JS must be at runtime/cli/dist/cli.js (matches
 # the package.json `main` field) so its relative imports of ./commands/*,
