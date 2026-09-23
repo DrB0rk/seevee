@@ -7,25 +7,43 @@
   "updatedAt": "2026-09-23T00:00:00.000Z",
   "data": {
     "name": "Linked schema example",
-    "activeResources": {
+    "active": {
       "cvId": "cv_demo",
-      "provenanceId": "provdoc_demo",
-      "presentationId": "pres_demo",
-      "commentsId": "comments_demo"
+      "presentationId": "pres_demo"
     },
-    "files": {
-      "cv": "cv.json",
-      "provenance": "provenance.json",
-      "presentation": "presentation.json",
-      "comments": "comments.json"
+    "resources": {
+      "cvs": {
+        "cv_demo": {
+          "path": "cvs/demo.json",
+          "name": "Software Engineer",
+          "target": "General software engineering",
+          "provenanceId": "provdoc_demo",
+          "commentsId": "comments_demo",
+          "defaultPresentationId": "pres_demo",
+          "archived": false
+        }
+      },
+      "presentations": {
+        "pres_demo": {
+          "path": "presentations/demo.json",
+          "cvId": "cv_demo",
+          "name": "Minimal A4"
+        }
+      },
+      "provenance": {
+        "provdoc_demo": {
+          "path": "provenance/demo.json"
+        }
+      },
+      "comments": {
+        "comments_demo": {
+          "path": "comments/demo.json"
+        }
+      }
     },
     "sources": [
       "src_demo"
     ],
-    "template": {
-      "templateId": "tpl_minimal",
-      "versionId": "tplv_minimal_1"
-    },
     "policy": {
       "allowAgentFactInference": false,
       "requireEvidenceForNumericClaims": true,
