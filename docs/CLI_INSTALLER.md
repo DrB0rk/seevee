@@ -64,6 +64,18 @@ SHA256SUMS
 
 A release bundle contains everything the installed Seevee launcher needs except explicitly documented OS prerequisites. Prefer a self-contained application bundle over resolving packages at install time.
 
+The Unix archive contract expected by `install.sh` is:
+
+~~~text
+VERSION
+bin/
+  seevee
+runtime/
+  ...
+~~~
+
+`VERSION` contains the release version and `bin/seevee` is executable. Additional files may be added without changing the installer contract.
+
 If the first implementation still requires a system Node runtime, the installer may verify a supported Node version and fail with a precise message. It must not invoke npm to install Seevee.
 
 ### Installer behavior
