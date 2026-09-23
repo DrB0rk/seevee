@@ -5,7 +5,6 @@ set -eu
 
 REPOSITORY="DrB0rk/seevee"
 VERSION=""
-GH_TOKEN="${GH_TOKEN:-${GITHUB_TOKEN:-}}"
 
 usage() {
   cat <<'EOF'
@@ -89,7 +88,6 @@ success "${PLATFORM} · Node $(node --version)"
 
 TMP_DIR="$(mktemp -d 2>/dev/null || mktemp -d -t seevee)"
 STAGE_DIR=''
-GH_NETRC=''
 cleanup() {
   rm -rf "$TMP_DIR"
   [ -z "$STAGE_DIR" ] || rm -rf "$STAGE_DIR"
@@ -97,27 +95,10 @@ cleanup() {
 trap cleanup EXIT HUP INT TERM
 
 step 'Finding a release'
-if [ -z "$GH_TOKEN" ] && command -v gh >/dev/null 2>&1; then
-  GH_TOKEN="$(gh auth token --hostname github.com 2>/dev/null || true)"
-fi
-if [ -n "$GH_TOKEN" ]; then
-  GH_NETRC="$TMP_DIR/github.netrc"
-  printf 'machine github.com login x-access-token password %s\nmachine api.github.com login x-access-token password %s\n' \
-    "$GH_TOKEN" "$GH_TOKEN" > "$GH_NETRC"
-  chmod 600 "$GH_NETRC"
-  unset GH_TOKEN
-fi
 if [ -z "$VERSION" ] || [ "$VERSION" = 'latest' ]; then
-  if [ -n "$GH_NETRC" ]; then
-    VERSION="$(curl --fail --silent --show-error --netrc-file "$GH_NETRC" \
-      "https://api.github.com/repos/${REPOSITORY}/releases?per_page=1" \
-      | sed -n 's/.*"tag_name": "v\{0,1\}\([^"]*\)".*/\1/p' | head -1)" \
-      || fail 'Could not look up the latest release. Check your GitHub credentials.'
-  else
-    RELEASES_URL="https://api.github.com/repos/${REPOSITORY}/releases?per_page=1"
-    VERSION="$(curl -fsSL "$RELEASES_URL" | sed -n 's/.*"tag_name": "v\{0,1\}\([^"]*\)".*/\1/p' | head -1)" \
-      || fail 'Could not look up the latest release. For a private repository, authenticate with `gh auth login`.'
-  fi
+  RELEASES_URL="https://api.github.com/repos/${REPOSITORY}/releases?per_page=1"
+  VERSION="$(curl -fsSL "$RELEASES_URL" | sed -n 's/.*"tag_name": "v\{0,1\}\([^"]*\)".*/\1/p' | head -1)" \
+    || fail 'Could not look up the latest public release.'
 fi
 VERSION="${VERSION#v}"
 case "$VERSION" in
@@ -125,7 +106,6 @@ case "$VERSION" in
 esac
 ARCHIVE="seevee-${PLATFORM}.tar.gz"
 RELEASE_URL="https://github.com/${REPOSITORY}/releases/download/v${VERSION}"
-API_RELEASE_URL="https://api.github.com/repos/${REPOSITORY}/releases/tags/v${VERSION}"
 success "Seevee v${VERSION}"
 
 curl_download() {
@@ -139,31 +119,17 @@ curl_download() {
 download_asset() {
   asset_name="$1"
   output_path="$2"
-  if [ -n "$GH_NETRC" ]; then
-    if [ ! -f "$TMP_DIR/release.json" ]; then
-      curl --fail --silent --show-error --netrc-file "$GH_NETRC" "$API_RELEASE_URL" \
-        -o "$TMP_DIR/release.json" || return 1
-    fi
-    asset_id="$(node -e 'const release=JSON.parse(require("node:fs").readFileSync(0,"utf8")); const asset=release.assets.find((item)=>item.name===process.argv[1]); if (!asset) process.exit(1); process.stdout.write(String(asset.id));' \
-      "$asset_name" < "$TMP_DIR/release.json")" || return 1
-    curl_download \
-      --netrc-file "$GH_NETRC" -H 'Accept: application/octet-stream' \
-      "https://api.github.com/repos/${REPOSITORY}/releases/assets/${asset_id}" \
-      -o "$output_path"
-  else
-    curl_download \
-      "$RELEASE_URL/$asset_name" -o "$output_path"
-  fi
+  curl_download "$RELEASE_URL/$asset_name" -o "$output_path"
 }
 
 step 'Downloading release bundle'
 download_asset "$ARCHIVE" "$TMP_DIR/$ARCHIVE" \
-  || fail "Could not download $ARCHIVE. Check GitHub access and the release page; private repositories require 'gh auth login'."
+  || fail "Could not download $ARCHIVE. Check that the public release v${VERSION} includes this platform bundle."
 success 'Bundle downloaded'
 
 step 'Checking SHA-256 checksum'
 download_asset 'SHA256SUMS' "$TMP_DIR/SHA256SUMS" \
-  || fail "Could not download SHA256SUMS. Check GitHub access; private repositories require 'gh auth login'."
+  || fail "Could not download SHA256SUMS from release v${VERSION}."
 EXPECTED_SHA="$(awk -v f="$ARCHIVE" '$2 == f || $2 == "*" f { print toupper($1); exit }' "$TMP_DIR/SHA256SUMS")"
 [ -n "$EXPECTED_SHA" ] || fail "No checksum found for $ARCHIVE."
 if command -v sha256sum >/dev/null 2>&1; then

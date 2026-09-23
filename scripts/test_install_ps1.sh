@@ -45,11 +45,11 @@ else
   exit 1
 fi
 
-# Test: supports authenticated private GitHub releases
-if grep -q "gh auth token" "$SCRIPT" && grep -q "application/octet-stream" "$SCRIPT"; then
-  echo "PASS: install.ps1 supports authenticated release downloads"
+# Test: downloads public release assets without authentication
+if grep -q 'https://github.com/\$Repository/releases/download/v\$Version' "$SCRIPT" && ! grep -Eq 'gh auth|GH_TOKEN|GITHUB_TOKEN|Authorization' "$SCRIPT"; then
+  echo "PASS: install.ps1 downloads public releases without authentication"
 else
-  echo "FAIL: install.ps1 missing authenticated release download support"
+  echo "FAIL: install.ps1 must download public releases without authentication"
   exit 1
 fi
 

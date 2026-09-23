@@ -1,7 +1,5 @@
 # Seevee installer for Windows PowerShell 5.1+ and PowerShell 7+.
-# Private repository usage:
-# $s = gh api repos/DrB0rk/seevee/contents/install.ps1 --jq .content
-# iex ([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($s)))
+# Usage: irm https://raw.githubusercontent.com/DrB0rk/seevee/main/install.ps1 | iex
 param(
   [string]$Version = ""
 )
@@ -10,10 +8,6 @@ $ErrorActionPreference = 'Stop'
 $Repository = 'DrB0rk/seevee'
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 Add-Type -AssemblyName System.Net.Http
-$GithubToken = if ($env:GH_TOKEN) { $env:GH_TOKEN } else { $env:GITHUB_TOKEN }
-if ([string]::IsNullOrWhiteSpace($GithubToken) -and (Get-Command gh -ErrorAction SilentlyContinue)) {
-  $GithubToken = (& gh auth token --hostname github.com 2>$null | Out-String).Trim()
-}
 
 function Write-Step([string]$Message) {
   Write-Host "◆ " -NoNewline -ForegroundColor Cyan
@@ -28,10 +22,6 @@ function Write-Success([string]$Message) {
 function Download-File([string]$Uri, [string]$Path, [string]$Activity) {
   $Client = [System.Net.Http.HttpClient]::new()
   $Client.Timeout = [TimeSpan]::FromMinutes(5)
-  $Client.DefaultRequestHeaders.Accept.ParseAdd('application/octet-stream')
-  if (-not [string]::IsNullOrWhiteSpace($GithubToken)) {
-    $Client.DefaultRequestHeaders.Authorization = [System.Net.Http.Headers.AuthenticationHeaderValue]::new('Bearer', $GithubToken)
-  }
   $Response = $null
   $InputStream = $null
   $OutputStream = $null
@@ -86,26 +76,15 @@ $ArchiveName = "seevee-$Platform.zip"
 Write-Success "$Platform · $(& node --version)"
 
 Write-Step 'Finding a release'
-$Headers = @{}
-if (-not [string]::IsNullOrWhiteSpace($GithubToken)) { $Headers.Authorization = "Bearer $GithubToken" }
 if ([string]::IsNullOrWhiteSpace($Version) -or $Version -eq 'latest') {
-  $Releases = @(Invoke-RestMethod -Uri "https://api.github.com/repos/$Repository/releases?per_page=1" -Headers $Headers -TimeoutSec 15)
+  $Releases = @(Invoke-RestMethod -Uri "https://api.github.com/repos/$Repository/releases?per_page=1" -TimeoutSec 15)
   if ($Releases.Count -gt 0) { $Version = [string]$Releases[0].tag_name }
 }
 $Version = $Version -replace '^v', ''
 if ([string]::IsNullOrWhiteSpace($Version)) { throw 'Could not resolve a GitHub Release. Specify -Version to choose one.' }
 if ($Version -notmatch '^[A-Za-z0-9._-]+$') { throw "Invalid release version: $Version" }
 Write-Success "Seevee v$Version"
-try {
-  $ReleaseInfo = Invoke-RestMethod -Uri "https://api.github.com/repos/$Repository/releases/tags/v$Version" -Headers $Headers -TimeoutSec 15
-} catch {
-  throw "Could not access GitHub Release v$Version. For a private repository, authenticate first with 'gh auth login'."
-}
-$ArchiveAsset = $ReleaseInfo.assets | Where-Object { $_.name -eq $ArchiveName } | Select-Object -First 1
-$ChecksumsAsset = $ReleaseInfo.assets | Where-Object { $_.name -eq 'SHA256SUMS' } | Select-Object -First 1
-if (-not $ArchiveAsset) { throw "Release v$Version has no $ArchiveName asset." }
-if (-not $ChecksumsAsset) { throw "Release v$Version has no SHA256SUMS asset." }
-$ApiAssetsUrl = "https://api.github.com/repos/$Repository/releases/assets"
+$ReleaseUrl = "https://github.com/$Repository/releases/download/v$Version"
 
 $TempRoot = [System.IO.Path]::GetTempPath()
 $TempDir = Join-Path $TempRoot ([System.IO.Path]::GetRandomFileName())
@@ -115,11 +94,11 @@ $TempSums = Join-Path $TempDir 'SHA256SUMS'
 
 try {
   Write-Step 'Downloading release bundle'
-  Download-File "$ApiAssetsUrl/$($ArchiveAsset.id)" $TempArchive "Downloading Seevee v$Version"
+  Download-File "$ReleaseUrl/$ArchiveName" $TempArchive "Downloading Seevee v$Version"
   Write-Success 'Bundle downloaded'
 
   Write-Step 'Checking SHA-256 checksum'
-  Download-File "$ApiAssetsUrl/$($ChecksumsAsset.id)" $TempSums 'Downloading checksum manifest'
+  Download-File "$ReleaseUrl/SHA256SUMS" $TempSums 'Downloading checksum manifest'
   $ChecksumLine = Get-Content $TempSums | Where-Object { $_ -match "\s+$([regex]::Escape($ArchiveName))$" } | Select-Object -First 1
   if (-not $ChecksumLine) { throw "SHA256SUMS has no entry for $ArchiveName." }
   $ExpectedSha = ($ChecksumLine.Trim() -split '\s+')[0].ToUpperInvariant()
@@ -188,7 +167,7 @@ node "%SEEVEE_ROOT%\runtime\cli\dist\cli.js" %*
   Write-Host 'Next step' -ForegroundColor Cyan -NoNewline
   Write-Host '  Run seevee init in a workspace directory.'
 } catch {
-  throw "Seevee install failed: $($_.Exception.Message) For a private repository, authenticate first with 'gh auth login'."
+  throw "Seevee install failed: $($_.Exception.Message) Check the public release page and your network connection."
 } finally {
   Remove-Item $TempDir -Recurse -Force -ErrorAction SilentlyContinue
 }

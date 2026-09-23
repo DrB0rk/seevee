@@ -47,20 +47,19 @@ A CV never owns its Astro/CSS. A template never owns the facts.
 
 Seevee installs from GitHub Release bundles and requires Node.js 20 or newer. The installers show download progress, verify SHA-256 checksums, and install a versioned runtime plus a stable `seevee` launcher.
 
-This repository is private. Authenticate with GitHub CLI, clone the repository, and run the installer:
+Install the latest public release directly:
 
 ~~~sh
-gh auth login
-gh repo clone DrB0rk/seevee
-cd seevee
-./install.sh
+curl -fsSL https://raw.githubusercontent.com/DrB0rk/seevee/main/install.sh | sh
 ~~~
 
-On Windows, run `install.ps1` from PowerShell in the cloned repository. For a public checkout, `install.sh` can also be piped directly from `raw.githubusercontent.com`.
+On Windows, run this in PowerShell:
 
 ~~~powershell
-.\install.ps1
+irm https://raw.githubusercontent.com/DrB0rk/seevee/main/install.ps1 | iex
 ~~~
+
+Both installers download public GitHub Release assets without GitHub CLI or credentials. Pass `--version VERSION` to `install.sh`, or `-Version VERSION` to `install.ps1`, to install a specific release.
 
 Then create/open a workspace:
 
