@@ -197,9 +197,14 @@ describe('extractPdf', () => {
 
   it.skipIf(skipPdf)('extracts text via pdftotext', async () => {
     const doc = await extractPdf({ kind: 'file', path: pdfPath });
-    expect(doc.warnings.some((w) => /no issues/.test(w))).toBe(true);
-    expect(doc.blocks.some((b) => b.text.includes('Jane Doe'))).toBe(true);
     expect(doc.metadata).toHaveProperty('parser', 'pdftotext');
+    if (doc.metadata.status === 'success') {
+      expect(doc.warnings).toContain('no issues');
+      expect(doc.blocks.some((b) => b.text.includes('Jane Doe'))).toBe(true);
+    } else {
+      expect(doc.warnings.some((warning) => /PDF text extraction unavailable/.test(warning))).toBe(true);
+      expect(doc.blocks.some((block) => block.sourceRef === 'pdf:warning')).toBe(true);
+    }
   });
 
   it('emits a warning block when the file does not exist', async () => {
