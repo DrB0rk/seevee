@@ -499,13 +499,9 @@ The dashboard preview should be usable even before the export browser is provisi
 
 The dashboard surfaces version mismatch between CLI/runtime/workspace schema.
 
-Do not self-modify the installed package silently. Package-manager updates remain explicit:
+Do not self-modify silently.
 
-~~~sh
-npm install -g @drb0rk/seevee@latest
-~~~
-
-A future `seevee update` may wrap the package manager, but only with clear provenance and explicit action.
+A future `seevee update` must use the same GitHub Releases + checksum mechanism as the installer, perform an explicit user-requested update, and keep the previous installed version available for rollback.
 
 ## 14. Security defaults
 
