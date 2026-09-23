@@ -123,7 +123,7 @@ The dashboard itself is intentionally consistent: a dark technical workstation a
 └─────────────────────────────────────────────────────────────────────┘
 ~~~
 
-See [docs/DASHBOARD_VISUAL_DESIGN.md](docs/DASHBOARD_VISUAL_DESIGN.md) for the full UI system.
+The dashboard implementation specification is maintained under [`.dev/specs/DASHBOARD_VISUAL_DESIGN.md`](.dev/specs/DASHBOARD_VISUAL_DESIGN.md).
 
 ## Agent-driven workflow
 
@@ -186,7 +186,7 @@ A comment therefore does not become useless just because a bullet moved to anoth
 The repository includes a reusable Seevee skill:
 
 ~~~text
-skills/seevee-agent/
+skills/seevee-workspace-agent/
 ├── SKILL.md
 ├── agents/openai.yaml
 └── references/
@@ -202,20 +202,17 @@ The CV guidance is deliberately **agent-facing**. It contains recent research on
 
 It is advice for drafting and review—not a hidden user-facing score, selector, or hard layout rule.
 
-## Key documents
+## Project documentation
 
-| Document | Purpose |
+| Path | Purpose |
 |---|---|
-| [docs/DEVELOPMENT_PLAN.md](docs/DEVELOPMENT_PLAN.md) | Full architecture and implementation roadmap |
-| [docs/SCHEMA_ARCHITECTURE.md](docs/SCHEMA_ARCHITECTURE.md) | Core resource/reference model |
-| [schemas/README.md](schemas/README.md) | Machine-readable schema overview |
-| [docs/DASHBOARD_EDITOR.md](docs/DASHBOARD_EDITOR.md) | Dashboard behavior and editor UX |
-| [docs/DASHBOARD_VISUAL_DESIGN.md](docs/DASHBOARD_VISUAL_DESIGN.md) | Dashboard layout, visual system, components |
-| [docs/TEMPLATE_AUTHORING.md](docs/TEMPLATE_AUTHORING.md) | Astro template and rendering contract |
-| [docs/AGENT_CONTRACT.md](docs/AGENT_CONTRACT.md) | Agent roles and mutation boundaries |
-| [docs/AGENT_CV_GUIDANCE.md](docs/AGENT_CV_GUIDANCE.md) | Agent-facing CV/resume research and best practices |
-| [docs/CLI_INSTALLER.md](docs/CLI_INSTALLER.md) | GitHub installer and local server lifecycle |
-| [AGENTS.md](AGENTS.md) | Entry point for coding agents |
+| [schemas/README.md](schemas/README.md) | Machine-readable workspace/schema contracts |
+| [docs/workspace-agent/README.md](docs/workspace-agent/README.md) | User workspace-agent boundary and usage |
+| [docs/workspace-agent/CV_GUIDANCE.md](docs/workspace-agent/CV_GUIDANCE.md) | Long-form CV/resume research for workspace agents |
+| [skills/seevee-workspace-agent/](skills/seevee-workspace-agent/) | Distributable skill used by agents creating/editing CVs |
+| [examples/linked-workspace/](examples/linked-workspace/) | Linked multi-CV workspace example |
+
+Repository-maintainer specifications, contribution rules, audits, implementation status, versioning, and release procedures are deliberately isolated under [`.dev/`](.dev/README.md).
 
 ## Design principles
 
@@ -237,8 +234,8 @@ It is advice for drafting and review—not a hidden user-facing score, selector,
 
 The agent guidance is grounded in current primary material from MIT, UC Berkeley, Harvard, EURES/Europass, USAJOBS, NIH, and related sources. Rules that are genuinely time-sensitive or form-specific must be rechecked at task time.
 
-See [docs/AGENT_CV_GUIDANCE.md](docs/AGENT_CV_GUIDANCE.md).
+See [docs/workspace-agent/CV_GUIDANCE.md](docs/workspace-agent/CV_GUIDANCE.md).
 
 ---
 
-Seevee is currently in the architecture/design phase. The next implementation milestone is the schema package and local CLI/runtime foundation.
+Seevee is currently at **0.1.0-alpha.0** and remains in the architecture/bootstrap phase. See [`.dev/IMPLEMENTATION_STATUS.md`](.dev/IMPLEMENTATION_STATUS.md) for the exact implemented-versus-specified status.
