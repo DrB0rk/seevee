@@ -40,7 +40,7 @@ forwarded through `SEEVEE_WORKSPACE_ROOT`.
 | `/api/events`              | GET    | SSE workspace-change stream              |
 | `/api/render/preview`      | POST   | Re-render CV canvas (stub)               |
 | `/api/render/inspect`      | GET    | Layout diagnostics                       |
-| `/api/export/pdf`          | POST   | Generate PDF (stub → 501)                |
+| `/api/export/pdf`          | POST   | Server-side PDF pipeline (stub → 501); use the dashboard's browser print-to-PDF control |
 | `/api/agent/run`           | POST   | Trigger agent run (stub)                 |
 
 ## Constraints

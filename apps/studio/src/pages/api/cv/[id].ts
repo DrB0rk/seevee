@@ -38,7 +38,7 @@ export const PUT: APIRoute = async ({ params, request }) => {
   const id = params['id'];
   if (id === undefined || id.length === 0) return jsonResponse({ ok: false, reason: 'missing id' }, 400);
   const origin = request.headers.get('origin');
-  if (origin && new URL(origin).host !== new URL(request.url).host) {
+  if (origin && !isSameOrigin(request, origin)) {
     return jsonResponse({ ok: false, reason: 'cross-origin writes are not allowed' }, 403);
   }
   let body: unknown;
@@ -84,6 +84,18 @@ export const PUT: APIRoute = async ({ params, request }) => {
   watcher.broadcast({ type: 'cv.updated', cvId: id, revision: validDocument.revision, path: entry.relativePath });
   return jsonResponse({ ok: true, document: validDocument }, 200);
 };
+
+function isSameOrigin(request: Request, origin: string): boolean {
+  try {
+    const originUrl = new URL(origin);
+    const requestUrl = new URL(request.url);
+    const host = request.headers.get('host') ?? requestUrl.host;
+    const protocol = request.headers.get('x-forwarded-proto')?.split(',')[0]?.trim() ?? requestUrl.protocol.slice(0, -1);
+    return originUrl.origin === new URL(`${protocol}://${host}`).origin;
+  } catch {
+    return false;
+  }
+}
 
 async function writeAtomically(file: string, document: unknown): Promise<void> {
   const temporary = `${file}.${randomUUID()}.tmp`;

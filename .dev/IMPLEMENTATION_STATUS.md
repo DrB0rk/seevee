@@ -12,7 +12,7 @@ Last audited: 2026-09-23
 
 ## Current repository reality
 
-Seevee has usable schema, CLI, ingestion, agent tool, and local dashboard implementations. Template-driven rendering, PDF export, and agent execution remain incomplete.
+Seevee has usable schema, CLI, ingestion, agent tool, and local dashboard implementations. Template-driven rendering, server-side PDF export, and agent execution remain incomplete. The dashboard supports browser print-to-PDF.
 
 All packages typecheck (`pnpm typecheck` exit 0). All tests pass (`pnpm test` exit 0). End-to-end smoke verified: `seevee init --no-open → seevee status → seevee stop`.
 
@@ -38,7 +38,7 @@ All packages typecheck (`pnpm typecheck` exit 0). All tests pass (`pnpm test` ex
 ## Incomplete end-to-end paths
 
 - Studio preview displays editable CV content but does not yet use the template renderer package.
-- Studio PDF export returns HTTP 501.
+- The Studio server-side PDF API returns HTTP 501; users can export the current editor preview through the browser's print-to-PDF dialog.
 - Studio agent-run API only emits a started event and does not execute an agent.
 - Image ingestion records a placeholder block; it does not perform vision extraction.
 - CLI export integration and Playwright-backed PDF export have not been validated end to end.

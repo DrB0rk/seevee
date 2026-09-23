@@ -17,7 +17,7 @@ Seevee is a local, agent-driven CV studio.
 
 Give an agent source material, let it normalize your information into structured JSON, and render that information through interchangeable Astro templates. The fixed Seevee dashboard gives you physical-page preview, comments, provenance, history, diagnostics, and PDF export without dictating what your CV has to look like.
 
-> **Project status:** Seevee `v0.1.0-alpha.2` is available as a GitHub prerelease. The local dashboard supports editing profile, experience, and skills data with autosave and a live document preview. Template-driven rendering, PDF export, live agent execution, and image recognition remain incomplete.
+> **Project status:** Seevee `v0.1.0-alpha.3` is available as a GitHub prerelease. The local dashboard supports editing profile, experience, and skills data with autosave and a live document preview, plus browser print-to-PDF export. Template-driven rendering, server-side PDF export, live agent execution, and image recognition remain incomplete.
 
 ## The idea
 
@@ -71,7 +71,7 @@ seevee init
 
 <code>seevee init</code> is non-interactive. It will scaffold the directory, start the local dashboard server in the background, health-check it, open the browser, and return terminal control. You can then open **any agent you want** in the same directory.
 
-See the [v0.1.0-alpha.2 prerelease](https://github.com/DrB0rk/seevee/releases/tag/v0.1.0-alpha.2) for platform bundles and checksums.
+See the [v0.1.0-alpha.3 prerelease](https://github.com/DrB0rk/seevee/releases/tag/v0.1.0-alpha.3) for platform bundles and checksums.
 
 ## Workspace model
 
@@ -248,4 +248,4 @@ See [docs/workspace-agent/CV_GUIDANCE.md](docs/workspace-agent/CV_GUIDANCE.md).
 
 ---
 
-Seevee is currently at **0.1.0-alpha.2**. See [`.dev/IMPLEMENTATION_STATUS.md`](.dev/IMPLEMENTATION_STATUS.md) for the exact implemented-versus-specified status.
+Seevee is currently at **0.1.0-alpha.3**. See [`.dev/IMPLEMENTATION_STATUS.md`](.dev/IMPLEMENTATION_STATUS.md) for the exact implemented-versus-specified status.

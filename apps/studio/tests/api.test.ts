@@ -112,9 +112,9 @@ describe('Studio API', () => {
     const loaded = await settle(get.GET({ params: { id: 'cv_test' } } as Parameters<typeof get.GET>[0]));
     const current = await loaded.json() as { document: Record<string, any> };
     current.document.data.identity.name.display = 'Grace Hopper';
-    const request = new Request('http://localhost/api/cv/cv_test', {
+    const request = new Request('http://127.0.0.1:43129/api/cv/cv_test', {
       method: 'PUT',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', origin: 'http://localhost:43129', host: 'localhost:43129' },
       body: JSON.stringify({ expectedRevision: 1, document: current.document }),
     });
     const saved = await settle(mod.PUT({ params: { id: 'cv_test' }, request } as Parameters<typeof mod.PUT>[0]));
@@ -123,6 +123,14 @@ describe('Studio API', () => {
     expect(body.ok).toBe(true);
     expect(body.document.revision).toBe(2);
     expect(body.document.data.identity.name.display).toBe('Grace Hopper');
+
+    const crossOriginRequest = new Request('http://127.0.0.1:43129/api/cv/cv_test', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json', origin: 'http://attacker.invalid', host: 'localhost:43129' },
+      body: JSON.stringify({ expectedRevision: 2, document: body.document }),
+    });
+    const crossOrigin = await settle(mod.PUT({ params: { id: 'cv_test' }, request: crossOriginRequest } as Parameters<typeof mod.PUT>[0]));
+    expect(crossOrigin.status).toBe(403);
 
     const staleRequest = new Request('http://localhost/api/cv/cv_test', {
       method: 'PUT',

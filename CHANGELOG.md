@@ -6,6 +6,13 @@ This project uses Semantic Versioning. See `.dev/VERSIONING.md` for the project 
 
 ## [Unreleased]
 
+## [0.1.0-alpha.3] - 2026-09-23
+
+### Fixed
+
+- Accept same-origin editor saves when Astro's internal request URL differs from the browser hostname, while continuing to reject foreign origins.
+- Enable PDF export from the editor through the browser's print dialog, with print styling for the CV page.
+
 ## [0.1.0-alpha.2] - 2026-09-23
 
 ### Added

@@ -79,7 +79,7 @@ async function waitForHealthy(hc: HealthCheck): Promise<RuntimeState> {
         host: hc.host,
         port: hc.port,
         startedAt: new Date().toISOString(),
-        serverVersion: process.env.SEEVEE_VERSION ?? '0.1.0-alpha.2',
+        serverVersion: process.env.SEEVEE_VERSION ?? '0.1.0-alpha.3',
       };
     }
     await new Promise<void>((resolve) => setTimeout(resolve, 200));

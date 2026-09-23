@@ -35,7 +35,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
       <span id="save-label">Connecting to workspace</span>
     </div>
     <div class="top-actions">
-      <button class="button button-subtle" type="button" disabled title="PDF export is not implemented yet">Export PDF</button>
+      <button class="button button-subtle" id="export-pdf" type="button" title="Print or save this CV as a PDF">Export PDF</button>
       <span class="version-label">v{serverVersion}</span>
     </div>
   </header>
@@ -336,6 +336,14 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     }
   }
 
+  async function exportPdf() {
+    window.clearTimeout(saveTimer);
+    while (saving) await new Promise((resolve) => window.setTimeout(resolve, 40));
+    if (editCount > savedCount) await flushSave();
+    if (editCount !== savedCount || saveState.dataset.state === 'conflict' || saveState.dataset.state === 'error') return;
+    window.print();
+  }
+
   function markChanged(refreshPreview = true) {
     editCount += 1;
     setStatus('saving', 'Unsaved changes');
@@ -423,6 +431,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
   });
 
   picker.addEventListener('change', () => void loadCv(picker.value).catch((error) => setStatus('error', error.message)));
+  document.querySelector<HTMLButtonElement>('#export-pdf')?.addEventListener('click', () => void exportPdf());
   void loadCv().catch((error) => {
     setStatus('error', error instanceof Error ? error.message : 'Could not connect to workspace');
     paper.innerHTML = `<div class="workspace-error"><span class="eyebrow">WORKSPACE NEEDS ATTENTION</span><h2>Could not open your CV</h2><p>${escapeHtml(error instanceof Error ? error.message : 'Unknown error')}</p></div>`;

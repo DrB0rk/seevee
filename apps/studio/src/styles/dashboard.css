@@ -146,9 +146,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 }
 @media (max-width: 560px) {
   .studio { grid-template-columns: minmax(0, 1fr); grid-template-rows: 56px minmax(64vh, auto) 180px minmax(400px, auto) 28px; grid-template-areas: "top" "work" "structure" "editor" "status"; }
-  .brand-name, .topbar-divider, .cv-select-wrap .eyebrow, .top-actions, .status-path { display: none; }
+  .brand-name, .topbar-divider, .cv-select-wrap .eyebrow, .status-path { display: none; }
+  .topbar { gap: 8px; padding: 0 8px; }
+  .top-actions { margin-left: auto; }
+  .top-actions .button { padding: 0 8px; font-size: 10px; }
   .cv-select-wrap { min-width: 100px; border: 0; padding-left: 0; }
-  .save-state { font-size: 10px; }
+  .save-state { max-width: 80px; overflow: hidden; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
   .canvas-bar { padding: 0 10px; }
   .canvas-controls { gap: 3px; }
   .fit-button { padding: 0 5px; }
@@ -164,4 +167,18 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; }
+}
+
+@page { size: A4; margin: 0; }
+@media print {
+  :root { color-scheme: light; }
+  html, body { min-width: 0; min-height: 0; background: #fff; color: #202329; }
+  .studio { display: block; min-height: 0; background: #fff; }
+  .topbar, .structure-panel, .canvas-bar, .editor-panel, .statusbar { display: none !important; }
+  .work-area, .pasteboard { display: block; min-height: 0; overflow: visible; padding: 0; background: #fff; }
+  .paper { width: 210mm; min-height: 297mm; margin: 0; padding: 18mm; transform: none; box-shadow: none; }
+  .paper input, .paper textarea { color: inherit; outline: 0 !important; }
+  .paper textarea { overflow: visible; resize: none; }
+  .cv-section, .cv-entry { break-inside: avoid; }
+  .empty-section button { display: none; }
 }
