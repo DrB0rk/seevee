@@ -13,11 +13,11 @@ The schema layer is the product's primary contract. UI, renderer, agents and exp
 
 Use independent, revisioned resources:
 
-- cv.json — semantic CV graph and factual/generated content.
-- provenance.json — evidence and origin assertions for semantic fields.
-- presentation.json — document/page settings, template selection, tokens and layout overrides.
-- comments.json — review threads, resilient selectors and agent work state.
-- seevee.json — workspace descriptor, active resource IDs, canonical file paths and workspace policy.
+- cvs/<cv-id>.json — one complete independently revisioned CV per file.
+- provenance/<cv-id>.json — evidence and origin assertions associated with that CV.
+- comments/<cv-id>.json — review threads associated with that CV.
+- presentations/<presentation-id>.json — a CV + template/version pairing with page/style/layout state.
+- seevee.json — workspace library/index for all CVs, presentations, sources and active selections.
 - agent-run/render-diagnostic records — ephemeral/non-canonical run summaries and diagnostics.
 - template source — versioned Astro/CSS/assets.
 - compiled template artifact — immutable executable render artifact produced after validation.
@@ -93,7 +93,7 @@ seevee/
 
 See docs/CLI_INSTALLER.md for the normative CLI/runtime contract.
 
-The product is installed as a command named `seevee`. Publish the npm package under an official scope and expose `seevee` through its npm `bin` entry so the command name remains stable regardless of package-scope decisions.
+The product is installed as a command named `seevee` through the GitHub-hosted installer described in `docs/CLI_INSTALLER.md`. The normal user install path is `curl` from this repository followed by a checksum-verified GitHub Release download; npm/pnpm are development/build concerns only.
 
 Primary local workflow:
 
@@ -107,7 +107,7 @@ seevee init
 
 1. safely scaffolds or validates the current directory;
 2. creates the canonical CV/provenance/presentation/comments resources;
-3. installs/generates generic agent guidance for the workspace;
+3. creates the initial CV library structure and generic agent guidance for the workspace;
 4. starts the local dashboard server as a detached process;
 5. waits for a workspace-aware health check;
 6. opens the dashboard in the default browser;
@@ -231,9 +231,9 @@ Every write includes a base revision. Stale writes fail and must be rebased.
 
 Separate source templates from style presets.
 
-A source template is Astro/CSS/asset code that defines structure and visual language.
+A source template is Astro/CSS/asset code that defines structure and visual language. CV layout and styling are not constrained by Seevee beyond safety and valid rendering; a template may be reusable or completely bespoke to one CV.
 
-A style preset is JSON that references a source template and stores safe presentation-token overrides. The dashboard action Save current style as template should create a style preset by default. A separate Fork as independent template action creates a new source-template identity.
+A style preset is optional JSON that references a source template and stores presentation overrides exposed by that template. Templates are not required to expose any dashboard styling controls. A bespoke template may keep all visual decisions in Astro/CSS and be edited entirely by the user's agent.
 
 Source-template creation lifecycle:
 
@@ -280,7 +280,7 @@ Simple but useful controls:
 
 Default: ISO A4 portrait, exactly 210 x 297 mm.
 
-The editor is not a generic Figma-style layout builder. Complex layout work belongs to the design agent/template; the dashboard exposes predictable presentation controls.
+The editor is not a generic Figma-style layout builder. Complex layout and styling work belongs to the user's agent/template, which may be as custom as desired. The dashboard exposes only controls the template chooses to expose.
 
 ## 11. Pagination and diagnostics
 
@@ -420,7 +420,7 @@ Phase 0 — contracts:
 - comment target resolver.
 
 Phase 1 — CLI and local runtime:
-- packages/cli with npm bin `seevee`;
+- release-bundled CLI/runtime exposed as `seevee` and installed by the GitHub `install.sh`;
 - deterministic `seevee init` scaffold;
 - generic agent workspace instructions;
 - detached local server lifecycle;
@@ -484,11 +484,12 @@ The MVP is complete only when:
 - arbitrary external agents can operate on the local workspace without Seevee owning the agent runtime;
 - valid external file changes live-update the dashboard and invalid ones surface validation errors without replacing last-known-good state;
 - lifecycle commands can start, stop, inspect, validate and diagnose a workspace;
-- multiple source types can become a validated CV graph;
+- multiple source types can become independently saved CV JSON documents;
 - provenance exists for extracted factual fields;
 - the default CV renders as true A4 pages;
 - the fixed dashboard live-updates the preview;
 - a user can change basic page/presentation settings;
+- multiple CV JSON documents can be switched independently from templates;
 - at least two source templates work;
 - a style can be saved as a reusable preset;
 - a generated/forked source template can be validated, compiled and activated;
