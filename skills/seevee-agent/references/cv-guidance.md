@@ -1,614 +1,221 @@
-# Agent CV and Resume Guidance
+# CV drafting and review guidance
 
-Status: agent-facing research and drafting reference
-Reviewed: 2026-09-23
+Use this reference when creating, tailoring, reviewing, or restructuring CV content.
 
-## Purpose
+If operating inside the Seevee repository/workspace and `docs/AGENT_CV_GUIDANCE.md` is available, read that document for the full researched sector/locale guidance and source list. This skill reference contains the core rules needed when the skill is used standalone.
 
-This document is for agents that create, tailor, review, or redesign CVs in Seevee.
+## Authority and scope
 
-It is not a validation specification. It must not become a user-facing profile selector, resume score, mandatory template style, or export blocker.
+This is agent guidance, not product validation.
 
-Use it as informed guidance. The user's stated intent, target role, actual experience, locale, and chosen visual direction remain authoritative.
+- Do not create a user-facing resume score.
+- Do not create a hidden standards/profile selector.
+- Do not block export because a CV violates a generic career convention.
+- Preserve intentional unconventional layouts/content choices.
+- User intent, target role, market, sector, and factual source material are authoritative.
+- Verify current primary sources when handling government/regulatory/form-specific CVs or biosketches.
 
-Seevee's hard validation is reserved for data integrity, broken references, unsafe template execution, and invalid rendering/export. Career advice is not schema law.
+Hard Seevee failures are data/reference errors, unsafe template behavior, or invalid rendering/export—not generic resume advice.
 
-## General principles
+## Facts
 
-Current guidance from MIT, Harvard, Berkeley, Europass, EURES, USAJOBS, and other primary sources converges on several useful principles:
+Never invent:
 
-- Tailor content to the role instead of including every available detail.
-- Put relevant information where a reviewer can find it quickly.
-- Prefer specific, factual language.
-- Show contributions and outcomes rather than listing only responsibilities.
-- Use strong action verbs when they improve clarity.
-- Quantify impact when a real and supportable measurement exists.
-- Keep dates, names, links, spelling, and contact details accurate.
-- Use reverse chronology as a common default, not an absolute requirement.
-- Use projects, research, open source, coursework, volunteering, or independent work when they are meaningful evidence.
-- Keep formatting internally consistent unless a deliberate design choice requires otherwise.
-- Treat CV guidance as market- and sector-dependent.
+- employers or job titles;
+- dates;
+- degrees/certifications;
+- technologies;
+- responsibilities;
+- metrics;
+- users/revenue/scale;
+- performance improvements;
+- awards;
+- links/contact details.
 
-Never invent metrics, technologies, dates, scope, users, revenue, performance gains, certifications, job titles, or other facts merely to make copy sound stronger.
+A stronger-sounding unsupported metric is worse than a factual unquantified statement.
 
-## Master CV and tailored variants
+## Tailoring
 
-MIT explicitly recommends keeping a master resume while tailoring application versions to specific roles. MIT also advises saving different iterations for reuse with similar positions.
+Prefer separate CV JSON variants instead of one CV full of conditional flags.
 
-Seevee should take advantage of its multi-CV model:
+Useful pattern:
 
-- A broad master CV can contain a user's full verified history.
-- Separate CV JSON files can target backend, security, embedded, frontend, management, academic, or individual job applications.
-- Tailoring can remove, reorder, summarize, or emphasize material.
-- A tailored CV should remain independently understandable; do not depend on hidden data from another variant.
-- Reuse stable semantic IDs where the copied fact is genuinely the same fact and the implementation supports lineage.
-- Do not force every application into one CV full of conditional visibility flags.
+~~~text
+cvs/
+  master.json
+  backend.json
+  security.json
+  embedded.json
+  target-company.json
+~~~
 
-## Length
+A master CV may contain broader verified history. Tailored CVs should independently tell the story relevant to the target.
 
-Do not apply one universal page rule.
+Current MIT guidance supports maintaining comprehensive/master material and saving tailored resume iterations for reuse.
 
-MIT currently recommends one page for many commercial resumes, while explicitly noting that two pages can be appropriate and that there is no absolute rule. Berkeley recommends a simple one-page format for college students. Current Dutch EURES guidance says a Dutch CV is normally one to two A4 pages. Academic CVs can be much longer.
+## General content heuristics
 
-Use length as an editorial trade-off:
+When relevant:
 
-- early career: usually concise;
-- experienced engineers: one or two pages can both be reasonable;
-- senior/staff/leadership: use the space required to communicate meaningful scope;
-- academic CV: comprehensive and often multi-page;
-- bespoke portfolio CV: content and visual strategy may justify a different structure.
+- tailor to the role;
+- make the strongest evidence easy to find;
+- prefer concrete actions and outcomes over responsibility lists;
+- use strong verbs when natural;
+- quantify only when measured/supported;
+- keep dates/names/links internally consistent;
+- demonstrate important skills in experience/projects, not only a keyword list;
+- use projects/research/open source/coursework when they are real evidence;
+- remove repetition before shrinking typography/spacing.
 
-Do not shrink type or destroy whitespace purely to meet an arbitrary page count.
+Reverse chronology is a common default, not a requirement.
 
-## Software engineering: general
+Page length is context-dependent. Do not enforce a universal one-page/two-page rule.
 
-For software engineering, prioritize evidence of what the candidate can actually build, operate, improve, investigate, or lead.
+## Software engineering
 
-Useful content may include:
+Prioritize evidence of what the candidate can build, operate, debug, improve, secure, investigate, or lead.
 
-- languages and major frameworks;
+Useful evidence:
+
 - systems/components built;
-- architecture and technical decisions;
-- projects and open-source work;
-- APIs and integrations;
+- architecture/technical decisions;
+- languages/frameworks;
+- APIs/integrations;
 - data stores;
-- deployment and infrastructure;
-- testing and quality practices;
+- deployment/infrastructure;
+- testing;
 - performance;
 - reliability;
 - security;
 - developer tooling;
 - product/user context;
-- collaboration;
-- technical leadership;
-- measurable results when real.
+- collaboration/leadership;
+- real measured outcomes.
 
-A list of technologies is useful for scanning, but experience and project entries should provide evidence that important technologies were actually used.
+Use MIT's PAR idea as a reasoning aid, not a rigid sentence template:
 
-Technical resumes may legitimately emphasize projects and technical work. Berkeley's current technical-resume examples explicitly frame projects, technology-related skills, experience, and qualifications as central evidence for software development, engineering, IT, and data roles.
+~~~text
+context/project -> action -> result
+~~~
 
-## Software bullet writing
+### Frontend
 
-MIT's current PAR guidance is useful as a thinking model:
+Look for framework/language evidence plus component architecture, accessibility, browser/device behavior, state/data flow, API integration, testing, performance, rendering strategy, and design/product collaboration.
 
-Project/context -> Activity/action -> Result
+### Backend / distributed systems
 
-Do not mechanically force every bullet into the same sentence shape. Use the model to check whether a statement communicates enough context and consequence.
+Look for APIs/services, data modeling, databases, queues/events, concurrency, caching, consistency/failure handling, observability, reliability, migrations, security, performance, and operational ownership.
 
-A useful software bullet often answers some of:
+### Full-stack
 
-- What did the candidate build/change/investigate?
-- Why did it matter?
-- What was technically difficult?
-- What stack or system boundary was involved?
-- What scale or constraint mattered?
-- What improved?
-- What did the candidate own?
-- Was the result measured?
+Show complete outcomes and architecture boundaries rather than two keyword inventories.
 
-Good:
-- Built a Rust service that normalized telemetry from three device protocols and exposed a stable API for the dashboard.
+### DevOps / SRE / platform
 
-Potentially stronger when evidenced:
-- Cut a deployment workflow from 20 minutes to 6 by replacing manual packaging steps with a reproducible CI pipeline.
+Look for IaC, cloud/platform ownership, CI/CD, containers/orchestration, observability, reliability/SLOs, incidents, developer experience, cost, security/policy, and automation.
 
-Bad:
-- Improved performance by 80 percent.
+### Cybersecurity
 
-The last statement is unacceptable unless the source information supports that number and explains what was measured.
-
-## Frontend engineering
-
-Look for evidence of:
-
-- TypeScript/JavaScript;
-- relevant frameworks;
-- component architecture;
-- accessibility;
-- design systems;
-- browser/device behavior;
-- state/data flow;
-- API integration;
-- testing;
-- performance;
-- rendering strategy;
-- collaboration with design/product.
-
-Do not reduce frontend experience to a list of UI libraries.
-
-Useful project evidence includes shipped interfaces, design-system work, accessibility fixes, performance changes, complex interaction work, or ownership of frontend architecture.
-
-## Backend and distributed systems
-
-Look for:
-
-- API/service design;
-- data modeling and databases;
-- concurrency;
-- queues/event systems;
-- distributed systems;
-- caching;
-- consistency/failure handling;
-- observability;
-- reliability;
-- migrations;
-- security;
-- performance;
-- operational ownership;
-- scale when known.
-
-Avoid generic phrases such as "worked on backend systems" when more concrete source material exists.
-
-## Full-stack engineering
-
-Full-stack CVs should show connected outcomes rather than two disconnected keyword inventories.
-
-Useful evidence:
-
-- owning a feature across UI, API, persistence, deployment, and monitoring;
-- architectural boundaries;
-- product-facing impact;
-- integration work;
-- trade-offs across frontend/backend concerns.
-
-## DevOps, platform, cloud, and SRE
-
-Look for:
-
-- infrastructure as code;
-- cloud/platform ownership;
-- CI/CD;
-- containers/orchestration;
-- observability;
-- reliability/SLO work;
-- deployment architecture;
-- incident response;
-- developer experience;
-- cost work;
-- security/policy;
-- operational automation.
-
-Real before/after metrics are valuable, especially deployment time, incident frequency, reliability, cost, build time, or developer lead time. Never synthesize them.
-
-## Cybersecurity
-
-Identify the actual security branch rather than writing a generic "cybersecurity" CV:
-
-- penetration testing / offensive security;
-- application security;
-- cloud security;
-- security engineering;
-- detection engineering / SOC;
-- DFIR;
-- threat intelligence;
-- vulnerability management;
-- GRC/risk;
-- security research.
-
-Useful evidence may include:
-
-- authorized assessment scope;
-- vulnerabilities discovered;
-- remediation work;
-- secure design;
-- threat modeling;
-- detection content;
-- incident handling;
-- automation;
-- tooling;
-- standards/frameworks;
-- client/stakeholder communication.
-
-Do not expose confidential customer data, exploit details that should remain private, or unsupported severity claims.
-
-## Data engineering, ML, and AI
-
-Look for:
-
-- problem definition;
-- datasets and data pipelines;
-- scale;
-- model/approach;
-- evaluation method;
-- reproducibility;
-- serving/inference;
-- monitoring;
-- experimentation;
-- data quality;
-- productionization;
-- user/business outcome.
-
-Distinguish experiments, prototypes, research, and production systems accurately.
-
-Do not imply that calling an LLM API is equivalent to training, evaluating, or deploying an ML model unless the work actually included those activities.
-
-## Embedded, firmware, robotics, and electronics
-
-Look for:
-
-- MCU/SoC/platform;
-- C/C++/Rust or relevant languages;
-- RTOS/bare-metal work;
-- hardware interfaces and buses;
-- protocols;
-- sensor/signal handling;
-- timing;
-- memory;
-- power constraints;
-- hardware bring-up;
-- test equipment;
-- debugging;
-- manufacturing/reliability;
-- control systems or robotics where relevant.
-
-Concrete constraints are especially useful in this sector when known: sample rates, timing budgets, flash/RAM limits, current draw, communication rates, environmental constraints, or hardware revisions.
-
-## Mobile engineering
-
-Look for:
-
-- iOS/Android or cross-platform stack;
-- app architecture;
-- offline/data synchronization;
-- API integration;
-- accessibility;
-- performance;
-- testing;
-- release/store process;
-- crash/reliability work;
-- device/platform constraints.
-
-## Game, graphics, media, and realtime software
-
-Look for:
-
-- engine/runtime;
-- rendering;
-- performance/frame budgets;
-- networking;
-- gameplay/system ownership;
-- tooling;
-- asset/content pipelines;
-- platform constraints;
-- shipped titles or interactive portfolio work.
-
-## Student and junior software candidates
-
-Projects can be primary evidence. MIT and Berkeley both explicitly treat class, personal, research, volunteer, and project work as valid experience when relevant.
-
-Useful sections can include:
-
-- education;
-- relevant coursework;
-- projects;
-- internships;
-- research;
-- open source;
-- competitions;
-- volunteer work;
-- technical skills.
-
-Do not inflate class projects into professional employment. Describe them accurately and still make the engineering work concrete.
-
-## Mid-level engineers
-
-Prioritize:
-
-- independently delivered work;
-- system ownership;
-- technical depth;
-- debugging/problem solving;
-- collaboration;
-- testing/operations;
-- design decisions;
-- measurable outcomes when available.
-
-## Senior, staff, and principal engineers
-
-Look beyond implementation volume.
-
-Useful evidence includes:
-
-- architecture;
-- ambiguous/high-risk technical problems;
-- migrations;
-- reliability/platform strategy;
-- cross-team influence;
-- technical direction;
-- mentoring;
-- design reviews;
-- standards;
-- incident leadership;
-- long-term system improvements;
-- business/product consequences.
-
-Do not erase hands-on technical work merely because the person is senior.
-
-## Engineering management
-
-In addition to technical context, useful evidence includes:
-
-- team/org scope;
-- hiring;
-- mentoring;
-- delivery;
-- engineering process;
-- technical strategy;
-- product partnership;
-- prioritization;
-- organizational improvement;
-- team outcomes.
-
-## ATS and parser considerations
+Identify the actual branch: offensive, appsec, cloud security, security engineering, detection/SOC, DFIR, threat intelligence, vulnerability management, GRC, or research.
+
+Do not expose confidential customer/security information.
+
+### Data / ML / AI
+
+Distinguish data engineering, experimentation, model work, evaluation, serving/inference, monitoring, and production systems accurately. Calling an LLM API alone is not equivalent to training/evaluating a model.
+
+### Embedded / firmware / robotics
+
+Look for MCU/SoC, language, RTOS/bare metal, interfaces/buses, protocols, timing, memory, power, bring-up, instruments, debugging, signal/sensor work, manufacturing/reliability, and real hardware constraints.
+
+### Mobile
+
+Look for platform stack, architecture, offline/data synchronization, APIs, accessibility, performance, testing, release pipeline, reliability, and device constraints.
+
+## Seniority
+
+Student/junior:
+- projects, coursework, research, open source, competitions, and volunteer work can be primary evidence;
+- never mislabel coursework/projects as employment.
+
+Mid-level:
+- emphasize independent delivery, depth, system ownership, debugging, collaboration, and operations.
+
+Senior/staff/principal:
+- emphasize scope, architecture, ambiguous problems, migrations, cross-team influence, technical direction, mentoring, reliability/platform strategy, and product/business consequences without erasing hands-on engineering.
+
+Engineering management:
+- add team/org scope, hiring, mentoring, execution, process, technical/product strategy, and team outcomes.
+
+## ATS/parser considerations
 
 There is no universal ATS implementation.
 
-Berkeley currently recommends conservative formatting for maximum ATS compatibility: standard fonts and section names, conventional work-history structure, and avoiding headers, footers, text boxes, tables, colors, pictures, or graphics when ATS safety is the priority.
-
-Treat that as a conservative strategy, not a global Seevee rule.
-
-For an ATS-oriented variant, an agent should consider:
+For a deliberately conservative ATS-oriented variant, consider:
 
 - conventional section labels;
-- clear underlying reading order;
-- selectable text;
+- clear document reading order;
+- selectable/searchable text;
 - explicit employer/title/date fields;
-- no critical information conveyed only by icons/images;
-- avoiding a rasterized whole-page CV;
-- relevant terminology from the job description used naturally;
-- the requested upload file type.
+- no critical fact represented only as an image/icon;
+- requested upload file type;
+- relevant role terminology used naturally.
 
-For a design-led CV, portfolio CV, or human-first technical CV, the agent can intentionally make different trade-offs.
+Current Berkeley guidance recommends especially conservative formatting for maximum ATS compatibility, but that is a strategy—not a Seevee layout rule.
 
-A useful future Seevee feature is a plain-text extraction preview. It is more defensible than an invented "ATS score."
+Do not claim an ATS score. A plain-text extraction/reading-order preview is more defensible.
 
-## Reverse chronology
+## Locale/context differences
 
-Reverse chronological ordering is a common default in MIT, Harvard, Berkeley, and Europass guidance.
+US commercial guidance often discourages photos and personal demographic data. Europass conventions can differ, including professional-photo guidance.
 
-It is not mandatory.
+Therefore never make photo/no-photo a universal rule.
 
-Functional, hybrid, project-first, skill-first, or custom ordering can make sense for:
+Current Dutch EURES guidance describes Dutch CVs as direct, tailored, usually one to two A4 pages, while allowing chronological, functional, analytical, historical, or creative layouts.
 
-- career changes;
-- portfolio work;
-- research;
-- students;
-- freelance/consulting;
-- people with unusual career histories;
-- bespoke technical storytelling.
+## Academic/research
 
-Current Dutch EURES guidance explicitly notes that resume layout can be historical, analytical, chronological, functional, or creative.
+Academic CVs can be long and cumulative. Do not apply commercial-resume length rules.
 
-## Photos and personal information
+For NIH biosketch work, verify current NIH requirements at task time. As of September 2026, NIH's Biographical Sketch Common Form workflow requires SciENcv and cannot simply be replaced by an arbitrary Seevee PDF.
 
-Conventions conflict by region.
+## US federal
 
-Harvard's current US-oriented guidance says not to include a picture, age, or gender. Europass currently recommends a professional photograph.
+Treat USAJOBS/federal resumes separately from commercial US resumes. Current USAJOBS guidance requires a resume of two pages or less and expects the resume to explicitly show how the applicant meets the announcement requirements.
 
-Therefore:
+Verify the current announcement/guidance whenever performing this task.
 
-- do not treat photo/no-photo as a global correctness rule;
-- consider target market and user intent;
-- avoid unnecessary sensitive personal information;
-- do not infer demographic information;
-- do not add a photograph unless the user supplied/approved one.
+## Other sectors
 
-## Netherlands / EU
+Finance/consulting:
+- emphasize analytical/commercial context, client/project scope, leadership, and real quantitative outcomes.
 
-Current EURES Netherlands guidance says a Dutch CV should generally:
+Healthcare:
+- emphasize credentials, clinical/research context, safety/quality, systems/tools, and outcomes while protecting patient information.
 
-- be direct and professional;
-- normally fit within one or two A4 pages;
-- contain relevant and specific information;
-- be adapted to the position;
-- generally use recent-first education and work history.
+Creative/design/media:
+- portfolio/reel and project authorship can matter more; visual CVs may intentionally trade ATS conservatism for identity/presentation.
 
-EURES also says the user may choose chronological, functional, analytical, historical, or creative resume layouts.
+Sales/marketing/business development:
+- emphasize market/account scope, pipeline/revenue/quota/campaign outcomes only when factual.
 
-Europass currently recommends tailoring, clear language, strong verbs, reverse chronology, proofreading, and maintaining a reusable underlying profile from which tailored CVs can be created.
+Trades/operations/logistics:
+- emphasize licenses/certifications, equipment, safety, maintenance, throughput, quality, scheduling, and measurable improvements.
 
-Use these as contextual guidance, not hard constraints.
+## Review questions
 
-## US commercial resumes
+Before finalizing:
 
-Current Harvard guidance emphasizes:
-
-- tailoring to the position;
-- specific, active, fact-based language;
-- results;
-- organization and skimmability;
-- reverse chronology;
-- no photo/age/gender in its US-oriented guidance;
-- attention to both human readers and scanning systems.
-
-Do not import US conventions into all markets.
-
-## US federal / USAJOBS
-
-Treat federal resumes as a separate task.
-
-Current USAJOBS guidance states that federal agencies accept resumes up to two pages and that USAJOBS will not allow a resume longer than two pages. It also emphasizes showing directly how the candidate meets the job announcement's qualifications and requirements.
-
-When a user explicitly asks for a USAJOBS/federal resume, the agent should verify the current job announcement and current USAJOBS guidance at task time.
-
-Do not apply the federal two-page requirement to ordinary US resumes.
-
-## Academic CVs
-
-Academic CVs are cumulative documents, not short commercial resumes.
-
-Common content may include:
-
-- education;
-- appointments;
-- research;
-- publications;
-- presentations;
-- teaching;
-- grants/fellowships;
-- awards;
-- service;
-- professional memberships;
-- languages/technical skills;
-- references.
-
-Do not shorten an academic CV to a commercial one-page resume unless that is explicitly the requested transformation.
-
-## NIH and research biosketches
-
-These are compliance documents and change over time.
-
-As of September 2026, NIH's Biographical Sketch Common Form and NIH Biographical Sketch Supplement are prepared through SciENcv; NIH states that SciENcv must be used for the Common Form. The NIH transition rules changed during 2026, so an agent must verify current NIH instructions whenever the user requests an NIH biosketch.
-
-Seevee can help organize source data or prepare content, but it must not imply that an arbitrary Seevee PDF is an NIH-compliant Common Form.
-
-## Finance, banking, and consulting
-
-Useful emphasis:
-
-- analytical work;
-- commercial/financial context;
-- transactions or projects where disclosure is allowed;
-- quantitative outcomes;
-- client/stakeholder work;
-- leadership;
-- concise communication.
-
-Berkeley currently notes that chronological resumes are commonly appropriate in conservative industries such as banking.
-
-Do not force conservative visual styling if the user wants something else.
-
-## Healthcare and clinical work
-
-Useful evidence:
-
-- credentials/licensure;
-- clinical setting;
-- specialties/procedures;
-- systems/tools;
-- safety/quality;
-- research;
-- team scope;
-- outcome improvements where safe and factual.
-
-Never include patient-identifying information.
-
-## Creative, design, and media
-
-Visual CVs may intentionally optimize for human review and portfolio identity.
-
-Useful evidence:
-
-- portfolio/reel;
-- role in projects;
-- shipped/published work;
-- design/creative direction;
-- tools;
-- clients/brands where disclosure is permitted;
-- reach/results where meaningful.
-
-It can be sensible to keep both a highly designed CV and a conservative application variant.
-
-## Sales, marketing, and business development
-
-Useful evidence:
-
-- account/market scope;
-- pipeline/revenue when factual;
-- quota attainment when factual;
-- acquisition/retention;
-- campaign performance;
-- strategy;
-- stakeholder ownership;
-- team scope.
-
-Never create missing percentages or currency figures.
-
-## Skilled trades, operations, and logistics
-
-Useful evidence:
-
-- certifications/licenses;
-- equipment/machinery;
-- safety;
-- maintenance;
-- scheduling;
-- throughput;
-- quality;
-- site/team scope;
-- reductions or improvements when measured.
-
-## Agent review checklist
-
-Before finalizing a CV, ask:
-
-- Is every factual claim supported by user-provided/source information?
+- Are all factual claims supported?
 - Is the content relevant to the stated target?
-- Are the strongest pieces of evidence easy to find?
-- Are vague responsibilities replaceable with more concrete source-backed statements?
+- Is the strongest evidence easy to find?
+- Can vague responsibilities become more concrete from available sources?
 - Are important skills demonstrated in context?
-- Are there duplicate or low-value statements consuming space?
-- Are links useful and correct?
-- Are dates and titles internally consistent?
-- Does the chosen order support the story the user wants to tell?
-- Does the visual design support that story?
-- If parser compatibility matters, is the underlying reading order sensible?
-- Have market-specific conventions been considered without assuming they are universal?
-- Has the agent preserved intentional unconventional design choices?
+- Is there duplicate/low-value content?
+- Are dates/titles/links consistent?
+- Does ordering support the intended story?
+- Does the chosen visual design support that story?
+- If parser compatibility matters, is underlying reading order sensible?
+- Have you preserved intentional custom design choices?
 
-## Sources reviewed
-
-MIT Career Advising & Professional Development:
-https://capd.mit.edu/resources/resumes/
-https://capd.mit.edu/resources/resumes-writing-about-your-skills/
-https://capd.mit.edu/blog/2026/06/23/interphase-2026-resume-resources/
-
-UC Berkeley Career Engagement:
-https://career.berkeley.edu/prepare-for-success/resumes/
-https://career.berkeley.edu/prepare-for-success/resumes/sample-resumes/
-
-Harvard FAS Mignone Center:
-https://careerservices.fas.harvard.edu/resources/create-a-strong-resume/
-
-EURES Netherlands:
-https://eures.europa.eu/living-and-working/living-and-working-conditions-europe/living-and-working-conditions-netherlands_en
-
-Europass:
-https://europass.europa.eu/en/create-europass-cv
-
-USAJOBS:
-https://help.usajobs.gov/faq/application/documents/resume/what-to-include
-
-NIH:
-https://grants.nih.gov/grants-process/write-application/forms-directory/biographical-sketch-common-form
-https://grants.nih.gov/grants-process/write-application/forms-directory/biosketch
-https://grants.nih.gov/grants/guide/notice-files/NOT-OD-26-079.html
-
-## Maintenance rule
-
-This reference is dated research, not timeless truth.
-
-When an agent is handling a regulated/form-specific document, a government application, or a market convention that materially affects the output, verify current primary guidance before applying it.
-
-For ordinary CV drafting, use this file as a practical baseline and preserve user intent.
+Do not silently rewrite a user's strategy because generic guidance suggests another one.
