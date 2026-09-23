@@ -35,6 +35,9 @@ importers:
       astro:
         specifier: ^5.14.0
         version: 5.18.2(@types/node@22.20.4)(rollup@4.63.4)(supports-color@7.2.0)(tsx@4.23.15)(typescript@5.9.3)(yaml@2.9.1)
+      zod:
+        specifier: ^3.24.0
+        version: 3.25.76
     devDependencies:
       '@astrojs/check':
         specifier: ^0.9.0
