@@ -256,8 +256,9 @@ if [ -d "$WORK/node_modules" ]; then
 fi
 rm -rf "$WORK"
 
-# Workspace packages must be linked explicitly for Node's ESM resolver.
-# NODE_PATH is only consulted by CommonJS resolution.
+# Copy workspace packages into their scoped package locations for Node's ESM
+# resolver. NODE_PATH is only consulted by CommonJS resolution.
+rm -rf "$RUNTIME/node_modules/@seevee"
 mkdir -p "$RUNTIME/node_modules/@seevee"
 for pkg in $RUNTIME_PKGS; do
   cp -R "$RUNTIME/$pkg" "$RUNTIME/node_modules/@seevee/$pkg"
