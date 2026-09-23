@@ -743,7 +743,12 @@ Comments are independent review threads.
               "x": 0.10,
               "y": 0.42,
               "width": 0.64,
-              "height": 0.04
+              "height": 0.04,
+              "renderContext": {
+                "cvRevision": 14,
+                "presentationRevision": 21,
+                "templateVersionId": "tplv_004"
+              }
             }
           ]
         },
@@ -986,9 +991,11 @@ Never use last-write-wins for agent mutations.
       },
       "comments": {
         "comments_backend": { "path": "comments/backend.json" }
+      },
+      "sources": {
+        "src_001": { "path": "sources/src_001.json" }
       }
     },
-    "sources": ["src_001"],
     "policy": {
       "allowAgentFactInference": false,
       "requireEvidenceForNumericClaims": true,
@@ -1076,7 +1083,8 @@ Checks include:
 - A4 preset always resolves to 210 x 297 mm before orientation transform;
 - current-date range constraints are valid;
 - IDs are unique within their resource namespace;
-- source/provenance references are not dangling.
+- source/provenance references are not dangling;
+- if both pagination targetPages and maxPages are non-null, targetPages <= maxPages.
 
 ## 18. Schema versioning
 
