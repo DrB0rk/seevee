@@ -15,6 +15,7 @@
 #     bin/seevee.cmd                   (Windows cmd wrapper for seevee.exe)
 #     runtime/
 #       cli/                           built @seevee/cli (dist/*)
+#       studio/                        built Studio app (Astro standalone)
 #       schema/                        built @seevee/schema (dist/*)
 #       template-sdk/                  built @seevee/template-sdk (dist/*)
 #       renderer/                      built @seevee/renderer (dist/*)
@@ -96,6 +97,7 @@ for pkg in $RUNTIME_PKGS; do
 done
 # shellcheck disable=SC2086
 pnpm -r $filter_args run build
+pnpm --filter @seevee/studio run build
 
 # Packages that ship with `noEmit: true` (template-sdk, renderer, and
 # optionally @seevee/export when SEEVEE_INCLUDE_EXPORT=1) need an explicit
@@ -161,6 +163,24 @@ fi
 # 5. Stage the runtime tree
 # ---------------------------------------------------------------------------
 RUNTIME="$STAGE/$ARCHIVE_BASE/runtime"
+mkdir -p "$RUNTIME/studio"
+cp -R "$ROOT_DIR/apps/studio/dist" "$RUNTIME/studio/"
+
+# Astro's standalone entry records build-machine absolute asset paths. Rewrite
+# only those two paths so an extracted bundle can move to any install folder.
+node - "$RUNTIME/studio/dist/server/entry.mjs" <<'NODE'
+const fs = require('node:fs');
+const file = process.argv[2];
+let entry = fs.readFileSync(file, 'utf8');
+const client = /"client":\s*"file:\/\/[^\"]*\/dist\/client\/"/;
+const server = /"server":\s*"file:\/\/[^\"]*\/dist\/server\/"/;
+if (!client.test(entry) || !server.test(entry)) {
+  throw new Error('Astro standalone entry did not contain the expected absolute asset paths');
+}
+entry = entry.replace(client, '"client": new URL("../client/", import.meta.url).href');
+entry = entry.replace(server, '"server": new URL("./", import.meta.url).href');
+fs.writeFileSync(file, entry);
+NODE
 
 for pkg in $RUNTIME_PKGS; do
   src="$ROOT_DIR/packages/$pkg"
@@ -214,6 +234,7 @@ WORK="$(mktemp -d -t seevee-pnpm.XXXXXX)"
 for pkg in $RUNTIME_PKGS; do
   mkdir -p "$WORK/$pkg"
 done
+mkdir -p "$WORK/studio"
 # Hoist @seevee/* packages (and their deps) to the top of node_modules so
 # Node's resolution algorithm can find @seevee/schema from anywhere under
 # runtime/cli/. Without this, pnpm nests workspace pkgs under .pnpm/ via
@@ -234,6 +255,7 @@ printf 'packages:\n' > "$WORK/pnpm-workspace.yaml"
 for pkg in $RUNTIME_PKGS; do
   printf "  - './%s'\n" "$pkg" >> "$WORK/pnpm-workspace.yaml"
 done
+printf "  - './studio'\n" >> "$WORK/pnpm-workspace.yaml"
 cp "$ROOT_DIR/pnpm-lock.yaml" "$WORK/pnpm-lock.yaml"
 for pkg in $RUNTIME_PKGS; do
   src="$ROOT_DIR/packages/$pkg"
@@ -248,12 +270,44 @@ for pkg in $RUNTIME_PKGS; do
     cp -R "$src/src/." "$dest/src/"
   fi
 done
+cp "$ROOT_DIR/apps/studio/package.json" "$WORK/studio/package.json"
+cp -R "$ROOT_DIR/apps/studio/dist" "$WORK/studio/"
 # --no-frozen-lockfile because the synthetic resolver project diverges from
 # the root lockfile (we only ship the runtime subset of packages).
 (cd "$WORK" && pnpm install --prod --no-frozen-lockfile --silent)
 if [ -d "$WORK/node_modules" ]; then
   cp -R "$WORK/node_modules/." "$RUNTIME/node_modules/"
 fi
+# The compiled Astro server chunks live under runtime/studio/dist rather than
+# under a package symlink, so ESM resolves their external imports from this
+# package-local node_modules directory. Mirror pnpm's hoisted dependency links
+# there while keeping their targets in the one shared runtime node_modules.
+mkdir -p "$RUNTIME/studio/node_modules"
+node - "$RUNTIME/node_modules/.pnpm/node_modules" "$RUNTIME/studio/node_modules" <<'NODE'
+const fs = require('node:fs');
+const path = require('node:path');
+const [hoisted, destination] = process.argv.slice(2);
+if (!fs.existsSync(hoisted)) process.exit(0);
+for (const name of fs.readdirSync(hoisted)) {
+  if (name === '.bin') continue;
+  const source = path.join(hoisted, name);
+  const target = path.join(destination, name);
+  const stat = fs.lstatSync(source);
+  if (stat.isDirectory() && !stat.isSymbolicLink()) {
+    fs.mkdirSync(target, { recursive: true });
+    for (const child of fs.readdirSync(source)) {
+      const childSource = path.join(source, child);
+      const childTarget = path.join(target, child);
+      if (fs.existsSync(childTarget) || !fs.existsSync(childSource)) continue;
+      fs.symlinkSync(path.relative(path.dirname(childTarget), fs.realpathSync(childSource)), childTarget, 'junction');
+    }
+    continue;
+  }
+  if (!fs.existsSync(target) && fs.existsSync(source)) {
+    fs.symlinkSync(path.relative(path.dirname(target), fs.realpathSync(source)), target, 'junction');
+  }
+}
+NODE
 rm -rf "$WORK"
 
 # Copy workspace packages into their scoped package locations for Node's ESM

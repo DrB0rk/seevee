@@ -1,18 +1,6 @@
 ---
-/**
- * Dashboard layout — fixed three-pane application shell.
- *
- * Implements the geometry described in `.dev/specs/DASHBOARD_VISUAL_DESIGN.md`
- * §3 (52 px top bar, 48 px activity rail, 264 px left panel, 336 px
- * inspector, 28 px status bar). Each slot is its own component so the
- * layout stays declarative and the panels remain individually re-renderable
- * when SSE events arrive.
- */
+/** Fixed editor shell. CV data and edits come from the workspace APIs. */
 import '../styles/dashboard.css';
-import TopToolbar from '../components/TopToolbar.astro';
-import DataRail from '../components/DataRail.astro';
-import Inspector from '../components/Inspector.astro';
-import PageCanvas from '../components/PageCanvas.astro';
 
 interface Props {
   workspaceName: string;
@@ -22,20 +10,423 @@ interface Props {
   startedAt: string;
 }
 
-const { workspaceName, workspaceId, serverVersion, pid, startedAt } = Astro.props as Props;
+const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
 ---
 
-<div class="dashboard-shell">
-  <TopToolbar workspaceName={workspaceName} workspaceId={workspaceId} />
-  <DataRail />
-  <main class="dashboard-canvas" aria-label="CV canvas">
-    <PageCanvas />
+<div class="studio" id="studio" data-workspace-id={workspaceId}>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Seevee Studio home">
+      <span class="brand-mark" aria-hidden="true">S</span>
+      <span class="brand-name">seevee</span>
+    </a>
+    <span class="topbar-divider" aria-hidden="true"></span>
+    <div class="workspace-label">
+      <span class="eyebrow">WORKSPACE</span>
+      <strong>{workspaceName}</strong>
+    </div>
+    <label class="cv-select-wrap" for="cv-picker">
+      <span class="eyebrow">DOCUMENT</span>
+      <select id="cv-picker" aria-label="Choose a CV" disabled>
+        <option>Loading CVs…</option>
+      </select>
+    </label>
+    <div class="save-state" id="save-state" data-state="loading" role="status" aria-live="polite">
+      <span class="save-dot" aria-hidden="true"></span>
+      <span id="save-label">Connecting to workspace</span>
+    </div>
+    <div class="top-actions">
+      <button class="button button-subtle" type="button" disabled title="PDF export is not implemented yet">Export PDF</button>
+      <span class="version-label">v{serverVersion}</span>
+    </div>
+  </header>
+
+  <aside class="structure-panel" aria-label="CV structure">
+    <div class="panel-heading">
+      <div>
+        <span class="eyebrow">YOUR DOCUMENT</span>
+        <h1>CV structure</h1>
+      </div>
+      <button type="button" class="icon-button" id="add-experience" aria-label="Add experience" title="Add experience">+</button>
+    </div>
+    <nav class="section-list" id="section-list" aria-label="CV sections">
+      <p class="quiet-message">Loading sections…</p>
+    </nav>
+    <div class="panel-footnote">
+      <span class="online-indicator" aria-hidden="true"></span>
+      <span>Saved on this device</span>
+    </div>
+  </aside>
+
+  <main class="work-area" aria-label="CV editor">
+    <div class="canvas-bar">
+      <div class="canvas-title">
+        <span class="canvas-kicker">LIVE PREVIEW</span>
+        <span id="preview-name">Untitled CV</span>
+      </div>
+      <div class="canvas-controls" aria-label="Preview controls">
+        <button class="icon-button" type="button" data-zoom="-" aria-label="Zoom out">−</button>
+        <output class="zoom-readout" id="zoom-readout">82%</output>
+        <button class="icon-button" type="button" data-zoom="+" aria-label="Zoom in">+</button>
+        <span class="control-divider" aria-hidden="true"></span>
+        <button class="button button-subtle fit-button" type="button" id="fit-page">Fit page</button>
+      </div>
+    </div>
+    <div class="pasteboard" id="pasteboard">
+      <article class="paper" id="cv-paper" aria-label="Editable CV preview">
+        <p class="paper-loading">Loading your CV…</p>
+      </article>
+    </div>
   </main>
-  <Inspector serverVersion={serverVersion} pid={pid} startedAt={startedAt} />
-  <footer class="dashboard-status">
-    <span class="status-pill">Seevee Studio v{serverVersion}</span>
-    <span class="status-pill mono">pid {pid}</span>
-    <span class="status-pill mono">workspace {workspaceId}</span>
-    <span class="status-pill mono">started {startedAt}</span>
+
+  <aside class="editor-panel" aria-label="Edit CV content">
+    <div class="editor-heading">
+      <span class="eyebrow">CONTENT</span>
+      <h2>Edit your CV</h2>
+      <p>Changes save to this workspace as you type.</p>
+    </div>
+    <div class="editor-content" id="editor-content">
+      <p class="quiet-message">Your fields will appear here.</p>
+    </div>
+    <div class="editor-footer">
+      <span class="revision-label" id="revision-label">Revision —</span>
+      <span>Local workspace</span>
+    </div>
+  </aside>
+
+  <footer class="statusbar">
+    <span><span class="status-led" aria-hidden="true"></span>Studio ready</span>
+    <span class="status-path" title={workspaceId}>{workspaceId}</span>
+    <span class="status-help">Edit the paper or use the fields on the right</span>
   </footer>
 </div>
+
+<script>
+  type CvDoc = {
+    id: string;
+    revision: number;
+    updatedAt: string;
+    data: {
+      locale: string;
+      identity: {
+        id: string;
+        name: { display: string };
+        headline?: string;
+        summary?: string;
+        contact: Array<{ kind: string; value: string; primary?: boolean }>;
+      };
+      sectionOrder: string[];
+      sections: Record<string, { id: string; type: string; title: string; visible: boolean; nodeOrder?: string[] }>;
+      entities: {
+        experience?: Record<string, {
+          id: string; type: 'experience';
+          organization: { name: string };
+          role: { title: string };
+          period: { start: { precision: string; year: number }; end?: { year: number }; ongoing?: boolean };
+          summary?: string | null;
+          bulletOrder: string[];
+          bullets: Record<string, { id: string; text: string }>;
+        }>;
+        skills?: Record<string, { id: string; name: string; keywords: string[] }>;
+        education?: Record<string, { id: string; institution: { name: string }; program: { name: string; degree?: string | null }; period: { start: { year: number }; end?: { year: number } } }>;
+      };
+    };
+  };
+
+  type CvListItem = { ok: true; cv: { id: string; name: string; headline: string | null; revision: number } } | { ok: false; path: string; reason: string };
+
+  const studio = document.querySelector<HTMLElement>('#studio')!;
+  const picker = document.querySelector<HTMLSelectElement>('#cv-picker')!;
+  const paper = document.querySelector<HTMLElement>('#cv-paper')!;
+  const editor = document.querySelector<HTMLElement>('#editor-content')!;
+  const sectionList = document.querySelector<HTMLElement>('#section-list')!;
+  const saveState = document.querySelector<HTMLElement>('#save-state')!;
+  const saveLabel = document.querySelector<HTMLElement>('#save-label')!;
+  const revisionLabel = document.querySelector<HTMLElement>('#revision-label')!;
+  const pasteboard = document.querySelector<HTMLElement>('#pasteboard')!;
+  let cv: CvDoc | null = null;
+  let baseRevision = 0;
+  let editCount = 0;
+  let savedCount = 0;
+  let saveTimer: number | undefined;
+  let saving = false;
+  let zoom = 0.82;
+
+  const escapeHtml = (value: unknown) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!);
+  const dateLabel = (period: { start?: { year?: number }; end?: { year?: number }; ongoing?: boolean }) => {
+    const start = period?.start?.year;
+    const end = period?.ongoing ? 'Present' : period?.end?.year;
+    if (!start) return '';
+    return `${start}${end ? ` — ${end}` : ''}`;
+  };
+
+  function setStatus(state: 'loading' | 'saving' | 'saved' | 'error' | 'conflict', message: string) {
+    saveState.dataset.state = state;
+    saveLabel.textContent = message;
+  }
+
+  function experienceIds() {
+    if (!cv) return [];
+    const all = cv.data.entities.experience ?? {};
+    const ordered = new Set(Object.values(cv.data.sections).flatMap((section) => section.nodeOrder ?? []));
+    return [...ordered, ...Object.keys(all)].filter((id, index, ids) => all[id] && ids.indexOf(id) === index);
+  }
+
+  function field(path: string, value: unknown, placeholder: string, label: string, multiline = false) {
+    if (multiline) return `<label class="field"><span>${escapeHtml(label)}</span><textarea rows="${label === 'Summary' ? '5' : '3'}" data-field="${escapeHtml(path)}" placeholder="${escapeHtml(placeholder)}">${escapeHtml(value)}</textarea></label>`;
+    return `<label class="field"><span>${escapeHtml(label)}</span><input type="text" data-field="${escapeHtml(path)}" value="${escapeHtml(value)}" placeholder="${escapeHtml(placeholder)}"></label>`;
+  }
+
+  function renderEditor() {
+    if (!cv) return;
+    const identity = cv.data.identity;
+    const experiences = experienceIds().map((id) => {
+      const item = cv!.data.entities.experience![id]!;
+      const firstBullet = item.bulletOrder[0];
+      return `<section class="editor-group experience-editor" id="edit-${escapeHtml(id)}">
+        <div class="group-heading"><h3>Experience</h3><button class="text-button danger-text" type="button" data-remove-experience="${escapeHtml(id)}">Remove</button></div>
+        ${field(`experience.${id}.role.title`, item.role.title, 'Role title', 'Role')}
+        ${field(`experience.${id}.organization.name`, item.organization.name, 'Organization', 'Organization')}
+        ${field(`experience.${id}.summary`, item.summary ?? '', 'A short description of your work', 'Description', true)}
+        ${firstBullet ? field(`experience.${id}.bullets.${firstBullet}.text`, item.bullets[firstBullet]?.text ?? '', 'What changed because of your work?', 'Key result', true) : ''}
+      </section>`;
+    }).join('');
+    const email = identity.contact.find((item) => item.kind === 'email')?.value ?? '';
+    editor.innerHTML = `<section class="editor-group" id="edit-identity">
+      <div class="group-heading"><h3>Identity</h3><span class="group-index">01</span></div>
+      ${field('identity.name.display', identity.name.display, 'Your name', 'Name')}
+      ${field('identity.headline', identity.headline ?? '', 'Role or professional focus', 'Headline')}
+      ${field('contact.email', email, 'name@example.com', 'Email')}
+      ${field('identity.summary', identity.summary ?? '', 'A concise introduction to your work', 'Summary', true)}
+    </section>${experiences}<button type="button" class="add-entry" id="add-experience-inline">+ Add experience</button>`;
+    revisionLabel.textContent = `Revision ${cv.revision}`;
+  }
+
+  function renderPreview() {
+    if (!cv) return;
+    const identity = cv.data.identity;
+    const contacts = identity.contact.find((entry) => entry.kind === 'email')?.value ?? identity.contact[0]?.value ?? '';
+    const experienceEntries = experienceIds().map((id) => {
+      const item = cv!.data.entities.experience![id]!;
+      const dates = dateLabel(item.period);
+      const bullets = item.bulletOrder.map((bulletId) => item.bullets[bulletId]?.text).filter(Boolean)
+        .map((text) => `<li>${escapeHtml(text)}</li>`).join('');
+      return `<div class="cv-entry">
+        <div class="cv-entry-head"><strong>${escapeHtml(item.role.title || 'Role')}</strong><span>${escapeHtml(dates)}</span></div>
+        <p class="cv-organization">${escapeHtml(item.organization.name)}</p>
+        ${item.summary ? `<p>${escapeHtml(item.summary)}</p>` : ''}
+        ${bullets ? `<ul>${bullets}</ul>` : ''}
+      </div>`;
+    }).join('');
+    const experiences = experienceEntries ? `<section class="cv-section"><h2>Experience</h2>${experienceEntries}</section>` : '';
+    const summary = identity.summary?.trim();
+    const skillRows = Object.values(cv.data.entities.skills ?? {});
+    const skills = skillRows.length ? `<section class="cv-section"><h2>Skills</h2><p>${skillRows.map((skill) => escapeHtml(skill.name)).join(' · ')}</p></section>` : '';
+    paper.innerHTML = `<header class="cv-header">
+      <input class="cv-name" aria-label="Name" data-field="identity.name.display" value="${escapeHtml(identity.name.display)}" placeholder="Your name">
+      <input class="cv-headline" aria-label="Headline" data-field="identity.headline" value="${escapeHtml(identity.headline ?? '')}" placeholder="Professional headline">
+      <input class="cv-contact" aria-label="Email" data-field="contact.email" value="${escapeHtml(contacts)}" placeholder="Email or contact details">
+    </header>
+    <section class="cv-section cv-summary"><h2>Profile</h2><textarea aria-label="Profile summary" data-field="identity.summary" placeholder="Write a short introduction">${escapeHtml(summary)}</textarea></section>
+    ${experiences || `<section class="cv-section empty-section"><h2>Experience</h2><p>Add your first role to build this section.</p><button type="button" data-add-experience>+ Add experience</button></section>`}
+    ${skills}`;
+    document.querySelector('#preview-name')!.textContent = identity.name.display || 'Untitled CV';
+  }
+
+  function renderSections() {
+    if (!cv) return;
+    const sections = cv.data.sectionOrder.map((id) => cv!.data.sections[id]).filter((item) => item?.visible);
+    sectionList.innerHTML = sections.map((section, index) => {
+      const firstExperience = section.type === 'experience' ? experienceIds()[0] : undefined;
+      const target = firstExperience ? `edit-${firstExperience}` : 'edit-identity';
+      return `<button type="button" class="section-link" data-section="${target}"><span class="section-number">${String(index + 1).padStart(2, '0')}</span><span>${escapeHtml(section.title)}</span></button>`;
+    }).join('');
+    if (experienceIds().length === 0 && !sections.some((section) => section.type === 'experience')) {
+      sectionList.insertAdjacentHTML('beforeend', '<button type="button" class="section-link" data-section="edit-identity"><span class="section-number">01</span><span>Identity</span></button>');
+    }
+  }
+
+  function render() {
+    if (!cv) return;
+    renderEditor();
+    renderPreview();
+    renderSections();
+  }
+
+  function setPath(path: string, value: string) {
+    if (!cv) return;
+    const bits = path.split('.');
+    if (bits[0] === 'contact' && bits[1] === 'email') {
+      let email = cv.data.identity.contact.find((entry) => entry.kind === 'email');
+      if (!email) {
+        email = { kind: 'email', value, primary: true };
+        cv.data.identity.contact.push(email);
+      } else email.value = value;
+      return;
+    }
+    let target: Record<string, unknown> = cv as unknown as Record<string, unknown>;
+    for (const key of bits.slice(0, -1)) {
+      const next = target[key];
+      if (!next || typeof next !== 'object') return;
+      target = next as Record<string, unknown>;
+    }
+    target[bits.at(-1)!] = value;
+  }
+
+  async function loadCv(id?: string) {
+    setStatus('loading', 'Loading document');
+    const listResponse = await fetch('/api/cv');
+    if (!listResponse.ok) throw new Error('Could not read CVs from this workspace.');
+    const items = await listResponse.json() as CvListItem[];
+    const available = items.filter((item): item is Extract<CvListItem, { ok: true }> => item.ok);
+    if (!available.length) throw new Error('No valid CV is registered in this workspace. Run seevee init again to create one.');
+    picker.replaceChildren(...available.map((item) => {
+      const option = document.createElement('option');
+      option.value = item.cv.id;
+      option.textContent = item.cv.name;
+      return option;
+    }));
+    picker.disabled = false;
+    const selected = available.find((item) => item.cv.id === id)?.cv.id ?? available[0]!.cv.id;
+    picker.value = selected;
+    const response = await fetch(`/api/cv/${encodeURIComponent(selected)}`);
+    const payload = await response.json() as { ok: boolean; document?: CvDoc; reason?: string };
+    if (!response.ok || !payload.document) throw new Error(payload.reason ?? 'Could not load this CV.');
+    cv = payload.document;
+    baseRevision = cv.revision;
+    editCount = 0;
+    savedCount = 0;
+    render();
+    setStatus('saved', 'All changes saved');
+  }
+
+  async function flushSave() {
+    if (saving || !cv || editCount === savedCount) return;
+    saving = true;
+    setStatus('saving', 'Saving changes');
+    try {
+      while (cv && savedCount < editCount) {
+        const snapshotCount = editCount;
+        const body = structuredClone(cv);
+        const response = await fetch(`/api/cv/${encodeURIComponent(body.id)}`, {
+          method: 'PUT',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ expectedRevision: baseRevision, document: body }),
+        });
+        const payload = await response.json() as { ok: boolean; document?: CvDoc; reason?: string };
+        if (response.status === 409) {
+          setStatus('conflict', 'Changed elsewhere · reload to continue');
+          return;
+        }
+        if (!response.ok || !payload.document) throw new Error(payload.reason ?? 'Save failed.');
+        baseRevision = payload.document.revision;
+        cv.revision = baseRevision;
+        cv.updatedAt = payload.document.updatedAt;
+        savedCount = snapshotCount;
+        revisionLabel.textContent = `Revision ${baseRevision}`;
+      }
+      if (editCount === savedCount) setStatus('saved', 'All changes saved');
+    } catch (error) {
+      setStatus('error', error instanceof Error ? error.message : 'Save failed');
+    } finally {
+      saving = false;
+      if (editCount > savedCount && saveState.dataset.state !== 'conflict') {
+        window.clearTimeout(saveTimer);
+        saveTimer = window.setTimeout(() => void flushSave(), 250);
+      }
+    }
+  }
+
+  function markChanged(refreshPreview = true) {
+    editCount += 1;
+    setStatus('saving', 'Unsaved changes');
+    if (refreshPreview) renderPreview();
+    window.clearTimeout(saveTimer);
+    saveTimer = window.setTimeout(() => void flushSave(), 550);
+  }
+
+  function addExperience() {
+    if (!cv) return;
+    const stamp = Date.now().toString(36);
+    const id = `experience_${stamp}`;
+    const bulletId = `bullet_${stamp}`;
+    const sectionId = cv.data.sectionOrder.find((section) => cv!.data.sections[section]?.type === 'experience');
+    const entity = {
+      id,
+      type: 'experience' as const,
+      organization: { id: `organization_${stamp}`, type: 'organization' as const, name: 'Organization' },
+      role: { id: `role_${stamp}`, type: 'role' as const, title: 'Role title' },
+      period: { start: { precision: 'year', year: new Date().getFullYear() }, ongoing: true },
+      bulletOrder: [bulletId],
+      bullets: { [bulletId]: { id: bulletId, text: 'Describe a result you delivered.' } },
+      technologyRefs: [],
+    };
+    cv.data.entities.experience ??= {};
+    cv.data.entities.experience[id] = entity;
+    if (sectionId) cv.data.sections[sectionId]!.nodeOrder = [...(cv.data.sections[sectionId]!.nodeOrder ?? []), id];
+    else {
+      const newSectionId = `sec_experience_${stamp}`;
+      cv.data.sections[newSectionId] = { id: newSectionId, type: 'experience', title: 'Experience', visible: true, nodeOrder: [id] };
+      cv.data.sectionOrder.push(newSectionId);
+    }
+    markChanged();
+    render();
+    window.setTimeout(() => document.querySelector<HTMLInputElement>(`[data-field="experience.${id}.role.title"]`)?.focus(), 0);
+  }
+
+  function removeExperience(id: string) {
+    if (!cv?.data.entities.experience?.[id]) return;
+    delete cv.data.entities.experience[id];
+    for (const section of Object.values(cv.data.sections)) {
+      if (section.nodeOrder) section.nodeOrder = section.nodeOrder.filter((nodeId) => nodeId !== id);
+    }
+    markChanged();
+    render();
+  }
+
+  studio.addEventListener('input', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)) return;
+    const path = target.dataset.field;
+    if (!path || !cv) return;
+    setPath(path, target.value);
+    const editingPaper = paper.contains(target);
+    if (editingPaper) document.querySelector('#preview-name')!.textContent = cv.data.identity.name.display || 'Untitled CV';
+    markChanged(!editingPaper);
+  });
+
+  studio.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const add = target.closest('[data-add-experience], #add-experience-inline, #add-experience');
+    if (add) return addExperience();
+    const remove = target.closest<HTMLElement>('[data-remove-experience]');
+    if (remove?.dataset.removeExperience) return removeExperience(remove.dataset.removeExperience);
+    const section = target.closest<HTMLElement>('[data-section]');
+    if (section?.dataset.section) {
+      const title = section.dataset.section;
+      document.querySelector(`#edit-${CSS.escape(title)}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    const zoomControl = target.closest<HTMLElement>('[data-zoom]');
+    if (zoomControl?.dataset.zoom) {
+      zoom = Math.max(0.55, Math.min(1.15, zoom + (zoomControl.dataset.zoom === '+' ? 0.08 : -0.08)));
+      paper.style.setProperty('--paper-zoom', String(zoom));
+      document.querySelector('#zoom-readout')!.textContent = `${Math.round(zoom * 100)}%`;
+      return;
+    }
+    if (target.closest('#fit-page')) {
+      const width = pasteboard.clientWidth - 72;
+      zoom = Math.max(0.55, Math.min(1.15, width / 794));
+      paper.style.setProperty('--paper-zoom', String(zoom));
+      document.querySelector('#zoom-readout')!.textContent = `${Math.round(zoom * 100)}%`;
+    }
+  });
+
+  picker.addEventListener('change', () => void loadCv(picker.value).catch((error) => setStatus('error', error.message)));
+  void loadCv().catch((error) => {
+    setStatus('error', error instanceof Error ? error.message : 'Could not connect to workspace');
+    paper.innerHTML = `<div class="workspace-error"><span class="eyebrow">WORKSPACE NEEDS ATTENTION</span><h2>Could not open your CV</h2><p>${escapeHtml(error instanceof Error ? error.message : 'Unknown error')}</p></div>`;
+    editor.innerHTML = '<p class="quiet-message">Fix the workspace data, then reload this page.</p>';
+    sectionList.innerHTML = '';
+  });
+</script>

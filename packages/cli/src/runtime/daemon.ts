@@ -6,12 +6,12 @@
  *   stop()   → SIGTERM → SIGKILL if needed
  *   status() → read runtime state + health probe, no side effects
  *
- * PID files are hints only. We always verify liveness via /api/health before
- * reporting a process as "running".
+ * PID files are hints only. We always verify the Studio server via /api/health
+ * before reporting a process as "running".
  */
 
 import { spawn } from 'node:child_process';
-import { dirname, join } from 'node:path';
+import { dirname } from 'node:path';
 import { closeSync, openSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -79,7 +79,7 @@ async function waitForHealthy(hc: HealthCheck): Promise<RuntimeState> {
         host: hc.host,
         port: hc.port,
         startedAt: new Date().toISOString(),
-        serverVersion: '0.1.0',
+        serverVersion: process.env.SEEVEE_VERSION ?? '0.1.0-alpha.2',
       };
     }
     await new Promise<void>((resolve) => setTimeout(resolve, 200));
@@ -146,17 +146,21 @@ export async function start(opts: StartOptions): Promise<StartResult> {
     if (err instanceof PortUnavailableError) throw new DaemonStartError(err.message, logFile);
     throw err;
   }
-  // 3. Spawn detached. Development runs use TypeScript through tsx; release
-  // bundles contain compiled JavaScript and no tsx runtime dependency.
+  // 3. Spawn the compiled Astro Studio server. The source checkout and the
+  // release bundle keep Studio at different relative paths beside the CLI.
   const sourceMode = import.meta.url.endsWith('.ts');
   const serverEntry = fileURLToPath(
-    new URL(sourceMode ? './daemon-server.ts' : './daemon-server.js', import.meta.url),
+    new URL(
+      sourceMode ? '../../../../apps/studio/dist/server/entry.mjs' : '../../../studio/dist/server/entry.mjs',
+      import.meta.url,
+    ),
   );
-  const cliRoot = fileURLToPath(new URL(sourceMode ? '../../' : '../../../', import.meta.url));
-  const childEnv = { ...process.env };
-  if (sourceMode) {
-    childEnv.NODE_OPTIONS = [process.env.NODE_OPTIONS, '--import tsx'].filter(Boolean).join(' ');
-  }
+  const childEnv = {
+    ...process.env,
+    HOST: host,
+    PORT: String(port),
+    SEEVEE_WORKSPACE_ROOT: opts.workspace.root,
+  };
   await mkdir(dirname(logFile), { recursive: true });
   const logFd = openSync(logFile, 'a');
   let child;
@@ -165,7 +169,7 @@ export async function start(opts: StartOptions): Promise<StartResult> {
       process.execPath,
       [serverEntry, opts.workspace.root, host, String(port), opts.workspaceId],
       {
-        cwd: cliRoot,
+        cwd: opts.workspace.root,
         detached: true,
         stdio: ['ignore', logFd, logFd],
         windowsHide: true,

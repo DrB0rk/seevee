@@ -6,6 +6,19 @@ This project uses Semantic Versioning. See `.dev/VERSIONING.md` for the project 
 
 ## [Unreleased]
 
+## [0.1.0-alpha.2] - 2026-09-23
+
+### Added
+
+- Editable local CV dashboard with a live document preview, structure navigation, and autosaving profile, experience, and skills fields.
+- Revision-aware CV saves with schema validation and conflict detection.
+- Migration of legacy workspaces with a timestamped backup of the original files.
+
+### Fixed
+
+- Fresh workspaces now use the canonical document envelopes expected by the dashboard.
+- Release bundles include the Astro Studio server and its browser assets, and the daemon starts that server on the workspace port.
+
 ## [0.1.0-alpha.1] - 2026-09-23
 
 ### Fixed

@@ -42,7 +42,7 @@ export const EXIT = {
 
 export type ExitCode = (typeof EXIT)[keyof typeof EXIT];
 
-export const VERSION = process.env.SEEVEE_VERSION ?? '0.1.0-alpha.1';
+export const VERSION = process.env.SEEVEE_VERSION ?? '0.1.0-alpha.2';
 export const SCHEMA_VERSION = '1.0.0';
 export const RUNTIME_VERSION = VERSION;
 

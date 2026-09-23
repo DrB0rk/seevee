@@ -10,11 +10,15 @@
  * adapter requires `astro build`, which is exercised separately.
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import fs from 'node:fs/promises';
+import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import process from 'node:process';
 
 const fixtureRoot = fileURLToPath(new URL('./fixtures/workspace', import.meta.url));
+let testRoot = '';
+let previousCwd = '';
 
 interface HealthBody {
   ok: boolean;
@@ -46,13 +50,18 @@ async function settle<T>(value: RouteReturn<T>): Promise<T> {
   return value instanceof Promise ? value : Promise.resolve(value);
 }
 
-beforeAll(() => {
-  process.env['SEEVEE_WORKSPACE_ROOT'] = fixtureRoot;
-  process.chdir(fixtureRoot);
+beforeAll(async () => {
+  previousCwd = process.cwd();
+  testRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'seevee-studio-test-'));
+  await fs.cp(fixtureRoot, testRoot, { recursive: true });
+  process.env['SEEVEE_WORKSPACE_ROOT'] = testRoot;
+  process.chdir(testRoot);
 });
 
-afterAll(() => {
+afterAll(async () => {
   delete process.env['SEEVEE_WORKSPACE_ROOT'];
+  process.chdir(previousCwd);
+  await fs.rm(testRoot, { recursive: true, force: true });
 });
 
 describe('Studio API', () => {
@@ -95,6 +104,33 @@ describe('Studio API', () => {
     const body = (await res.json()) as { ok: boolean; document?: { id: string } };
     expect(body.ok).toBe(true);
     expect(body.document?.id).toBe('cv_test');
+  });
+
+  it('saves a schema-valid CV with revision protection', async () => {
+    const mod = await import('../src/pages/api/cv/[id].js');
+    const get = await import('../src/pages/api/cv/[id].js');
+    const loaded = await settle(get.GET({ params: { id: 'cv_test' } } as Parameters<typeof get.GET>[0]));
+    const current = await loaded.json() as { document: Record<string, any> };
+    current.document.data.identity.name.display = 'Grace Hopper';
+    const request = new Request('http://localhost/api/cv/cv_test', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ expectedRevision: 1, document: current.document }),
+    });
+    const saved = await settle(mod.PUT({ params: { id: 'cv_test' }, request } as Parameters<typeof mod.PUT>[0]));
+    expect(saved.status).toBe(200);
+    const body = await saved.json() as { ok: boolean; document: { revision: number; data: { identity: { name: { display: string } } } } };
+    expect(body.ok).toBe(true);
+    expect(body.document.revision).toBe(2);
+    expect(body.document.data.identity.name.display).toBe('Grace Hopper');
+
+    const staleRequest = new Request('http://localhost/api/cv/cv_test', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ expectedRevision: 1, document: current.document }),
+    });
+    const stale = await settle(mod.PUT({ params: { id: 'cv_test' }, request: staleRequest } as Parameters<typeof mod.PUT>[0]));
+    expect(stale.status).toBe(409);
   });
 
   it('returns 404 for an unknown CV', async () => {

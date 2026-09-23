@@ -43,6 +43,7 @@ export async function runInit(ctx: CommandContext): Promise<CommandResult> {
 
   const marker = await fileExists(ws.workspaceFile);
   if (marker) {
+    await migrateLegacyWorkspace(ws);
     await validateExistingWorkspace(ws);
   } else {
     await createFreshWorkspace(ws);
@@ -182,11 +183,12 @@ async function createFreshWorkspace(ws: DiscoveredWorkspace): Promise<void> {
   ]) {
     await fs.mkdir(path.join(ws.root, d), { recursive: true });
   }
-  await atomicWrite(ws.workspaceFile, buildWorkspaceStub(path.basename(ws.root)));
-  await atomicWrite(path.join(ws.root, 'cvs', 'main.json'), buildResourceStub('seevee.cv'));
-  await atomicWrite(path.join(ws.root, 'provenance', 'main.json'), buildResourceStub('seevee.provenance'));
-  await atomicWrite(path.join(ws.root, 'comments', 'main.json'), buildResourceStub('seevee.comments'));
-  await atomicWrite(path.join(ws.root, 'presentations', 'main.json'), buildResourceStub('seevee.presentation'));
+  const documents = buildWorkspaceDocuments(path.basename(ws.root));
+  await atomicWrite(ws.workspaceFile, JSON.stringify(documents.workspace, null, 2) + '\n');
+  await atomicWrite(path.join(ws.root, 'cvs', 'main.json'), JSON.stringify(documents.cv, null, 2) + '\n');
+  await atomicWrite(path.join(ws.root, 'provenance', 'main.json'), JSON.stringify(documents.provenance, null, 2) + '\n');
+  await atomicWrite(path.join(ws.root, 'comments', 'main.json'), JSON.stringify(documents.comments, null, 2) + '\n');
+  await atomicWrite(path.join(ws.root, 'presentations', 'main.json'), JSON.stringify(documents.presentation, null, 2) + '\n');
 }
 
 async function atomicWrite(file: string, content: string): Promise<void> {
@@ -196,49 +198,121 @@ async function atomicWrite(file: string, content: string): Promise<void> {
   await fs.rename(tmp, file);
 }
 
-function buildWorkspaceStub(name: string): string {
+function buildWorkspaceDocuments(name: string) {
   const stamp = new Date().toISOString();
   const workspaceId = `ws_local_${Date.now().toString(36)}`;
-  const doc = {
-    schema: SCHEMA_VERSION,
-    type: 'seevee.workspace',
-    id: workspaceId,
+  const emptyResource = (kind: string, data: object) => ({
+    kind,
     schemaVersion: SCHEMA_VERSION,
+    id: 'main',
+    revision: 1,
+    createdAt: stamp,
     updatedAt: stamp,
-    data: {
-      name,
-      active: { cvId: 'main', presentationId: 'main' },
-      resources: {
-        cvs: {},
-        presentations: {},
-        provenance: {},
-        comments: {},
-        sources: {},
-        templates: {},
-        stylePresets: {},
-        changeSets: {},
-        agentRuns: {},
-      },
-      policy: {
-        allowAgentFactInference: false,
-        requireEvidenceForNumericClaims: true,
-        allowForceExportWithOverflow: false,
-        autoResolveDeterministicComments: true,
-      },
-      extensions: {},
+    data,
+  });
+  const cv = emptyResource('seevee.cv', {
+    locale: 'en-US',
+    identity: {
+      id: 'person_main',
+      name: { display: 'Your name' },
+      contact: [],
+      headline: '',
+      summary: '',
     },
+    sectionOrder: ['sec_summary', 'sec_experience', 'sec_education', 'sec_skills'],
+    sections: {
+      sec_summary: { id: 'sec_summary', type: 'summary', title: 'Profile', visible: true, collapsible: false, defaultCollapsed: false },
+      sec_experience: { id: 'sec_experience', type: 'experience', title: 'Experience', visible: true, collapsible: false, defaultCollapsed: false, nodeOrder: [] },
+      sec_education: { id: 'sec_education', type: 'education', title: 'Education', visible: true, collapsible: false, defaultCollapsed: false, nodeOrder: [] },
+      sec_skills: { id: 'sec_skills', type: 'skills', title: 'Skills', visible: true, collapsible: false, defaultCollapsed: false, nodeOrder: [] },
+    },
+    entities: {
+      experience: {}, education: {}, projects: {}, skills: {}, skillGroups: {}, certifications: {},
+      awards: {}, languages: {}, publications: {}, volunteering: {}, references: {}, organizations: {},
+      roles: {}, bulletCollections: {}, custom: {},
+    },
+  });
+  const presentation = emptyResource('seevee.presentation', {
+    cvId: 'main',
+    template: { templateId: 'tpl_classic', versionId: 'tpl_classic_v1' },
+    page: { preset: 'A4', orientation: 'portrait', edges: { top: 12, right: 12, bottom: 12, left: 12 } },
+    pagination: { targetMin: 1, targetMax: 2, breakBehavior: 'auto' },
+    tokens: {},
+    sectionOverrides: {},
+    templateOverrides: {},
+  });
+  const cvEntry = { id: 'main', relativePath: 'cvs/main.json', revision: 1, updatedAt: stamp };
+  const presentationEntry = {
+    id: 'main', relativePath: 'presentations/main.json', templateId: 'tpl_classic', versionId: 'tpl_classic_v1', revision: 1, updatedAt: stamp,
   };
-  return `${JSON.stringify(doc, null, 2)}\n`;
+  return {
+    workspace: {
+      kind: 'seevee.workspace', schemaVersion: SCHEMA_VERSION, id: workspaceId, revision: 1, createdAt: stamp, updatedAt: stamp,
+      data: {
+        name,
+        active: { cvId: 'main', presentationId: 'main' },
+        resources: {
+          cvs: { main: cvEntry }, presentations: { main: presentationEntry },
+          provenance: { main: { id: 'main', relativePath: 'provenance/main.json', cvId: 'main', revision: 1, updatedAt: stamp } },
+          comments: { main: { id: 'main', relativePath: 'comments/main.json', cvId: 'main', revision: 1, updatedAt: stamp } },
+          sources: {}, templates: {}, stylePresets: {}, changeSets: {}, agentRuns: {},
+        },
+        policy: { allowAgentFactInference: false, requireEvidenceForNumericClaims: true, allowForceExportWithOverflow: false, autoResolveDeterministicComments: true },
+      },
+    },
+    cv,
+    presentation,
+    provenance: emptyResource('seevee.provenance', { sources: {}, assertions: {} }),
+    comments: emptyResource('seevee.comments', { threadOrder: [], threads: {} }),
+  };
 }
 
-function buildResourceStub(type: string): string {
-  const doc = {
-    schema: SCHEMA_VERSION,
-    type,
-    id: 'main',
-    schemaVersion: SCHEMA_VERSION,
-    updatedAt: new Date().toISOString(),
-    data: {},
-  };
-  return `${JSON.stringify(doc, null, 2)}\n`;
+async function migrateLegacyWorkspace(ws: DiscoveredWorkspace): Promise<void> {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(await fs.readFile(ws.workspaceFile, 'utf8')) as unknown;
+  } catch {
+    return;
+  }
+  if (!raw || typeof raw !== 'object' || !('type' in raw) || raw.type !== 'seevee.workspace' || !('data' in raw)) return;
+  const legacy = raw as { id?: unknown; data?: { name?: unknown } };
+  const backupRoot = path.join(ws.runtimeDir, 'migrations', `legacy-${Date.now()}`);
+  const managed = [ws.workspaceFile, path.join(ws.root, 'cvs/main.json'), path.join(ws.root, 'presentations/main.json'), path.join(ws.root, 'comments/main.json'), path.join(ws.root, 'provenance/main.json')];
+  await fs.mkdir(backupRoot, { recursive: true });
+  for (const file of managed) {
+    try {
+      const backup = path.join(backupRoot, path.relative(ws.root, file));
+      await fs.mkdir(path.dirname(backup), { recursive: true });
+      await fs.copyFile(file, backup);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    }
+  }
+  const name = typeof legacy.data?.name === 'string' && legacy.data.name.trim() ? legacy.data.name : path.basename(ws.root);
+  const documents = buildWorkspaceDocuments(name);
+  if (typeof legacy.id === 'string' && legacy.id.length > 2) documents.workspace.id = legacy.id;
+  const existingCvPath = path.join(ws.root, 'cvs/main.json');
+  try {
+    const oldCv = JSON.parse(await fs.readFile(existingCvPath, 'utf8')) as { data?: { identity?: { name?: { display?: unknown }; fullName?: unknown; headline?: unknown; summary?: unknown; contactChannels?: unknown } } };
+    const oldIdentity = oldCv.data?.identity;
+    if (oldIdentity) {
+      const identity = (documents.cv.data as unknown as { identity: { name: { display: string }; headline: string; summary: string; contact: Array<{ kind: string; value: string; primary?: boolean }> } }).identity;
+      const display = oldIdentity.name?.display ?? oldIdentity.fullName;
+      if (typeof display === 'string' && display.trim()) identity.name.display = display;
+      if (typeof oldIdentity.headline === 'string') identity.headline = oldIdentity.headline;
+      if (typeof oldIdentity.summary === 'string') identity.summary = oldIdentity.summary;
+      if (Array.isArray(oldIdentity.contactChannels)) {
+        identity.contact = oldIdentity.contactChannels.filter((entry): entry is { kind: string; value: string } =>
+          !!entry && typeof entry === 'object' && 'kind' in entry && 'value' in entry && typeof entry.kind === 'string' && typeof entry.value === 'string',
+        ).filter((entry) => ['email', 'phone', 'website', 'linkedin', 'github', 'mastodon', 'orcid', 'other'].includes(entry.kind)) as typeof identity.contact;
+      }
+    }
+  } catch {
+    // The archived file remains available if its legacy shape cannot be read.
+  }
+  await atomicWrite(ws.workspaceFile, JSON.stringify(documents.workspace, null, 2) + '\n');
+  await atomicWrite(existingCvPath, JSON.stringify(documents.cv, null, 2) + '\n');
+  await atomicWrite(path.join(ws.root, 'presentations/main.json'), JSON.stringify(documents.presentation, null, 2) + '\n');
+  await atomicWrite(path.join(ws.root, 'comments/main.json'), JSON.stringify(documents.comments, null, 2) + '\n');
+  await atomicWrite(path.join(ws.root, 'provenance/main.json'), JSON.stringify(documents.provenance, null, 2) + '\n');
 }

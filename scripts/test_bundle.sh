@@ -60,7 +60,8 @@ assert "runtime/template-sdk/" test -d "$BUNDLE_DIR/runtime/template-sdk"
 assert "runtime/renderer/"     test -d "$BUNDLE_DIR/runtime/renderer"
 assert "runtime/node_modules/" test -d "$BUNDLE_DIR/runtime/node_modules"
 assert "runtime/cli/dist/cli.js present" test -f "$BUNDLE_DIR/runtime/cli/dist/cli.js"
-assert "compiled dashboard daemon present" test -f "$BUNDLE_DIR/runtime/cli/dist/runtime/daemon-server.js"
+assert "Studio server entry present" test -f "$BUNDLE_DIR/runtime/studio/dist/server/entry.mjs"
+assert "Studio browser assets present" test -d "$BUNDLE_DIR/runtime/studio/dist/client/_astro"
 
 # The @seevee/cli launcher JS must be at runtime/cli/dist/cli.js (matches
 # the package.json `main` field) so its relative imports of ./commands/*,

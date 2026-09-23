@@ -12,7 +12,7 @@ Last audited: 2026-09-23
 
 ## Current repository reality
 
-Seevee has substantial implementations across schema, CLI, ingestion, agent tools, Studio, template, and packaging areas. Several end-to-end paths remain placeholders, so the project is not release-ready.
+Seevee has usable schema, CLI, ingestion, agent tool, and local dashboard implementations. Template-driven rendering, PDF export, and agent execution remain incomplete.
 
 All packages typecheck (`pnpm typecheck` exit 0). All tests pass (`pnpm test` exit 0). End-to-end smoke verified: `seevee init --no-open → seevee status → seevee stop`.
 
@@ -25,7 +25,7 @@ All packages typecheck (`pnpm typecheck` exit 0). All tests pass (`pnpm test` ex
 | `packages/cli` | Implemented | All commands (init/start/stop/restart/status/open/validate/doctor/export); 18 tests |
 | `packages/agent-runtime` | Implemented | Typed tool boundary; 35 tests |
 | `packages/ingest` | Implemented | 9 adapters (text/markdown/json/html/yaml/pdf/docx/image/url); SSRF protection; 57 tests |
-| `apps/studio` | Implemented | Astro dashboard + 11 API routes + watcher + renderer + workspace lib; 8 tests |
+| `apps/studio` | Implemented | Editable Astro dashboard, schema-checked revision-aware CV save API, 11 API routes + watcher + workspace lib; 9 tests |
 | `install.sh` / `install.ps1` | Implemented | SHA256SUMS; 12+5 tests |
 | `packages/template-sdk` | Implemented | 36 tests |
 | `packages/renderer` | Implemented | 44 tests |
@@ -33,16 +33,16 @@ All packages typecheck (`pnpm typecheck` exit 0). All tests pass (`pnpm test` ex
 | `packages/template-compiler` | Partial | Policy scanning and compilation checks; fixture renderer uses a deterministic stub |
 | `templates/classic/v1` | Implemented | Astro template + fixtures |
 | `templates/two-column/v1` | Implemented | Astro template + fixtures |
-| Release bundle scripts | Partial | Scripts and workflow exist; bundle versions disagree with root `VERSION`, and Windows launcher is not a native executable |
+| Release bundle scripts | Implemented | Five platform archives, checksums, GitHub release workflow, and Linux init/health/stop smoke check |
 
 ## Incomplete end-to-end paths
 
-- Studio preview rendering returns an empty placeholder page; it does not use the renderer package.
+- Studio preview displays editable CV content but does not yet use the template renderer package.
 - Studio PDF export returns HTTP 501.
 - Studio agent-run API only emits a started event and does not execute an agent.
 - Image ingestion records a placeholder block; it does not perform vision extraction.
 - CLI export integration and Playwright-backed PDF export have not been validated end to end.
-- Release bundles have not been proven installable on their target operating systems. The current bundle script writes the root `package.json` version (`0.1.0`) while the canonical `VERSION` is `0.1.0-alpha.0`; the Windows `bin/seevee.exe` is copied from JavaScript and is not a PE executable.
+- Only the Linux release bundle has an automated extracted-archive init/health/stop smoke test; other platform bundles are structurally checked but have not been exercised on native operating systems.
 
 ## Key decisions (do not undo)
 
