@@ -4,12 +4,12 @@
 
 Seevee uses several independently versioned canonical documents. Their separation is an invariant:
 
-- `cv.json`: semantic CV content.
-- `provenance.json`: source/evidence links for facts and generated claims.
-- `presentation.json`: page, theme, layout and visibility configuration.
-- `comments.json`: review threads and resilient targets.
-- `workspace.json`: workspace-level configuration and active resource references.
-- `agent-state.json`: non-canonical run/checkpoint information.
+- `cvs/<cv-id>.json`: one complete semantic CV document per file.
+- `provenance/<cv-id>.json`: source/evidence links associated with a CV.
+- `presentations/<presentation-id>.json`: page/layout/template state that explicitly references one CV ID.
+- `comments/<cv-id>.json`: review threads associated with a CV.
+- `seevee.json`: workspace library/index and active CV/presentation references.
+- `.seevee/*`: non-canonical runtime/checkpoint information.
 
 Each canonical document has `kind`, `schemaVersion`, `id`, `revision`, `createdAt`, and `updatedAt`.
 
@@ -36,7 +36,7 @@ IDs survive reorder, wording edits, template switches and page repagination. A d
 
 ## Canonical CV organization
 
-Prefer a modular section registry instead of hard-coding every future section at the document root.
+Each tailored CV is a separate complete JSON document. Within each CV, prefer a modular section registry instead of hard-coding every future section at the document root.
 
 The document contains:
 
@@ -48,6 +48,8 @@ The document contains:
 A section instance declares `sectionType`, title/label, visibility, ordered `items` as node references, and optional section-specific configuration. Entity bodies live in typed stores.
 
 This gives templates one ordered section stream while allowing new entity/section types to be added without rewriting every existing top-level structure.
+
+Do not put template source or a mandatory template selection inside CV JSON. A presentation binds a CV to a template/version. Many presentations may reference the same CV and many CVs may use the same template.
 
 ## References
 
