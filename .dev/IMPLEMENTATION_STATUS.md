@@ -83,7 +83,7 @@ Exit criteria:
 1. Implement the actual `seevee` executable.
 2. Implement workspace discovery.
 3. Implement `seevee init` using the multi-CV directory model.
-4. Generate **workspace-agent** instructions during init; never copy repository `AGENTS.md`.
+4. Generate **workspace-agent** instructions during init; never copy repository `.dev/AGENTS.md`.
 5. Implement atomic JSON writes and revision checks.
 6. Implement start/stop/restart/status/open/validate/doctor.
 7. Implement detached server lifecycle and health endpoint.
