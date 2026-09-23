@@ -27,11 +27,11 @@ The bootstrap machine-readable v1 specification is committed under `schemas/v1/`
 A workspace contains separately revisioned resources:
 
 ~~~text
-workspace
-├── cv
-├── provenance
-├── presentation
-├── comments
+workspace index
+├── cvs/* (many independent CV documents)
+├── provenance/* (typically one per CV)
+├── presentations/* (many CV + template pairings)
+├── comments/* (typically one per CV)
 ├── source registry
 ├── template source/version
 ├── style presets
@@ -41,6 +41,10 @@ workspace
 ~~~
 
 The separation is intentional. A design change must not rewrite CV facts; a factual correction must not rewrite template source.
+
+A workspace may contain any number of CV documents. Each CV is complete and independently revisioned. Do not encode job-specific variants as a large set of conditional flags inside one CV document.
+
+A presentation explicitly references the CV it renders and the template/version it applies. This makes CVs and templates interchangeable by default while still allowing a presentation/template to be highly bespoke for one particular CV.
 
 ## 3. Common resource envelope
 
@@ -546,6 +550,7 @@ Presentation controls how CV data is rendered without changing CV facts.
   "createdAt": "...",
   "updatedAt": "...",
   "data": {
+    "cvId": "cv_0199...",
     "template": {
       "templateId": "tpl_minimal",
       "versionId": "tplv_004",
@@ -941,7 +946,7 @@ If current revision != baseRevision:
 
 Never use last-write-wins for agent mutations.
 
-## 14. Workspace document (`seevee.json`)
+## 14. Workspace library/index (`seevee.json`)
 
 ~~~json
 {
@@ -1012,7 +1017,33 @@ Agent-state is operational rather than canonical CV content.
 
 Do not store private chain-of-thought. Store only concise operational summaries, tool results, diagnostics, evidence references and decisions needed for product behavior.
 
-## 16. Semantic validation
+## 16. Multi-CV workspace invariants
+
+The workspace index tracks many CVs and presentations.
+
+Recommended file model:
+
+~~~text
+cvs/<cv-id>.json
+provenance/<cv-id>.json
+comments/<cv-id>.json
+presentations/<presentation-id>.json
+~~~
+
+A CV entry in `seevee.json` records its file path plus associated provenance/comments resources and optional default presentation. A presentation entry records its file path and target CV ID.
+
+Rules:
+
+- every CV file has a unique CV resource ID;
+- every presentation references exactly one CV ID;
+- a CV may have zero, one or many presentations;
+- many CVs may use the same template/version;
+- one CV may use many different templates;
+- a template may be tagged `reusable`, `targeted`, or `bespoke`, but this tag is advisory;
+- template design intent never hard-blocks applying it to another CV;
+- CV JSON never embeds Astro/CSS source or a required template.
+
+## 17. Semantic validation
 
 JSON Schema validates structure. A separate semantic validator must enforce cross-document invariants.
 
@@ -1032,7 +1063,7 @@ Checks include:
 - IDs are unique within their resource namespace;
 - source/provenance references are not dangling.
 
-## 17. Schema versioning
+## 18. Schema versioning
 
 Each resource family versions independently.
 
@@ -1052,7 +1083,7 @@ seevee.presentation 1.4.0
 
 A workspace can therefore upgrade comments without forcing a CV schema migration.
 
-## 18. Migrations
+## 19. Migrations
 
 Every supported migration is deterministic code:
 
@@ -1073,7 +1104,7 @@ Requirements:
 
 If an old version cannot be migrated safely, stop with a clear compatibility error.
 
-## 19. Generated JSON Schema
+## 20. Generated JSON Schema
 
 Generate JSON Schema Draft 2020-12 from Zod at build/test time.
 
@@ -1100,7 +1131,7 @@ Commit generated artifacts so:
 
 CI fails if generated artifacts differ from the canonical Zod source.
 
-## 20. Schema test matrix
+## 21. Schema test matrix
 
 Every schema module requires:
 
@@ -1133,7 +1164,7 @@ Additional provenance tests:
 - generated wording with factual subclaims;
 - source deletion/deactivation policy.
 
-## 21. Implementation rule
+## 22. Implementation rule
 
 Implement these contracts before dashboard, ingestion or template-agent complexity.
 
