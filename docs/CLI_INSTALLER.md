@@ -54,11 +54,11 @@ GitHub Releases are the distribution source of truth.
 Each release should publish versioned runtime bundles, for example:
 
 ~~~text
-seevee-v0.1.0-linux-x64.tar.gz
-seevee-v0.1.0-linux-arm64.tar.gz
-seevee-v0.1.0-darwin-x64.tar.gz
-seevee-v0.1.0-darwin-arm64.tar.gz
-seevee-v0.1.0-windows-x64.zip
+seevee-linux-x64.tar.gz
+seevee-linux-arm64.tar.gz
+seevee-darwin-x64.tar.gz
+seevee-darwin-arm64.tar.gz
+seevee-windows-x64.zip
 SHA256SUMS
 ~~~
 
@@ -86,7 +86,7 @@ If the first implementation still requires a system Node runtime, the installer 
 Support:
 
 ~~~sh
-SEEVE_VERSION=v0.2.0 curl -fsSL https://raw.githubusercontent.com/DrB0rk/seevee/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/DrB0rk/seevee/main/install.sh | sh -s -- --version v0.2.0
 ~~~
 
 or an equivalent documented version argument mechanism that remains safe through a pipe.
