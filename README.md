@@ -116,7 +116,7 @@ The dashboard itself is intentionally consistent: a dark technical workstation a
 ├──────┬──────────────────┬───────────────────────┬───────────────────┤
 │ rail │ CVs / Sources    │                       │ Properties        │
 │      │ Templates        │     physical CV       │ Comments          │
-│      │ History          │       pages           │ Audit             │
+│      │ History          │       pages           │ Diagnostics       │
 │      │ Agent runs       │                       │                   │
 ├──────┴──────────────────┴───────────────────────┴───────────────────┤
 │ path · schema · render status · watcher · diagnostics              │
