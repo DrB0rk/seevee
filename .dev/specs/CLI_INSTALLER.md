@@ -266,7 +266,7 @@ my-cv/
     ├── diagnostics/
     └── agent/
         ├── README.md
-        └── seevee-agent/
+        └── seevee-workspace-agent/
 ~~~
 
 ### Canonical versus runtime files
@@ -310,7 +310,7 @@ The generated agent guide points agents to:
 - template restrictions;
 - A4 render rules;
 - deterministic validation commands;
-- the bundled Seevee agent skill/reference material.
+- the bundled Seevee workspace-agent skill/reference material.
 
 The dashboard and CLI must not launch or manage the user's external coding agent. The user opens Claude Code, Codex, OMP, Cursor, another CLI, or any future agent directly in the directory.
 
