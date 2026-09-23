@@ -55,7 +55,7 @@ The following remain outside `.dev/` because they are part of Seevee itself:
 - `CHANGELOG.md`
 - `install.sh`
 - `schemas/`
-- `skills/seevee-agent/`
+- `skills/seevee-workspace-agent/`
 - `docs/workspace-agent/`
 - `examples/`
 - future application/runtime packages
