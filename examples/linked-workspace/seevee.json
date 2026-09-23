@@ -39,11 +39,13 @@
         "comments_demo": {
           "path": "comments/demo.json"
         }
+      },
+      "sources": {
+        "src_demo": {
+          "path": "sources/src_demo.json"
+        }
       }
     },
-    "sources": [
-      "src_demo"
-    ],
     "policy": {
       "allowAgentFactInference": false,
       "requireEvidenceForNumericClaims": true,
