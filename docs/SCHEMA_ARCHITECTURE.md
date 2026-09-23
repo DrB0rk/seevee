@@ -957,24 +957,38 @@ Never use last-write-wins for agent mutations.
   "createdAt": "...",
   "updatedAt": "...",
   "data": {
-    "name": "Alex Example CV",
-    "activeResources": {
-      "cvId": "cv_0199...",
-      "provenanceId": "provdoc_001",
-      "presentationId": "pres_001",
-      "commentsId": "comments_001"
+    "name": "Alex Example CV workspace",
+    "active": {
+      "cvId": "cv_backend",
+      "presentationId": "pres_backend_minimal"
     },
-    "files": {
-      "cv": "cv.json",
-      "provenance": "provenance.json",
-      "presentation": "presentation.json",
-      "comments": "comments.json"
+    "resources": {
+      "cvs": {
+        "cv_backend": {
+          "path": "cvs/backend.json",
+          "name": "Backend Engineer",
+          "target": "Backend/platform roles",
+          "provenanceId": "prov_backend",
+          "commentsId": "comments_backend",
+          "defaultPresentationId": "pres_backend_minimal",
+          "archived": false
+        }
+      },
+      "presentations": {
+        "pres_backend_minimal": {
+          "path": "presentations/backend-minimal.json",
+          "cvId": "cv_backend",
+          "name": "Backend / Minimal"
+        }
+      },
+      "provenance": {
+        "prov_backend": { "path": "provenance/backend.json" }
+      },
+      "comments": {
+        "comments_backend": { "path": "comments/backend.json" }
+      }
     },
     "sources": ["src_001"],
-    "template": {
-      "templateId": "tpl_minimal",
-      "versionId": "tplv_004"
-    },
     "policy": {
       "allowAgentFactInference": false,
       "requireEvidenceForNumericClaims": true,
@@ -1055,7 +1069,8 @@ Checks include:
 - every skill/link reference resolves;
 - comment selectors reference valid resources or have explicit orphan state;
 - provenance targets resolve;
-- presentation overrides reference existing sections;
+- each presentation references an existing CV resource;
+- presentation overrides reference sections that exist in its referenced CV;
 - selected template supports current schema versions;
 - selected style preset belongs to the active template lineage;
 - A4 preset always resolves to 210 x 297 mm before orientation transform;
