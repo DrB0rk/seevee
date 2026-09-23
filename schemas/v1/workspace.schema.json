@@ -41,10 +41,9 @@
       "type": "object",
       "required": [
         "name",
-        "activeResources",
-        "files",
+        "active",
+        "resources",
         "sources",
-        "template",
         "policy"
       ],
       "properties": {
@@ -52,53 +51,11 @@
           "type": "string",
           "minLength": 1
         },
-        "activeResources": {
-          "type": "object",
-          "required": [
-            "cvId",
-            "provenanceId",
-            "presentationId",
-            "commentsId"
-          ],
-          "properties": {
-            "cvId": {
-              "$ref": "common.schema.json#/$defs/id"
-            },
-            "provenanceId": {
-              "$ref": "common.schema.json#/$defs/id"
-            },
-            "presentationId": {
-              "$ref": "common.schema.json#/$defs/id"
-            },
-            "commentsId": {
-              "$ref": "common.schema.json#/$defs/id"
-            }
-          },
-          "additionalProperties": false
+        "active": {
+          "$ref": "#/$defs/active"
         },
-        "files": {
-          "type": "object",
-          "required": [
-            "cv",
-            "provenance",
-            "presentation",
-            "comments"
-          ],
-          "properties": {
-            "cv": {
-              "$ref": "#/$defs/relativePath"
-            },
-            "provenance": {
-              "$ref": "#/$defs/relativePath"
-            },
-            "presentation": {
-              "$ref": "#/$defs/relativePath"
-            },
-            "comments": {
-              "$ref": "#/$defs/relativePath"
-            }
-          },
-          "additionalProperties": false
+        "resources": {
+          "$ref": "#/$defs/resources"
         },
         "sources": {
           "type": "array",
@@ -106,22 +63,6 @@
             "$ref": "common.schema.json#/$defs/id"
           },
           "uniqueItems": true
-        },
-        "template": {
-          "type": "object",
-          "required": [
-            "templateId",
-            "versionId"
-          ],
-          "properties": {
-            "templateId": {
-              "$ref": "common.schema.json#/$defs/id"
-            },
-            "versionId": {
-              "$ref": "common.schema.json#/$defs/id"
-            }
-          },
-          "additionalProperties": false
         },
         "policy": {
           "$ref": "#/$defs/policy"
@@ -160,6 +101,136 @@
         },
         "extensions": {
           "$ref": "common.schema.json#/$defs/extensions"
+        }
+      },
+      "additionalProperties": false
+    },
+    "active": {
+      "type": "object",
+      "required": [
+        "cvId",
+        "presentationId"
+      ],
+      "properties": {
+        "cvId": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "presentationId": {
+          "$ref": "common.schema.json#/$defs/id"
+        }
+      },
+      "additionalProperties": false
+    },
+    "resources": {
+      "type": "object",
+      "required": [
+        "cvs",
+        "presentations",
+        "provenance",
+        "comments"
+      ],
+      "properties": {
+        "cvs": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/cvResource"
+          }
+        },
+        "presentations": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/presentationResource"
+          }
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/fileResource"
+          }
+        },
+        "comments": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/fileResource"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "cvResource": {
+      "type": "object",
+      "required": [
+        "path",
+        "name",
+        "provenanceId",
+        "commentsId"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "provenanceId": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "commentsId": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "defaultPresentationId": {
+          "anyOf": [
+            {
+              "$ref": "common.schema.json#/$defs/id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "archived": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "presentationResource": {
+      "type": "object",
+      "required": [
+        "path",
+        "cvId"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "cvId": {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "fileResource": {
+      "type": "object",
+      "required": [
+        "path"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/relativePath"
         }
       },
       "additionalProperties": false
