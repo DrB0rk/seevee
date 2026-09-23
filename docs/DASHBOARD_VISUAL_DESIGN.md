@@ -168,7 +168,7 @@ Persistent activity modes:
 4. Comments
 5. History
 6. Agent runs
-7. Audit
+7. Diagnostics
 8. Settings
 
 Use 18 px line icons.
@@ -201,7 +201,7 @@ Center group:
 Right group:
 
 - comment mode;
-- audit toggle;
+- diagnostics toggle;
 - undo/redo;
 - run/fix comments;
 - Export PDF.
@@ -289,7 +289,7 @@ Tabs:
 
 - Properties
 - Comments
-- Audit
+- Diagnostics
 
 ### Properties
 
@@ -314,28 +314,21 @@ A template is not required to expose dashboard-editable visual tokens. A bespoke
 
 Show threads linked to the selected target first, then all document threads.
 
-### Audit
+### Diagnostics
 
-Show advisory checks grouped by:
+Show concrete product/runtime diagnostics such as:
 
-- content;
-- relevance;
-- readability;
-- ATS/parser compatibility;
-- locale/sector profile;
-- layout/export;
-- factual/provenance quality.
+- schema/reference errors;
+- unresolved or stale comment targets;
+- missing sources/provenance where the workflow expects them;
+- template compilation failures;
+- missing fonts/assets;
+- clipping/overflow;
+- broken links or failed asset loads;
+- PDF/export failures;
+- file-watcher or workspace conflicts.
 
-Audit findings use language such as:
-
-- Recommended
-- Consider
-- Potential issue
-- Required for selected profile
-
-Do not generate an arbitrary numeric "resume score".
-
-Only genuine documented external constraints, such as a selected USAJOBS profile's page requirement, can become hard profile requirements.
+CV writing standards and career best practices do not run here as hidden product rules. When the user asks their agent to review a CV, the agent may use the repository's agent-facing guidance and create ordinary comments or proposed changes that remain visible and explainable.
 
 ## 12. Comments interaction
 
@@ -355,36 +348,22 @@ Pins:
 
 Do not use large sticky-note overlays that obscure the CV.
 
-## 13. Audit mode
+## 13. Agent review and diagnostics
 
-Audit mode is a visual overlay and inspector view, not a destructive formatter.
+There is no built-in CV-standard profile selector and no resume quality score.
 
-Suggested profiles:
+Technical diagnostics come from Seevee itself. Editorial/career review comes from the user's chosen agent.
 
-- Software Engineering / ATS-safe
-- Software Engineering / human-first
-- Frontend
-- Backend
-- Full-stack
-- DevOps / SRE
-- Security
-- Data / ML
-- Embedded / hardware-software
-- Mobile
-- Engineering general
-- Netherlands / EU general
-- US general
-- USAJOBS
-- Academic CV
-- Research / grant biosketch
-- Healthcare
-- Finance / consulting
-- Creative / portfolio
-- Custom
+When asked to review a CV, an agent may consult `docs/AGENT_CV_GUIDANCE.md`, inspect the current CV/template/render, and then:
 
-Audit profiles normally produce diagnostics only.
+- add comments;
+- propose content edits;
+- propose a different layout;
+- create a tailored CV variant;
+- create/fork a template;
+- explain trade-offs.
 
-The user can always disable a recommendation, accept a trade-off, or intentionally use a custom composition.
+The dashboard displays those explicit comments/changes like any other collaboration artifact. It does not silently enforce career advice.
 
 ## 14. Status bar
 
@@ -531,7 +510,7 @@ The dashboard design is complete when:
 - templates can be applied/forked without changing CV data;
 - bespoke CV templates are fully supported;
 - comments can be added without obscuring the document;
-- audit results are understandable without a score;
+- technical diagnostics are understandable without a synthetic resume score;
 - layout/render failures are visually distinct from career-advice warnings;
 - the dashboard never forces a visual style onto CV templates;
 - the design remains usable at 1280 x 720 and strong at 1440 x 900+.
