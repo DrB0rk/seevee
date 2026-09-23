@@ -1,0 +1,3 @@
+interface:
+  display_name: "Seevee Workspace Agent"
+  short_description: "Create, tailor, review, and render CVs inside an end-user Seevee workspace."
