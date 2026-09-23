@@ -1,0 +1,49 @@
+{
+  "kind": "seevee.provenance",
+  "schemaVersion": "1.0.0",
+  "id": "provdoc_demo",
+  "revision": 0,
+  "createdAt": "2026-09-23T00:00:00.000Z",
+  "updatedAt": "2026-09-23T00:00:00.000Z",
+  "data": {
+    "sources": {
+      "src_demo": {
+        "id": "src_demo",
+        "sourceType": "text",
+        "name": "notes.txt",
+        "contentHash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        "ingestedAt": "2026-09-23T00:00:00.000Z",
+        "metadata": {},
+        "extensions": {}
+      }
+    },
+    "assertions": {
+      "prov_demo": {
+        "id": "prov_demo",
+        "target": {
+          "kind": "field",
+          "nodeId": "bul_demo",
+          "nodeType": "bullet",
+          "field": "/text"
+        },
+        "evidence": [
+          {
+            "sourceId": "src_demo",
+            "locator": {
+              "type": "text-range",
+              "start": 34,
+              "end": 101,
+              "quote": "Built internal developer tooling for repeated engineering workflows."
+            },
+            "note": null
+          }
+        ],
+        "claimType": "paraphrased",
+        "confidence": 1,
+        "verifiedByUser": false,
+        "extensions": {}
+      }
+    },
+    "extensions": {}
+  }
+}
