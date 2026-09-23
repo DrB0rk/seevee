@@ -2,7 +2,7 @@
 
 Audience: agents operating inside a user's initialized Seevee workspace.
 
-This document is **not** for agents developing the Seevee repository itself. Repository-development agents should follow `.dev/AGENTS.md` and `docs/development/`.
+This document is **not** for agents developing the Seevee repository itself. Repository-development agents should follow `.dev/AGENTS.md` and `.dev/`.
 
 Status: agent-facing research and drafting reference
 Reviewed: 2026-09-23
