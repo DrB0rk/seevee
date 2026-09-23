@@ -25,85 +25,111 @@ After that, the user can launch any coding/AI agent they want from the same dire
 
 ## 2. Distribution strategy
 
-### Primary distribution: scoped npm package
+### Canonical installation: GitHub-hosted installer
 
-Do not make the user-facing command depend on ownership or future availability of the unscoped npm package name `seevee`.
+The public installation path is a shell installer fetched directly from this GitHub repository.
 
-Publish the CLI under a scoped package, for example:
-
-~~~text
-@drb0rk/seevee
-~~~
-
-or, if a dedicated organization is created later:
-
-~~~text
-@seevee/cli
-~~~
-
-The package still exposes the executable `seevee` through `package.json`:
-
-~~~json
-{
-  "name": "@drb0rk/seevee",
-  "type": "module",
-  "bin": {
-    "seevee": "./dist/cli.js"
-  }
-}
-~~~
-
-The executable starts with:
-
-~~~js
-#!/usr/bin/env node
-~~~
-
-This preserves the desired UX:
+Target UX:
 
 ~~~sh
-npm install -g @drb0rk/seevee
+curl -fsSL https://raw.githubusercontent.com/DrB0rk/seevee/main/install.sh | sh
+~~~
+
+Then:
+
+~~~sh
+mkdir my-cv
+cd my-cv
 seevee init
 ~~~
 
-Also support:
+Do **not** require npm, pnpm, Homebrew, or another package manager for the normal user installation flow.
 
-~~~sh
-pnpm add -g @drb0rk/seevee
+The repository may use npm/pnpm internally during development and release builds. That implementation detail must not leak into installation instructions.
+
+### Release model
+
+GitHub Releases are the distribution source of truth.
+
+Each release should publish versioned runtime bundles, for example:
+
+~~~text
+seevee-v0.1.0-linux-x64.tar.gz
+seevee-v0.1.0-linux-arm64.tar.gz
+seevee-v0.1.0-darwin-x64.tar.gz
+seevee-v0.1.0-darwin-arm64.tar.gz
+seevee-v0.1.0-windows-x64.zip
+SHA256SUMS
 ~~~
 
-The exact publication scope can change without changing the executable name.
+A release bundle contains everything the installed Seevee launcher needs except explicitly documented OS prerequisites. Prefer a self-contained application bundle over resolving packages at install time.
 
-### Secondary distribution: bootstrap installers
+If the first implementation still requires a system Node runtime, the installer may verify a supported Node version and fail with a precise message. It must not invoke npm to install Seevee.
 
-Provide versioned installer scripts that install the scoped CLI package and verify the executable:
+### Installer behavior
+
+`install.sh` must:
+
+1. run non-interactively;
+2. detect OS and CPU architecture;
+3. resolve the requested version or latest stable GitHub release;
+4. download the matching release archive from GitHub Releases;
+5. download the published checksum manifest;
+6. verify SHA-256 before extraction;
+7. install versioned files under a user-owned application directory, e.g. `~/.local/share/seevee/<version>/`;
+8. create/update a stable launcher at `~/.local/bin/seevee`;
+9. preserve previous versions until activation succeeds;
+10. verify `seevee --version`;
+11. print a concise PATH hint only when `~/.local/bin` is not currently reachable;
+12. exit without modifying unrelated shell configuration.
+
+Support:
 
 ~~~sh
-curl -fsSL https://<official-host>/install.sh | sh
+SEEVE_VERSION=v0.2.0 curl -fsSL https://raw.githubusercontent.com/DrB0rk/seevee/main/install.sh | sh
 ~~~
 
-Windows:
+or an equivalent documented version argument mechanism that remains safe through a pipe.
+
+### Update behavior
+
+A future `seevee update` should use the same GitHub Release + checksum path as `install.sh`.
+
+It should:
+
+- fetch release metadata;
+- download into a new version directory;
+- verify checksums;
+- run a version/health self-check;
+- atomically switch the stable launcher;
+- retain the previous version for rollback.
+
+Do not silently update in the background.
+
+### Windows
+
+Provide a PowerShell equivalent:
 
 ~~~powershell
-irm https://<official-host>/install.ps1 | iex
+irm https://raw.githubusercontent.com/DrB0rk/seevee/main/install.ps1 | iex
 ~~~
 
-The scripts must:
+The Unix `curl | sh` path is the primary documented installer; PowerShell should mirror the same GitHub Release/checksum model.
 
-1. detect supported OS/architecture;
-2. verify Node.js meets the supported runtime version;
-3. install or clearly report the missing prerequisite;
-4. install a pinned/current Seevee release from the official package;
-5. verify `seevee --version`;
-6. never modify unrelated shell configuration without explicit flags.
+### Trust and supply-chain requirements
 
-A future standalone-binary distribution can be added, but it should not block the MVP. Astro server/runtime and Playwright browser management make the Node package the lower-risk first distribution.
+The installer must never execute a downloaded payload before integrity verification.
 
-### Package-name note
+Release hardening should include:
 
-Prefer an official scoped npm package. The package name and executable name are independent because npm's `bin` field controls the command installed into PATH.
+- SHA-256 manifest;
+- GitHub release provenance;
+- reproducible or at least deterministic build workflow where practical;
+- release workflow pinned to reviewed actions/versions;
+- optional artifact signing in a later phase;
+- no install-time dependency resolution from arbitrary registries.
 
-## 3. CLI package architecture
+## 3. CLI/runtime package architecture
 
 Add:
 
@@ -527,26 +553,27 @@ Process lifecycle tests assert that:
 
 ## 16. Implementation sequence
 
-1. Create `packages/cli`.
-2. Expose `seevee` using npm `bin`.
-3. Implement workspace discovery and schema-version checks.
-4. Implement deterministic scaffold generation.
-5. Generate generic agent instructions/skill copy.
-6. Implement detached server launcher and health check.
-7. Implement runtime state/locks/logging.
-8. Implement browser opening.
-9. Implement start/stop/restart/status/open.
-10. Implement validate/doctor.
-11. Integrate export.
-12. Add installer scripts.
-13. Add release workflow and signed/checksummed installer artifacts where applicable.
-14. Run platform lifecycle tests.
+1. Create `packages/cli` and the production runtime bundle.
+2. Build platform release archives suitable for direct GitHub Release installation.
+3. Add root `install.sh` and `install.ps1` that install from GitHub Releases with checksum verification.
+4. Implement workspace discovery and schema-version checks.
+5. Implement deterministic scaffold generation.
+6. Generate generic agent instructions/skill copy.
+7. Implement detached server launcher and health check.
+8. Implement runtime state/locks/logging.
+9. Implement browser opening.
+10. Implement start/stop/restart/status/open.
+11. Implement validate/doctor.
+12. Integrate export.
+13. Add release workflow, checksums and install integration tests.
+14. Add optional artifact signing/rollback hardening.
+15. Run platform lifecycle tests.
 
 ## 17. MVP acceptance criteria
 
 The CLI/distribution portion is complete only when:
 
-- a clean machine with supported Node can install the official scoped package;
+- a clean supported machine can install Seevee using the GitHub-hosted `curl | sh` installer without npm/pnpm;
 - `seevee` is available on PATH;
 - `seevee init` requires no prompts;
 - init can safely run in a non-empty directory;
@@ -567,5 +594,6 @@ The CLI/distribution portion is complete only when:
 
 Implementation should be verified against current primary documentation:
 
-- npm package `bin` behavior: https://docs.npmjs.com/files/package.json/#bin
+- GitHub Releases REST/API and release assets: https://docs.github.com/en/rest/releases/releases
+- GitHub release asset downloads: https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases
 - Node child process detached/unref behavior: https://nodejs.org/api/child_process.html#optionsdetached
