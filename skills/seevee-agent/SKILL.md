@@ -1,9 +1,11 @@
 ---
 name: seevee-agent
-description: Operate and modify Seevee agent-driven CV workspaces safely and consistently. Use when an agent needs to ingest or normalize CV information, edit or tailor CV content, apply review comments, adjust presentation/page settings, create or modify Astro CV templates, save style presets, render or export a CV, or validate a Seevee workspace. Enforces Seevee's stable-node/reference model, provenance rules, revision-safe mutations, A4-default page model, template sandbox boundaries, multi-CV resource model, and completion checks.
+description: Operate inside an end-user Seevee CV workspace safely and consistently; this skill is not for developing the Seevee repository itself. Use when an agent needs to ingest or normalize CV information, edit or tailor CV content, apply review comments, adjust presentation/page settings, create or modify Astro CV templates, save style presets, render or export a CV, or validate a Seevee workspace. Enforces Seevee's stable-node/reference model, provenance rules, revision-safe mutations, A4-default page model, template sandbox boundaries, multi-CV resource model, and completion checks.
 ---
 
-# Seevee Agent
+# Seevee Workspace Agent
+
+Use this skill only for an end-user Seevee workspace. If you are modifying the Seevee application repository itself, stop and follow that repository's root `AGENTS.md` instead.
 
 Use Seevee's structured documents as the source of truth. Do not treat rendered HTML or PDF output as canonical data.
 
