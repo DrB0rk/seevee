@@ -88,7 +88,12 @@ success "${PLATFORM} · Node $(node --version)"
 
 TMP_DIR="$(mktemp -d 2>/dev/null || mktemp -d -t seevee)"
 STAGE_DIR=''
+DOWNLOAD_PIDS=''
+DOWNLOAD_PROGRESS_PID=''
 cleanup() {
+  for pid in $DOWNLOAD_PIDS ${DOWNLOAD_PROGRESS_PID:-}; do
+    kill "$pid" 2>/dev/null || true
+  done
   rm -rf "$TMP_DIR"
   [ -z "$STAGE_DIR" ] || rm -rf "$STAGE_DIR"
 }
@@ -122,8 +127,100 @@ download_asset() {
   curl_download "$RELEASE_URL/$asset_name" -o "$output_path"
 }
 
+download_bundle() {
+  asset_url="$RELEASE_URL/$ARCHIVE"
+  output_path="$TMP_DIR/$ARCHIVE"
+  part_count=8
+  headers="$TMP_DIR/range-headers"
+  probe="$TMP_DIR/range-probe"
+
+  # GitHub release assets support byte ranges. Parallel requests avoid a slow
+  # single connection on networks that throttle each connection separately.
+  if ! curl --fail --location --retry 3 --retry-delay 1 --silent --show-error \
+    --range 0-0 --dump-header "$headers" "$asset_url" -o "$probe" 2>/dev/null; then
+    curl_download "$asset_url" -o "$output_path"
+    return
+  fi
+  file_size="$(awk 'tolower($1) == "content-range:" { gsub(/\r/, "", $3); split($3, range, "/"); if (range[2] ~ /^[0-9]+$/) size=range[2] } END { print size }' "$headers")"
+  if [ -z "$file_size" ] || [ "$(wc -c < "$probe" | tr -d ' ')" -ne 1 ]; then
+    curl_download "$asset_url" -o "$output_path"
+    return
+  fi
+
+  chunk_size=$(((file_size + part_count - 1) / part_count))
+  part=0
+  while [ "$part" -lt "$part_count" ]; do
+    range_start=$((part * chunk_size))
+    [ "$range_start" -lt "$file_size" ] || break
+    range_end=$((range_start + chunk_size - 1))
+    [ "$range_end" -lt "$file_size" ] || range_end=$((file_size - 1))
+    part_file="$TMP_DIR/$ARCHIVE.part.$part"
+    part_error="$TMP_DIR/$ARCHIVE.part.$part.err"
+    curl --fail --location --retry 3 --retry-delay 1 --silent --show-error \
+      --range "$range_start-$range_end" "$asset_url" -o "$part_file" 2>"$part_error" &
+    DOWNLOAD_PIDS="$DOWNLOAD_PIDS $!"
+    part=$((part + 1))
+  done
+
+  if [ -t 2 ]; then
+    (
+      while :; do
+        received=0
+        part=0
+        while [ "$part" -lt "$part_count" ]; do
+          part_file="$TMP_DIR/$ARCHIVE.part.$part"
+          if [ -f "$part_file" ]; then
+            received=$((received + $(wc -c < "$part_file" | tr -d ' ')))
+          fi
+          part=$((part + 1))
+        done
+        percent=$((received * 100 / file_size))
+        [ "$percent" -le 100 ] || percent=100
+        printf '\r  Downloading bundle · %3s%% (%s/%s MiB)' "$percent" "$((received / 1048576))" "$(((file_size + 1048575) / 1048576))" >&2
+        active=0
+        for pid in $DOWNLOAD_PIDS; do
+          if kill -0 "$pid" 2>/dev/null; then active=1; break; fi
+        done
+        [ "$active" -eq 1 ] || break
+        sleep 1
+      done
+      printf '\n' >&2
+    ) &
+    DOWNLOAD_PROGRESS_PID=$!
+  fi
+
+  failed=0
+  for pid in $DOWNLOAD_PIDS; do
+    wait "$pid" || failed=1
+  done
+  if [ -n "$DOWNLOAD_PROGRESS_PID" ]; then
+    wait "$DOWNLOAD_PROGRESS_PID" 2>/dev/null || true
+    DOWNLOAD_PROGRESS_PID=''
+  fi
+  if [ "$failed" -ne 0 ]; then
+    cat "$TMP_DIR"/"$ARCHIVE".part.*.err >&2
+    fail 'A release bundle download range failed. Please retry the installer.'
+  fi
+
+  : > "$output_path"
+  part=0
+  while [ "$part" -lt "$part_count" ]; do
+    range_start=$((part * chunk_size))
+    [ "$range_start" -lt "$file_size" ] || break
+    range_end=$((range_start + chunk_size - 1))
+    [ "$range_end" -lt "$file_size" ] || range_end=$((file_size - 1))
+    part_file="$TMP_DIR/$ARCHIVE.part.$part"
+    expected_size=$((range_end - range_start + 1))
+    actual_size="$(wc -c < "$part_file" | tr -d ' ')"
+    [ "$actual_size" -eq "$expected_size" ] || fail "Release download range $((part + 1)) was incomplete; please retry the installer."
+    cat "$part_file" >> "$output_path"
+    part=$((part + 1))
+  done
+  DOWNLOAD_PIDS=''
+}
+
 step 'Downloading release bundle'
-download_asset "$ARCHIVE" "$TMP_DIR/$ARCHIVE" \
+download_bundle \
   || fail "Could not download $ARCHIVE. Check that the public release v${VERSION} includes this platform bundle."
 success 'Bundle downloaded'
 
