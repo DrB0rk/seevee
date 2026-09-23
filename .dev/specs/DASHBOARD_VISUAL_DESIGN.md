@@ -354,7 +354,7 @@ There is no built-in CV-standard profile selector and no resume quality score.
 
 Technical diagnostics come from Seevee itself. Editorial/career review comes from the user's chosen agent.
 
-When asked to review a CV, an agent may consult `docs/AGENT_CV_GUIDANCE.md`, inspect the current CV/template/render, and then:
+When asked to review a CV, an agent may consult `docs/workspace-agent/CV_GUIDANCE.md`, inspect the current CV/template/render, and then:
 
 - add comments;
 - propose content edits;
