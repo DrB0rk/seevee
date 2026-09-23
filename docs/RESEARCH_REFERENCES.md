@@ -63,16 +63,18 @@ Used for:
 - print backgrounds;
 - physical page-size verification.
 
-## npm executable mapping
+## GitHub release distribution
 
-npm package.json documentation:
+GitHub Releases documentation:
 
-- https://docs.npmjs.com/files/package.json/#bin
+- https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases
+- https://docs.github.com/en/rest/releases/releases
 
 Used for:
 
-- keeping the user-facing executable named `seevee` even when publishing the package under an official npm scope;
-- cross-platform PATH installation.
+- publishing platform runtime bundles;
+- checksum-verified installer downloads;
+- keeping installation independent from npm/pnpm.
 
 ## Detached local server
 
