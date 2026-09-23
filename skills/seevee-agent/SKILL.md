@@ -1,6 +1,6 @@
 ---
 name: seevee-agent
-description: Operate and modify Seevee agent-driven CV workspaces safely and consistently. Use when an agent needs to ingest or normalize CV information, edit canonical CV content, apply review comments, adjust presentation/page settings, create or modify Astro CV templates, save style presets, render or export a CV, or validate a Seevee workspace. Enforces Seevee's stable-node/reference model, provenance rules, revision-safe mutations, A4-first page model, template sandbox boundaries, and completion checks.
+description: Operate and modify Seevee agent-driven CV workspaces safely and consistently. Use when an agent needs to ingest or normalize CV information, edit or tailor CV content, apply review comments, adjust presentation/page settings, create or modify Astro CV templates, save style presets, render or export a CV, or validate a Seevee workspace. Enforces Seevee's stable-node/reference model, provenance rules, revision-safe mutations, A4-default page model, template sandbox boundaries, multi-CV resource model, and completion checks.
 ---
 
 # Seevee Agent
@@ -31,8 +31,10 @@ Use Seevee's structured documents as the source of truth. Do not treat rendered 
 - Treat unresolved factual conflicts as conflicts. Do not silently choose one value.
 - Treat generated Astro template code as restricted visual code. Do not add filesystem, process, environment, arbitrary network, dynamic-evaluation, endpoint, or package-install capabilities.
 - The dashboard/editor is fixed product UI. Do not redesign it when asked to redesign a CV.
-- Default document profile is A4 portrait, 210 mm x 297 mm.
-- Preview and PDF export must share the same page dimensions and render contract.
+- CV layout and styling are fully user/agent controlled inside the template safety boundary.
+- Default new-presentation profile is A4 portrait, 210 mm x 297 mm; it is not a mandatory CV style or page size.
+- Preview and PDF export must share the same selected page dimensions and render contract.
+- Do not turn CV best practices into hidden dashboard rules, a profile selector, or a resume score.
 - Do not mark a comment resolved merely because an agent attempted a fix. Mark it applied/pending review until a user or deterministic rule resolves it.
 - Do not store private chain-of-thought. Store only concise run summaries, evidence, diagnostics, and decisions needed by the product.
 
@@ -58,7 +60,8 @@ When editing copy:
 - keep wording changes separate from factual corrections;
 - require source or user confirmation for new numeric impact claims;
 - preserve stable IDs when reordering or rewriting existing nodes;
-- create a new ID only for a genuinely new semantic node.
+- create a new ID only for a genuinely new semantic node;
+- read `references/cv-guidance.md` when tailoring/reviewing a CV.
 
 ## Comment-driven work
 
@@ -82,8 +85,8 @@ For visual/template changes:
 
 - keep the selected `cvs/<cv-id>.json` content resource read-only during visual-only template work;
 - use the template SDK bindings for every semantic/commentable rendered block;
-- keep A4 and custom physical sizes page-aware;
-- preserve print-safe typography and explicit overflow behavior;
+- keep selected physical page dimensions page-aware;
+- preserve explicit overflow behavior;
 - use presentation tokens when the template exposes them, but do not require them;
 - allow fully bespoke Astro/CSS layouts when requested;
 - create/fork source templates whenever source-level design control is the appropriate surface;
