@@ -2,7 +2,7 @@
 
 ## Fixed editor versus generated canvas
 
-The dashboard is fixed application UI. Agents modify the CV canvas, not the dashboard shell.
+The dashboard is fixed application UI. Agents modify the CV canvas, not the dashboard shell. Seevee does not prescribe CV styling or layout.
 
 The canvas renders one or more physical pages. Default:
 
@@ -17,7 +17,7 @@ The same page profile drives dashboard preview and PDF export.
 
 ## Source template versus style preset
 
-A source template is Astro/CSS/asset code defining structure and visual language.
+A source template is Astro/CSS/asset code defining structure and visual language. It may be reusable or completely bespoke to one CV.
 
 A style preset is data referencing a source template and overriding safe presentation tokens. Saving the current style should create a style preset by default. Fork source only when structural/template-code independence is required.
 
@@ -67,7 +67,7 @@ Do not hide overflow merely to make a validation warning disappear.
 
 ## Presentation tokens
 
-Prefer data-driven tokens for ordinary changes:
+Templates may expose data-driven tokens for convenient dashboard changes, but this is optional. When useful, tokens can cover:
 
 - font family and fallbacks;
 - scale/type ramp;
@@ -80,7 +80,7 @@ Prefer data-driven tokens for ordinary changes:
 - icon treatment;
 - page/margins.
 
-A token must declare type, supported range/options, default and whether the dashboard may expose it.
+If a token exists, it must declare type, supported range/options, default and whether the dashboard may expose it. Lack of exposed tokens does not restrict source-level Astro/CSS design.
 
 ## Export readiness
 
