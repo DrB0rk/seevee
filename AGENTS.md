@@ -22,7 +22,7 @@ If your environment supports reusable skills, use skills/seevee-agent/SKILL.md w
 
 - Treat schemas as public APIs.
 - Do not create task-specific JSON shapes outside packages/schema.
-- Canonical CV content, provenance, presentation, comments and template source remain separate resources.
+- Each CV is a separate JSON resource under `cvs/`; CV content, provenance, comments, presentations and template source remain separate resources.
 - Every independently editable/commentable semantic object has a stable ID.
 - Array positions are never long-lived identity.
 - Comments use resilient selectors and can link to semantic content and rendered fallbacks.
@@ -32,10 +32,10 @@ If your environment supports reusable skills, use skills/seevee-agent/SKILL.md w
 - Default page profile is A4 portrait, 210 x 297 mm.
 - Preview and PDF export use the same page model.
 - Source-template changes are validated and compiled before activation.
-- Ordinary styling should use presentation tokens/style presets, not source duplication.
+- Presentation tokens/style presets are optional conveniences. Do not restrict template source styling; users and agents may create fully bespoke Astro/CSS layouts.
 - Writes are revision checked. Never silently overwrite a newer revision.
 - Deterministic validation gates agent completion.
-- The user-facing executable is `seevee`; `seevee init` is non-interactive and must return terminal control after a healthy detached dashboard server is running.
+- The user-facing executable is `seevee`; installation is through the repository `install.sh`/GitHub Releases flow, and `seevee init` is non-interactive and must return terminal control after a healthy detached dashboard server is running.
 - Seevee must remain agent-agnostic: do not make the dashboard dependent on Claude Code, Codex, OMP, Cursor, or another specific agent runtime.
 
 ## Schema implementation rule
