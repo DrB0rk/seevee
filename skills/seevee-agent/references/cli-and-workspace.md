@@ -2,7 +2,7 @@
 
 ## User workflow
 
-Seevee is installed as a command named `seevee`.
+Seevee is installed as a command named `seevee` using the repository's GitHub-hosted `install.sh` and GitHub Release bundles. Do not instruct users to install Seevee through npm.
 
 A normal local project begins with:
 
@@ -18,7 +18,7 @@ The user launches their chosen external agent separately in the same directory. 
 
 ## Workspace discovery
 
-Before operating, identify the workspace root from `seevee.json` and load canonical resource IDs/revisions.
+Before operating, identify the workspace root from `seevee.json`, resolve the active CV under `cvs/`, resolve its presentation/provenance/comments resources, and load canonical IDs/revisions.
 
 Do not treat `.seevee/runtime.json`, PID files, logs, caches or temporary build files as canonical CV state.
 
