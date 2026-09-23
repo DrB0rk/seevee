@@ -16,6 +16,7 @@ Use Seevee's structured documents as the source of truth. Do not treat rendered 
    - Astro templates, visual design, page sizing, or style presets: `references/templates-and-rendering.md`.
    - End-to-end agent procedure and completion rules: `references/workflows.md`.
    - Workspace initialization, CLI/server lifecycle, or working alongside arbitrary external agents: `references/cli-and-workspace.md`.
+   - Drafting, tailoring, reviewing, or restructuring CV content: `references/cv-guidance.md`.
 3. Read the workspace's current revisions before proposing a mutation.
 4. Use the narrowest mutation surface. Do not replace a whole canonical document for a small edit.
 5. Validate after every committed mutation category.
@@ -26,7 +27,7 @@ Use Seevee's structured documents as the source of truth. Do not treat rendered 
 - Distinguish extracted/user facts from generated wording. Preserve provenance for factual and numerical claims.
 - Never identify an entity only by array index. Use stable node IDs.
 - Never use a JSON Pointer as the sole long-lived identity for a list item. Pair field pointers with a stable node target.
-- Keep CV content, presentation, template source, provenance, and comments separate.
+- Keep each CV as its own JSON resource. Keep CV content, presentation, template source, provenance, and comments separate.
 - Treat unresolved factual conflicts as conflicts. Do not silently choose one value.
 - Treat generated Astro template code as restricted visual code. Do not add filesystem, process, environment, arbitrary network, dynamic-evaluation, endpoint, or package-install capabilities.
 - The dashboard/editor is fixed product UI. Do not redesign it when asked to redesign a CV.
@@ -79,12 +80,13 @@ Then mutate only the corresponding document or template surface. Read `reference
 
 For visual/template changes:
 
-- keep `cv.json` read-only;
+- keep the selected `cvs/<cv-id>.json` content resource read-only during visual-only template work;
 - use the template SDK bindings for every semantic/commentable rendered block;
 - keep A4 and custom physical sizes page-aware;
 - preserve print-safe typography and explicit overflow behavior;
-- use presentation tokens for ordinary style changes;
-- create/fork source templates only for structural or visual-system changes;
+- use presentation tokens when the template exposes them, but do not require them;
+- allow fully bespoke Astro/CSS layouts when requested;
+- create/fork source templates whenever source-level design control is the appropriate surface;
 - run template validation, render diagnostics, and export checks before completion.
 
 Read `references/templates-and-rendering.md` before generating or patching template source.
