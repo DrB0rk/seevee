@@ -7,7 +7,7 @@ Date: 2026-09-23
 
 Agents are constrained operators over Seevee's canonical resources. They do not receive authority to rewrite arbitrary files or bypass validation.
 
-The application exposes typed tools. Every write is revision checked, validated and auditable.
+The application exposes typed tools. Every write is revision checked, validated and auditable. Agents must resolve which CV JSON document is active or explicitly target a CV ID; never assume a single root `cv.json`.
 
 ## 2. Roles
 
@@ -51,6 +51,8 @@ Must:
 - require evidence/user confirmation for unsupported factual additions.
 
 ### Design agent
+
+CV layout/styling is fully user/agent controlled. Seevee does not impose a visual house style. A design agent may create a reusable template or a completely bespoke Astro/CSS composition around one CV.
 
 Inputs:
 
@@ -110,10 +112,15 @@ Recommended tools:
 
 ~~~text
 workspace.get
+cv.list
 cv.get
+cv.create
+cv.duplicate
 cv.proposeChanges
 provenance.get
+presentation.list
 presentation.get
+presentation.create
 presentation.proposeChanges
 comments.list
 comments.get
