@@ -12,9 +12,11 @@ For any non-trivial repository change:
 
 1. `.dev/README.md`
 2. `.dev/IMPLEMENTATION_STATUS.md`
-3. `.dev/specs/SCHEMA_ARCHITECTURE.md`
-4. the task-specific specification
-5. latest relevant audit in `.dev/audits/`
+3. `.dev/DEVELOPMENT.md`
+4. `.dev/QUALITY_GATES.md`
+5. `.dev/specs/SCHEMA_ARCHITECTURE.md`
+6. the task-specific specification
+7. latest relevant audit in `.dev/audits/`
 
 Task-specific specifications:
 
@@ -69,7 +71,7 @@ A written spec does not mean the runtime exists.
 
 ## Workspace-agent packaging rule
 
-The root repository `AGENTS.md` must never be copied into an end-user workspace.
+The repository-maintainer `.dev/AGENTS.md` must never be copied into an end-user workspace.
 
 `seevee init` must instead generate/copy dedicated workspace instructions derived from:
 
