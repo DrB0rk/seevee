@@ -17,7 +17,7 @@ Seevee is a local, agent-driven CV studio.
 
 Give an agent source material, let it normalize your information into structured JSON, and render that information through interchangeable Astro templates. The fixed Seevee dashboard gives you physical-page preview, comments, provenance, history, diagnostics, and PDF export without dictating what your CV has to look like.
 
-> **Project status:** a working pre-release runtime is under development. The schema, CLI, ingestion, agent tool boundary, dashboard shell, renderer primitives, and template compiler have implementations and passing package tests. Dashboard rendering, PDF export, live agent execution, and image recognition are still incomplete. Release bundles are not yet validated for publication.
+> **Project status:** Seevee `v0.1.0-alpha.0` is available as a GitHub prerelease. The schema, CLI, ingestion, agent tool boundary, dashboard shell, renderer primitives, and template compiler have implementations and passing package tests. Dashboard rendering, PDF export, live agent execution, and image recognition remain incomplete.
 
 ## The idea
 
@@ -45,10 +45,21 @@ A CV never owns its Astro/CSS. A template never owns the facts.
 
 ## Installation model
 
-The intended installation path is GitHub, not npm:
+Seevee installs from GitHub Release bundles and requires Node.js 20 or newer. The installers show download progress, verify SHA-256 checksums, and install a versioned runtime plus a stable `seevee` launcher.
+
+This repository is private. Authenticate with GitHub CLI, clone the repository, and run the installer:
 
 ~~~sh
-curl -fsSL https://raw.githubusercontent.com/DrB0rk/seevee/main/install.sh | sh
+gh auth login
+gh repo clone DrB0rk/seevee
+cd seevee
+./install.sh
+~~~
+
+On Windows, run `install.ps1` from PowerShell in the cloned repository. For a public checkout, `install.sh` can also be piped directly from `raw.githubusercontent.com`.
+
+~~~powershell
+.\install.ps1
 ~~~
 
 Then create/open a workspace:
@@ -61,7 +72,7 @@ seevee init
 
 <code>seevee init</code> is non-interactive. It will scaffold the directory, start the local dashboard server in the background, health-check it, open the browser, and return terminal control. You can then open **any agent you want** in the same directory.
 
-The installer scripts are present, but a usable install requires validated, platform-correct GitHub Release bundles. No production runtime release has been published yet.
+See the [v0.1.0-alpha.0 prerelease](https://github.com/DrB0rk/seevee/releases/tag/v0.1.0-alpha.0) for platform bundles and checksums.
 
 ## Workspace model
 
