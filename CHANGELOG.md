@@ -6,6 +6,14 @@ This project uses Semantic Versioning. See `.dev/VERSIONING.md` for the project 
 
 ## [Unreleased]
 
+## [0.1.0-alpha.4] - 2026-09-23
+
+### Fixed
+
+- Stop two previously orphaned Seevee test daemons.
+- Serialize workspace start and stop operations with a stale-owner-aware lock so parallel starts reuse one server instead of launching duplicate processes.
+- Persist the server PID before the health wait so a later CLI invocation can recover a server after an interrupted start.
+
 ## [0.1.0-alpha.3] - 2026-09-23
 
 ### Fixed

@@ -22,7 +22,7 @@ All packages typecheck (`pnpm typecheck` exit 0). All tests pass (`pnpm test` ex
 |---|---|---|
 | Canonical data contracts (P0) | Implemented | 37 tests pass; drift-check clean; `pnpm typecheck` exit 0 |
 | `packages/schema` | Implemented | 12 Zod resource schemas + migrations + semantic validator + JSON Schema generator |
-| `packages/cli` | Implemented | All commands (init/start/stop/restart/status/open/validate/doctor/export); 18 tests |
+| `packages/cli` | Implemented | All commands (init/start/stop/restart/status/open/validate/doctor/export); workspace daemon lock prevents duplicate concurrent starts; 20 tests |
 | `packages/agent-runtime` | Implemented | Typed tool boundary; 35 tests |
 | `packages/ingest` | Implemented | 9 adapters (text/markdown/json/html/yaml/pdf/docx/image/url); SSRF protection; 57 tests |
 | `apps/studio` | Implemented | Editable Astro dashboard, schema-checked revision-aware CV save API, 11 API routes + watcher + workspace lib; 9 tests |

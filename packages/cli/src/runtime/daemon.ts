@@ -11,9 +11,9 @@
  */
 
 import { spawn } from 'node:child_process';
-import { dirname } from 'node:path';
+import { dirname, join } from 'node:path';
 import { closeSync, openSync } from 'node:fs';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, realpath, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 import {
@@ -22,10 +22,12 @@ import {
   PortUnavailableError,
 } from './ports.js';
 import {
+  isProcessAlive,
   readRuntimeState,
   writeRuntimeState,
   type RuntimeState,
 } from './process-state.js';
+import { acquireStartLock } from './start-lock.js';
 import type { DiscoveredWorkspace } from './workspace-discovery.js';
 
 export type { RuntimeState };
@@ -60,8 +62,8 @@ async function isHealthy(hc: HealthCheck): Promise<boolean> {
       signal: AbortSignal.timeout(2000),
     });
     if (!res.ok) return false;
-    const body = (await res.json()) as { workspaceId?: string };
-    return body.workspaceId === hc.workspaceId;
+    const body = (await res.json()) as { workspaceId?: string; pid?: number };
+    return body.workspaceId === hc.workspaceId && body.pid === hc.expectedPid;
   } catch {
     return false;
   }
@@ -79,7 +81,7 @@ async function waitForHealthy(hc: HealthCheck): Promise<RuntimeState> {
         host: hc.host,
         port: hc.port,
         startedAt: new Date().toISOString(),
-        serverVersion: process.env.SEEVEE_VERSION ?? '0.1.0-alpha.3',
+        serverVersion: process.env.SEEVEE_VERSION ?? '0.1.0-alpha.4',
       };
     }
     await new Promise<void>((resolve) => setTimeout(resolve, 200));
@@ -99,8 +101,8 @@ async function isRuntimeStateLive(
       signal: AbortSignal.timeout(2000),
     });
     if (!res.ok) return false;
-    const body = (await res.json()) as { workspaceId?: string };
-    return body.workspaceId === state.workspaceId;
+    const body = (await res.json()) as { workspaceId?: string; pid?: number };
+    return body.workspaceId === state.workspaceId && body.pid === state.pid;
   } catch {
     return false;
   }
@@ -123,19 +125,40 @@ export interface StartResult {
 }
 
 export async function start(opts: StartOptions): Promise<StartResult> {
+  const releaseLock = await acquireWorkspaceLock(opts.workspace, opts.workspace.logFile);
+  try {
+    return await startLocked(opts);
+  } finally {
+    await releaseLock();
+  }
+}
+
+async function startLocked(opts: StartOptions): Promise<StartResult> {
   const host = opts.host ?? '127.0.0.1';
   const preferredPort = opts.port ?? DEFAULT_PREFERRED_PORT;
   const logFile = opts.workspace.logFile;
 
   // 1. Reuse a healthy persisted runtime.
+  let prior: RuntimeState | null = null;
   try {
-    const prior = await readRuntimeState(opts.workspace.runtimeStateFile);
-    if (prior) {
-      const live = await isRuntimeStateLive(prior, host, prior.port);
-      if (live) return { state: prior, reused: true };
-    }
+    prior = await readRuntimeState(opts.workspace.runtimeStateFile);
   } catch {
-    // No prior state — proceed to start fresh.
+    // Missing or malformed state — proceed to start fresh.
+  }
+  if (prior) {
+    const live = await isRuntimeStateLive(prior, prior.host, prior.port);
+    if (live) return { state: prior, reused: true };
+    if (await isProcessAlive(prior.pid)) {
+      const warming = await waitForExistingRuntime(prior);
+      if (warming) {
+        await writeRuntimeState(opts.workspace.runtimeStateFile, warming);
+        return { state: warming, reused: true };
+      }
+      throw new DaemonStartError(
+        `Seevee process ${prior.pid} is still alive but does not answer its health check; refusing to start a duplicate. Run seevee stop first.`,
+        logFile,
+      );
+    }
   }
 
   // 2. Choose a port.
@@ -185,20 +208,62 @@ export async function start(opts: StartOptions): Promise<StartResult> {
   }
   const pid = child.pid;
 
-  // 4. Wait for health.
-  const state = await waitForHealthy({
+  const provisional: RuntimeState = {
+    workspaceId: opts.workspaceId,
+    pid,
     host,
     port,
-    workspaceId: opts.workspaceId,
-    expectedPid: pid,
-    startTime: Date.now(),
-  });
+    startedAt: new Date().toISOString(),
+    serverVersion: process.env.SEEVEE_VERSION ?? '0.1.0-alpha.4',
+  };
+  try {
+    // Persist the child identity before waiting for HTTP health. If the CLI is
+    // interrupted during startup, another invocation can find and reuse it.
+    await writeRuntimeState(opts.workspace.runtimeStateFile, provisional);
+    await writeFile(opts.workspace.pidFile, String(pid), 'utf8');
+    const state = await waitForHealthy({
+      host,
+      port,
+      workspaceId: opts.workspaceId,
+      expectedPid: pid,
+      startTime: Date.now(),
+    });
+    await writeRuntimeState(opts.workspace.runtimeStateFile, state);
+    return { state, reused: false };
+  } catch (error) {
+    try {
+      process.kill(pid, 'SIGTERM');
+    } catch {
+      // The child may already have exited.
+    }
+    await clearRuntime(opts.workspace);
+    throw error;
+  }
+}
 
-  // 5. Persist runtime state and PID.
-  await writeRuntimeState(opts.workspace.runtimeStateFile, state);
-  await writeFile(opts.workspace.pidFile, String(pid), 'utf8');
+async function waitForExistingRuntime(state: RuntimeState): Promise<RuntimeState | null> {
+  const deadline = Date.now() + HEALTH_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    if (!(await isProcessAlive(state.pid))) return null;
+    if (await isRuntimeStateLive(state, state.host, state.port)) return state;
+    await new Promise<void>((resolve) => setTimeout(resolve, 200));
+  }
+  return null;
+}
 
-  return { state, reused: false };
+async function acquireWorkspaceLock(
+  workspace: DiscoveredWorkspace,
+  logFile: string,
+): Promise<() => Promise<void>> {
+  const root = await realpath(workspace.root);
+  const lockPath = join(root, '.seevee', 'daemon-start.lock');
+  const deadline = Date.now() + HEALTH_TIMEOUT_MS + 5_000;
+  while (Date.now() < deadline) {
+    const release = await acquireStartLock(lockPath);
+    if (release) return release;
+    await new Promise<void>((resolve) => setTimeout(resolve, 100));
+  }
+  throw new DaemonStartError('Another Seevee start or stop is still in progress; refusing to launch a duplicate.', logFile);
 }
 
 // ---------------------------------------------------------------------------
@@ -212,6 +277,15 @@ export interface StopResult {
 }
 
 export async function stop(opts: { workspace: DiscoveredWorkspace }): Promise<StopResult> {
+  const releaseLock = await acquireWorkspaceLock(opts.workspace, opts.workspace.logFile);
+  try {
+    return await stopLocked(opts);
+  } finally {
+    await releaseLock();
+  }
+}
+
+async function stopLocked(opts: { workspace: DiscoveredWorkspace }): Promise<StopResult> {
   let state: RuntimeState | null = null;
   try {
     state = await readRuntimeState(opts.workspace.runtimeStateFile);

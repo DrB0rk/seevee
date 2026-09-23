@@ -19,7 +19,13 @@ usage() {
 [ -f "$ARCHIVE" ] || { echo "verify_bundle.sh: archive not found: $ARCHIVE" >&2; exit 64; }
 
 WORK="$(mktemp -d -t seevee-verify.XXXXXX)"
-trap 'rm -rf "$WORK"' EXIT INT TERM
+cleanup() {
+  if [ -n "${SMOKE_WORKSPACE:-}" ] && [ -x "${LAUNCHER:-}" ]; then
+    "$LAUNCHER" stop "$SMOKE_WORKSPACE" >/dev/null 2>&1 || true
+  fi
+  rm -rf "$WORK"
+}
+trap cleanup EXIT INT TERM
 
 # ---------------------------------------------------------------------------
 # 1. Verify the bundle's published SHA-256 if a sibling SHA256SUMS exists.
@@ -109,4 +115,32 @@ if ! printf '%s' "$STATUS" | grep -q '"running": true'; then
   exit 1
 fi
 (cd "$SMOKE_WORKSPACE" && "$LAUNCHER" stop)
-echo "verify_bundle.sh: init, daemon health, and stop OK"
+
+# Start twice at the same time from a stopped workspace. Both invocations
+# must share one server process and the same bound port.
+"$LAUNCHER" start "$SMOKE_WORKSPACE" > "$WORK/start-a.log" 2>&1 &
+START_A=$!
+"$LAUNCHER" start "$SMOKE_WORKSPACE" > "$WORK/start-b.log" 2>&1 &
+START_B=$!
+if ! wait "$START_A"; then
+  cat "$WORK/start-a.log" "$WORK/start-b.log" >&2
+  exit 1
+fi
+if ! wait "$START_B"; then
+  cat "$WORK/start-a.log" "$WORK/start-b.log" >&2
+  exit 1
+fi
+PROCESS_COUNT="$(ps -eo pid=,args= | awk -v root="$SMOKE_WORKSPACE" 'index($0,root) && index($0,"runtime/studio/dist/server/entry.mjs") && $2 ~ /node/ { count++ } END { print count+0 }')"
+if [ "$PROCESS_COUNT" -ne 1 ]; then
+  echo "verify_bundle.sh: expected one Studio process, found $PROCESS_COUNT" >&2
+  cat "$WORK/start-a.log" "$WORK/start-b.log" >&2
+  exit 1
+fi
+STATUS="$(cd "$SMOKE_WORKSPACE" && "$LAUNCHER" status --json)"
+if ! printf '%s' "$STATUS" | grep -q '"running": true'; then
+  echo "verify_bundle.sh: concurrent start did not leave a healthy dashboard" >&2
+  printf '%s\n' "$STATUS" >&2
+  exit 1
+fi
+(cd "$SMOKE_WORKSPACE" && "$LAUNCHER" stop)
+echo "verify_bundle.sh: init, health, concurrent start reuse, and stop OK"
