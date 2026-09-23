@@ -1,49 +1,26 @@
-# Seevee documentation map
+# Seevee product documentation
 
-There are two completely separate agent audiences in this repository.
+This directory contains documentation that belongs to the Seevee product/runtime side of the repository.
 
-## 1. Repository development agents
+Repository-maintainer documentation is isolated under `.dev/`.
 
-These agents build, test, refactor, review, or release **Seevee itself**.
+## Workspace-agent documentation
 
-Start with:
+- `workspace-agent/README.md` — explains the end-user workspace-agent scope.
+- `workspace-agent/CV_GUIDANCE.md` — long-form researched CV/resume guidance used by workspace agents.
 
-- `/AGENTS.md`
-- `/docs/development/README.md`
-- `/docs/development/IMPLEMENTATION_STATUS.md`
-
-Development specifications live only under:
+The distributable operational skill is:
 
 ~~~text
-docs/development/
-schemas/
-audits/
+skills/seevee-workspace-agent/
 ~~~
 
-Do not use `skills/seevee-agent/` as instructions for developing the Seevee repository. That skill is product payload for end-user workspaces.
+## Important separation
 
-## 2. Workspace / CV agents
+Agents developing the Seevee repository should not use these workspace-agent documents as contribution instructions. They should start at:
 
-These agents run **inside a user's initialized Seevee workspace** and create, tailor, review, or redesign that user's CVs.
+~~~text
+.dev/AGENTS.md
+~~~
 
-Canonical workspace-agent materials:
-
-- `/skills/seevee-agent/` — distributable agent skill bundled/installed into workspaces.
-- `/docs/workspace-agent/README.md` — repository-side explanation of that runtime audience.
-- `/docs/workspace-agent/CV_GUIDANCE.md` — long-form researched CV guidance.
-
-Workspace agents should not use `AGENTS.md` from this repository as their operational guide. `seevee init` must generate/copy a workspace-specific agent guide instead.
-
-## Shared contracts
-
-Both audiences may need to understand the public data contracts:
-
-- `/schemas/v1/*.schema.json`
-- `/schemas/README.md`
-
-Repository-development agents implement and migrate them.
-Workspace agents consume them.
-
-## Public documentation
-
-`/README.md` is the project overview and user-facing architecture summary.
+Agents creating or editing a user's CV should not use `.dev/` as runtime guidance.
