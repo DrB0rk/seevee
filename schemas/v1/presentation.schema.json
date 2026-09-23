@@ -182,20 +182,32 @@
     "pagination": {
       "type": "object",
       "required": [
-        "targetPages",
-        "maxPages",
         "overflowPolicy"
       ],
       "properties": {
         "targetPages": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 100
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "maxPages": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 100
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "overflowPolicy": {
           "enum": [
