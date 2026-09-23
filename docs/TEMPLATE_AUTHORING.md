@@ -19,6 +19,26 @@ It defines:
 
 It does not own CV facts.
 
+## Design freedom
+
+Seevee does not prescribe a CV visual system.
+
+Template authors and user-selected agents may use arbitrary Astro/CSS composition inside the safety boundary, including:
+
+- single or multi-column layouts;
+- unusual grids;
+- custom typography;
+- colour;
+- illustration and approved images;
+- decorative elements;
+- content-specific compositions;
+- templates written specifically around one exact CV;
+- custom physical page sizes.
+
+Interchangeability is the default data model, not a requirement that every template must make every CV look good.
+
+A template manifest may describe its design intent as reusable, targeted, or bespoke. That metadata is advisory only and never prevents a user from applying it to another CV.
+
 ## 2. Directory contract
 
 ~~~text
@@ -142,7 +162,7 @@ The manifest declares:
 
 ## 8. Presentation tokens
 
-Template authors should expose useful controls instead of arbitrary CSS.
+Template authors may expose useful dashboard controls for convenience. This is optional and does not replace or constrain arbitrary template CSS.
 
 Examples:
 
@@ -158,7 +178,7 @@ Examples:
 - borderStyle;
 - iconStyle.
 
-Every token declares:
+If a template exposes a token, it declares:
 
 - type;
 - default;
@@ -168,7 +188,7 @@ Every token declares:
 
 ## 9. Page model
 
-Default page profile is A4 portrait:
+Seevee's default new-presentation profile is A4 portrait:
 
 ~~~text
 width: 210mm
@@ -225,7 +245,7 @@ Rendered DOM should include machine-readable binding metadata through the SDK. D
 
 ## 12. Representative fixtures
 
-Every template must render:
+Reusable built-in templates should be tested against:
 
 - sparse one-page CV;
 - normal CV;
@@ -237,7 +257,7 @@ Every template must render:
 - international Unicode text;
 - multiple pages.
 
-A4 is mandatory. Letter/custom tests run when the template declares support.
+A4 is the default built-in test profile. A targeted/bespoke template may instead declare and test only the page profiles it intentionally supports. No visual layout style is mandatory.
 
 ## 13. Style presets
 
@@ -245,7 +265,7 @@ Style presets store presentation values, not source.
 
 When a user clicks Save current style:
 
-1. capture allowed presentation/page fields;
+1. capture presentation/page fields exposed by the active template;
 2. reference the active template/version;
 3. create style-preset JSON;
 4. add it to the template browser.
@@ -285,8 +305,8 @@ Before activation:
 - forbidden imports absent;
 - Astro/type checks pass;
 - semantic bindings present;
-- sparse/normal/dense fixtures render;
-- A4 dimensions correct;
+- appropriate reusable fixtures render, or for a bespoke template its declared target CV fixture renders;
+- declared physical page dimensions are correct;
 - no clipping;
 - no unexpected overflow;
 - fonts/assets load;
