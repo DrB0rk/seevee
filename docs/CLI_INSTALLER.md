@@ -205,7 +205,7 @@ Running `seevee init` again in an initialized directory should:
 - open the dashboard;
 - exit.
 
-It must not create duplicate CV IDs, duplicate comments resources, duplicate templates or additional nested workspaces.
+It must not create duplicate CV IDs, duplicate library entries, duplicate templates or additional nested workspaces.
 
 ### Non-empty directories
 
@@ -230,10 +230,14 @@ Recommended initialized layout:
 my-cv/
 ├── AGENTS.md
 ├── seevee.json
-├── cv.json
-├── provenance.json
-├── presentation.json
-├── comments.json
+├── cvs/
+│   └── main.json
+├── provenance/
+│   └── main.json
+├── comments/
+│   └── main.json
+├── presentations/
+│   └── main.json
 ├── sources/
 │   ├── raw/
 │   └── extracted/
@@ -258,10 +262,10 @@ my-cv/
 Canonical/user-owned:
 
 - `seevee.json`
-- `cv.json`
-- `provenance.json`
-- `presentation.json`
-- `comments.json`
+- every `cvs/*.json` CV document
+- `provenance/*.json`
+- `comments/*.json`
+- `presentations/*.json`
 - source material
 - local template source
 - exports if the user chooses to version them
@@ -577,7 +581,7 @@ The CLI/distribution portion is complete only when:
 - `seevee` is available on PATH;
 - `seevee init` requires no prompts;
 - init can safely run in a non-empty directory;
-- default A4 canonical workspace files are created;
+- an initial `cvs/main.json` CV plus associated provenance/comments/presentation resources are created, with A4 as the default presentation profile;
 - generic agent instructions are created without overwriting an existing user agent file;
 - a local server starts in the background;
 - health is verified before success is reported;
