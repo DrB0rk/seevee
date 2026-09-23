@@ -14,12 +14,28 @@ During implementation, the runtime source of truth moves to Zod modules in `pack
 - `provenance.schema.json` — evidence and source locators linked to CV semantic targets.
 - `presentation.schema.json` — page profile, selected template, presentation tokens and section overrides.
 - `comments.schema.json` — review threads and resilient selector stacks.
-- `workspace.schema.json` — `seevee.json` workspace descriptor.
+- `workspace.schema.json` — `seevee.json` multi-CV workspace library/index.
 - `change-set.schema.json` — revision-safe, ID-aware mutations.
 - `template-manifest.schema.json` — Astro template capabilities, bindings and editable token contract.
 - `style-preset.schema.json` — reusable presentation preset referencing a source template.
 - `agent-run.schema.json` — auditable agent execution summary.
 - `render-diagnostics.schema.json` — deterministic render/export diagnostics.
+
+## Multi-CV resource model
+
+A workspace stores each CV as its own complete JSON document under `cvs/`. Presentations are separate resources that explicitly bind one CV ID to one template/version.
+
+This keeps content and design independently interchangeable:
+
+~~~text
+cvs/backend.json ─────┐
+                      ├─ presentation ─ template/minimal
+cvs/security.json ────┘
+
+cvs/backend.json ───── presentation ─ template/bespoke-backend
+~~~
+
+A template manifest may describe itself as reusable, targeted, or bespoke. That metadata is advisory and never a hard compatibility block.
 
 ## Linking model
 
@@ -59,7 +75,8 @@ The semantic validation package must additionally verify:
 - source IDs referenced by provenance exist;
 - presentation section overrides reference real sections;
 - template/style IDs and schema compatibility ranges are compatible;
-- selected template tokens are permitted by the manifest;
+- selected presentation references an existing CV and template/version;
+- template tokens, when used, are permitted by the manifest;
 - A4 portrait resolves to exactly 210 x 297 mm;
 - `isCurrent=true` has no end date;
 - `targetPages <= maxPages`;
