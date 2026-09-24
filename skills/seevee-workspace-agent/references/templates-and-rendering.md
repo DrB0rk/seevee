@@ -4,6 +4,12 @@
 
 The dashboard is fixed application UI. Agents modify the CV canvas, not the dashboard shell. Seevee does not prescribe CV styling or layout.
 
+## Design freedom
+
+Treat the user's visual direction as the design brief. The CV canvas may use any visual structure that fits the content and page profile: CSS Grid, Flexbox, multiple columns, sidebars, asymmetric compositions, timelines, cards, rules, color systems, custom typography, and image assets are all available. Do not force a design into Classic, the bundled Two-Column template, one-column ATS styling, or the dashboard's available token controls when the brief calls for something else.
+
+The bundled templates are examples and starting points only. For a distinct structure or style, fork a source template or create a bespoke local Astro/CSS template and register it with the presentation. Source-level design does not need to be expressible as dashboard tokens. Preserve semantic bindings for editable/commentable content, accessibility, selected physical page dimensions, page breaks, and export diagnostics while designing freely.
+
 The canvas renders one or more physical pages. Default:
 
 - preset: A4;

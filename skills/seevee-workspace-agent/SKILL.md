@@ -36,7 +36,7 @@ Use Seevee's structured documents as the source of truth. Do not treat rendered 
 - Treat unresolved factual conflicts as conflicts. Do not silently choose one value.
 - Treat generated Astro template code as restricted visual code. Do not add filesystem, process, environment, arbitrary network, dynamic-evaluation, endpoint, or package-install capabilities.
 - The dashboard/editor is fixed product UI. Do not redesign it when asked to redesign a CV.
-- CV layout and styling are fully user/agent controlled inside the template safety boundary.
+- CV layout and styling are fully user/agent controlled inside the template safety boundary. Use CSS Grid, Flexbox, columns, sidebars, asymmetric grids, timelines, visual accents, and bespoke typography or color systems when they serve the brief. Do not limit designs to the bundled templates, a single-column structure, or the dashboard's available style controls.
 - Default new-presentation profile is A4 portrait, 210 mm x 297 mm; it is not a mandatory CV style or page size.
 - Preview and PDF export must share the same selected page dimensions and render contract.
 - Do not turn CV best practices into hidden dashboard rules, a profile selector, or a resume score.
@@ -89,6 +89,7 @@ Then mutate only the corresponding document or template surface. Read `reference
 For visual/template changes:
 
 - keep the selected `cvs/<cv-id>.json` content resource read-only during visual-only template work;
+- treat the user's visual direction as the design brief and create a fully custom Astro/CSS layout when needed; the bundled templates are starting points, not layout constraints;
 - use the template SDK bindings for every semantic/commentable rendered block;
 - keep selected physical page dimensions page-aware;
 - preserve explicit overflow behavior;

@@ -6,7 +6,7 @@ Creating a CV includes its visible design. Do not finish after writing `cvs/<id>
 
 1. Create the schema-valid CV document with stable IDs and verified facts.
 2. Create a presentation registered to that CV, with an explicit page profile and visual tokens.
-3. Choose a source template. Use the installed `classic` template as the styled default when the user has not supplied a direction; adapt or create a local Astro/CSS template when the request calls for a distinct look.
+3. Choose a source template. Honor the user's design direction and feel free to create a fully custom Astro/CSS layout, including grid, columns, sidebars, and other structures. Use the installed `classic` template only as the styled default when the user has not supplied a direction; adapt or create a local template when the request calls for a distinct look.
 4. Register the template in `seevee.json` and point the presentation at its template/version IDs.
 5. Validate the manifest, CV, presentation, and workspace references together.
 6. Render the CV and correct page breaks, typography, spacing, and overflow before calling the new CV complete.

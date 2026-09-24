@@ -64,8 +64,13 @@ the Seevee workspace-agent at \`.seevee/agent/seevee-workspace-agent/\`.
 - Render bindings (overflow, truncation) live on the presentation, never
   on the CV.
 - Creating a CV is not complete with JSON alone. Create/register its
-  presentation and use the installed Classic visual template by default;
-  render it and account for page breaks before finishing.
+  presentation and give it a finished visual design. Use the installed
+  Classic template only when the user has not provided a visual direction.
+- The user controls the CV's visual layout. Build custom Astro/CSS when
+  useful: CSS Grid, Flexbox, multiple columns, sidebars, asymmetry, and
+  other layouts are all allowed. The bundled templates and dashboard style
+  controls are starting points, not constraints. Keep semantic bindings,
+  selected page sizing, accessibility, and export safety intact.
 
 ## Comments workflow
 
