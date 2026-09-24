@@ -1,7 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="18 18 140 140" fill="none">
-  <rect x="18" y="18" width="140" height="140" rx="28" fill="#111418"/>
-  <rect x="18.75" y="18.75" width="138.5" height="138.5" rx="27.25" stroke="#2D333A" stroke-width="1.5"/>
-  <path d="M55 48.5H105.5L125 68V126.5C125 132.299 120.299 137 114.5 137H55C49.201 137 44.5 132.299 44.5 126.5V59C44.5 53.201 49.201 48.5 55 48.5Z" fill="#181C20" stroke="#3B424A"/>
-  <path d="M105.5 48.5V62C105.5 65.314 108.186 68 111.5 68H125" stroke="#3B424A" stroke-width="1.5"/>
-  <path d="M111 77H80C69 77 62 83 62 92C62 100 68 105 79 105H94C104 105 110 110 110 118C110 126 104 131 93 131H59" stroke="#6AA0FF" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" fill="none" role="img" aria-labelledby="title">
+  <title id="title">Seevee</title>
+  <defs>
+    <linearGradient id="check" x1="55" y1="61" x2="101" y2="111" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#70A5FF"/>
+      <stop offset="1" stop-color="#3B78F2"/>
+    </linearGradient>
+  </defs>
+  <rect x="5" y="5" width="170" height="170" rx="34" fill="#0F1113" stroke="#242A30" stroke-width="2"/>
+  <rect x="18" y="18" width="144" height="144" rx="28" fill="#111418" stroke="#2D333A" stroke-width="1.5"/>
+  <path d="M62 45.5H104L122.5 64V119C122.5 124.799 117.799 129.5 112 129.5H62C56.201 129.5 51.5 124.799 51.5 119V56C51.5 50.201 56.201 45.5 62 45.5Z" fill="#181C20" stroke="#3B424A"/>
+  <path d="M104 46V59C104 62.314 106.686 65 110 65H122" stroke="#3B424A" stroke-width="1.5"/>
+  <path d="M63 81L76.5 104L103 62" stroke="url(#check)" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
