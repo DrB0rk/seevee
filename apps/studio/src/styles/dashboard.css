@@ -297,7 +297,7 @@ button, select { transition: background-color 120ms ease, border-color 120ms eas
 .section-list { padding: 10px 9px; }
 .section-link { min-height: 39px; border-radius: 4px; font-size: 12px; }
 .section-number { font-size: 11px; }
-.panel-heading { padding-top: 18px; }
+.panel-heading { flex: 0 0 54px; min-height: 54px; padding: 0 16px; }
 .work-area { background: var(--canvas-pasteboard); }
 .canvas-bar { min-height: 54px; padding-inline: 16px; }
 .canvas-title > span:last-child { font-size: 13px; font-weight: 560; }
@@ -450,7 +450,7 @@ button:active { background-color: var(--control-hover); }
   .structure-panel { max-height: 24vh; min-height: 140px; border-right: 0; }
   .editor-panel { min-height: 320px; }
   .section-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .panel-heading { padding: 13px 14px 10px; }
+  .panel-heading { flex-basis: auto; min-height: 54px; padding: 13px 14px 10px; }
   .canvas-controls { justify-content: space-between; gap: 4px; }
   .canvas-controls .icon-button { width: 44px; height: 44px; }
   .canvas-controls .button { min-height: 44px; padding-inline: 8px; font-size: 11px; }
