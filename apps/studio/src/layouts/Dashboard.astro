@@ -527,6 +527,9 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     paper.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[data-field]').forEach((field) => {
       field.readOnly = documentMode === 'preview';
     });
+    paper.querySelectorAll<HTMLElement>('.cv-inline-actions, .cv-add-entry, .cv-add-date, .cv-remove-result, .cv-current-toggle').forEach((control) => {
+      control.style.display = documentMode === 'preview' ? 'none' : '';
+    });
     document.querySelectorAll<HTMLButtonElement>('[data-document-mode]').forEach((button) => {
       button.setAttribute('aria-pressed', String(button.dataset.documentMode === documentMode));
     });
