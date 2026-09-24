@@ -55,9 +55,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 
 .structure-panel, .editor-panel { min-height: 0; background: var(--panel-background); }
 .editor-resize { grid-area: resize; position: relative; z-index: 2; width: 10px; cursor: col-resize; touch-action: none; }
-.editor-resize::before { position: absolute; inset: 0 auto 0 4px; width: 1px; background: var(--separator); content: ""; }
-.editor-resize::after { position: absolute; top: 50%; left: 2px; width: 5px; height: 34px; border: 1px solid #47515b; border-radius: 4px; background: #252b32; content: ""; opacity: .6; transform: translateY(-50%); transition: background-color 120ms ease, opacity 120ms ease; }
-.editor-resize:hover::after, .editor-resize:focus-visible::after, .editor-resize[data-dragging="true"]::after { border-color: var(--accent); background: #343d47; opacity: 1; }
+.editor-resize::before { position: absolute; inset: 0 auto 0 4px; width: 1px; background: #343b43; content: ""; transition: background-color 120ms ease, width 120ms ease; }
+.editor-resize:hover::before, .editor-resize:focus-visible::before, .editor-resize[data-dragging="true"]::before { width: 2px; background: #8693a0; }
 .editor-resize:focus-visible { outline: 0; }
 .structure-panel { grid-area: structure; display: flex; flex-direction: column; border-right: 1px solid var(--separator); }
 .panel-heading { display: flex; justify-content: space-between; align-items: center; padding: 21px 16px 15px; border-bottom: 1px solid var(--separator); }
@@ -164,8 +163,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .cv-inline-result { min-height: 0; }
 .cv-inline-description { margin-top: 5px; }
 .paper[data-mode="edit"] [data-field] { cursor: text; }
-.paper[data-mode="edit"] [data-field]:hover:not(:focus) { border-color: #c1c8cf; }
-.paper[data-mode="edit"] [data-field]:focus { border-color: var(--cv-accent-color, #1f2937); background: color-mix(in srgb, var(--cv-accent-color, #1f2937) 5%, #fff); outline: 2px solid color-mix(in srgb, var(--cv-accent-color, #1f2937) 75%, #fff); outline-offset: 1px; }
+.paper[data-mode="edit"] input[data-field], .paper[data-mode="edit"] textarea[data-field] { border: 1px solid transparent; border-radius: 0; background: transparent !important; box-shadow: none; color-scheme: light; }
+.paper[data-mode="edit"] input[type="number"][data-field] { appearance: textfield; -moz-appearance: textfield; }
+.paper[data-mode="edit"] input[type="number"][data-field]::-webkit-inner-spin-button,
+.paper[data-mode="edit"] input[type="number"][data-field]::-webkit-outer-spin-button { margin: 0; appearance: none; -webkit-appearance: none; }
+.paper[data-mode="edit"] [data-field]:hover:not(:focus) { border-color: #aeb6bd; }
+.paper[data-mode="edit"] [data-field]:focus { border-color: #76818b; background: transparent !important; outline: 1px solid #76818b; outline-offset: 0; }
 .cv-date-range { display: flex; align-items: center; justify-content: flex-end; gap: 4px; flex: 0 0 auto; color: #707982; font-size: 11px; }
 .cv-inline-year { width: 58px; text-align: center; font-size: var(--cv-small-size, 10pt); }
 .cv-present { color: #707982; font-size: 11px; }
@@ -310,10 +313,10 @@ button, select { transition: background-color 120ms ease, border-color 120ms eas
 .editor-heading p { margin-top: 6px; color: #a8b1bc; font-size: 11px; line-height: 1.45; }
 .editor-content { padding: 16px 18px 24px; background: #13171b; }
 .editor-section { margin-bottom: 14px; border-color: #38414a; border-radius: 5px; background: #191e23; }
-.editor-section-heading { min-height: 40px; padding-inline: 12px; border-bottom-color: #3a434d; background: #222830; }
-.editor-section-heading h3 { color: #e1e6eb; font-size: 10px; letter-spacing: .075em; }
-.editor-section-heading span { padding: 3px 7px; border: 1px solid #3f4954; border-radius: 10px; color: #b2bdc8; font-size: 9px; }
-.editor-section-body { padding-inline: 11px; }
+.editor-section-heading { align-items: center; min-height: 44px; padding-inline: 13px; border-bottom-color: #3a434d; background: #20262d; }
+.editor-section-heading h3 { color: #eef1f4; font-size: 12px; font-weight: 620; letter-spacing: 0; text-transform: none; }
+.editor-section-heading span { padding: 3px 8px; border: 1px solid #46515c; border-radius: 10px; color: #c0c8d0; font-size: 10px; }
+.editor-section-body { padding: 4px 13px 11px; }
 .editor-group { border-bottom-color: #343d46; }
 .group-heading { min-height: 50px; padding-inline: 4px; }
 .group-heading-title { font-size: 13px; font-weight: 620; }

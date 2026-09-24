@@ -698,16 +698,13 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
       </div>
     </details>`).join('');
     const email = identity.contact.find((item) => item.kind === 'email')?.value ?? '';
-    const editorSection = (title: string, meta: string, body: string) => `<section class="editor-section"><header class="editor-section-heading"><h3>${escapeHtml(title)}</h3><span>${escapeHtml(meta)}</span></header><div class="editor-section-body">${body}</div></section>`;
-    editor.innerHTML = `${editorSection('Profile', 'Name and contact', `<details class="editor-group" id="edit-identity">
-      <summary class="group-heading"><span class="group-heading-title">Identity</span><span class="group-heading-meta">Name and profile</span></summary>
-      <div class="group-body">
+    const editorSection = (title: string, meta: string, body: string, id = '') => `<section class="editor-section"${id ? ` id="${id}"` : ''}><header class="editor-section-heading"><h3>${escapeHtml(title)}</h3><span>${escapeHtml(meta)}</span></header><div class="editor-section-body">${body}</div></section>`;
+    editor.innerHTML = `${editorSection('Profile', '4 fields', `
       ${field('identity.name.display', identity.name.display, 'Your name', 'Name')}
       ${field('identity.headline', identity.headline ?? '', 'Role or professional focus', 'Headline')}
       ${field('contact.email', email, 'name@example.com', 'Email')}
       ${field('identity.summary', identity.summary ?? '', 'A concise introduction to your work', 'Summary', true)}
-      </div>
-    </details>`)}
+    `, 'edit-identity')}
       ${editorSection('Experience', `${experienceIds().length} entries`, `<div id="edit-experience">${experiences}</div><button type="button" class="add-entry" id="add-experience-inline">+ Add experience</button>`)}
       ${editorSection('Education', `${Object.keys(cv.data.entities.education ?? {}).length} entries`, `${education}<button type="button" class="add-entry" data-add-entry="education">+ Add education</button>`)}
       ${editorSection('Projects', `${Object.keys(cv.data.entities.projects ?? {}).length} entries`, `${projects}<button type="button" class="add-entry" data-add-entry="projects">+ Add project</button>`)}
