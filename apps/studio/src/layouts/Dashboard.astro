@@ -532,6 +532,15 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     });
   }
 
+  document.querySelectorAll<HTMLButtonElement>('[data-document-mode]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const mode = button.dataset.documentMode;
+      if (mode !== 'preview' && mode !== 'edit') return;
+      documentMode = mode;
+      syncDocumentMode();
+    });
+  });
+
   function paginatePreviewContent(content: string) {
     printPageStyle.textContent = `@page { size: ${pageProfile.width}mm ${pageProfile.height}mm; margin: 0; }`;
     for (const [name, value] of Object.entries({
@@ -1736,12 +1745,6 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     if (target.closest('#fit-page')) {
       const width = pasteboard.clientWidth - 72;
       setZoom(width / (pageProfile.width * 96 / 25.4));
-    }
-    const modeButton = target.closest<HTMLButtonElement>('[data-document-mode]');
-    if (modeButton?.dataset.documentMode === 'preview' || modeButton?.dataset.documentMode === 'edit') {
-      documentMode = modeButton.dataset.documentMode;
-      syncDocumentMode();
-      return;
     }
     const jump = target.closest<HTMLElement>('[data-comment-jump]');
     if (jump?.dataset.commentJump) {
