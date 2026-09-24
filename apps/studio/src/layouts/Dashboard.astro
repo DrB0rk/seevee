@@ -65,6 +65,10 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
       </div>
       <div class="canvas-controls" aria-label="Preview controls">
         <button class="button button-subtle" type="button" id="place-comment" aria-pressed="false" title="Choose a place on the CV for a comment">Place comment</button>
+        <div class="document-mode" role="group" aria-label="Document mode">
+          <button class="mode-button" type="button" data-document-mode="preview" aria-pressed="true">Preview</button>
+          <button class="mode-button" type="button" data-document-mode="edit" aria-pressed="false">Edit</button>
+        </div>
         <button class="icon-button" type="button" data-zoom="-" aria-label="Zoom out">−</button>
         <output class="zoom-readout" id="zoom-readout">100%</output>
         <button class="icon-button" type="button" data-zoom="+" aria-label="Zoom in">+</button>
@@ -176,6 +180,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
   let saveTimer: number | undefined;
   let saving = false;
   let zoom = 1;
+  let documentMode: 'preview' | 'edit' = 'preview';
   let placingComment = false;
   let pendingPlacement: Placement | null = null;
   let commentsDocument: CommentsDoc | null = null;
@@ -216,6 +221,16 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
 
   function inlineText(path: string, value: unknown, label: string, className = 'cv-inline-text') {
     return `<textarea rows="1" class="${className}" data-field="${escapeHtml(path)}" aria-label="${escapeHtml(label)}" placeholder="${escapeHtml(label)}">${escapeHtml(value)}</textarea>`;
+  }
+
+  function syncDocumentMode() {
+    paper.dataset.mode = documentMode;
+    paper.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[data-field]').forEach((field) => {
+      field.readOnly = documentMode === 'preview';
+    });
+    document.querySelectorAll<HTMLButtonElement>('[data-document-mode]').forEach((button) => {
+      button.setAttribute('aria-pressed', String(button.dataset.documentMode === documentMode));
+    });
   }
 
   function renderEditor() {
@@ -336,6 +351,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
       <section class="cv-section cv-summary" data-cv-section="${escapeHtml(sectionIdFor('summary'))}"><h2>Profile</h2>${inlineText('identity.summary', summary ?? '', 'Profile summary', 'cv-inline-text cv-summary-text')}</section>
       ${experiences}
       ${education}${projects}${skills}`;
+    syncDocumentMode();
     paper.querySelectorAll<HTMLTextAreaElement>('textarea').forEach((textarea) => {
       textarea.style.height = 'auto';
       textarea.style.height = `${textarea.scrollHeight}px`;
@@ -501,11 +517,13 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     else if (entry?.dataset.nodeId) actions.push({ id: 'edit-entry', label: 'Edit this entry in content panel' });
     const sectionType = cv?.data.sections[section?.dataset.cvSection ?? '']?.type;
     const experience = pageTarget.closest<HTMLElement>('[data-node-type="experience"]');
-    if (experience?.dataset.nodeId) actions.push({ id: 'add-result', label: 'Add result to this experience' });
-    if (sectionType === 'experience' && !entry) actions.push({ id: 'add-experience', label: 'Add experience' });
-    if (sectionType === 'education') actions.push({ id: 'add-education', label: 'Add education' });
-    if (sectionType === 'projects') actions.push({ id: 'add-project', label: 'Add project' });
-    if (sectionType === 'skills') actions.push({ id: 'add-skill', label: 'Add skill' });
+    if (documentMode === 'edit') {
+      if (experience?.dataset.nodeId) actions.push({ id: 'add-result', label: 'Add result to this experience' });
+      if (sectionType === 'experience' && !entry) actions.push({ id: 'add-experience', label: 'Add experience' });
+      if (sectionType === 'education') actions.push({ id: 'add-education', label: 'Add education' });
+      if (sectionType === 'projects') actions.push({ id: 'add-project', label: 'Add project' });
+      if (sectionType === 'skills') actions.push({ id: 'add-skill', label: 'Add skill' });
+    }
     if (commentId) {
       actions.push({ id: 'edit-comment', label: 'Edit this comment' });
       actions.push({ id: 'move-comment', label: 'Move pin to a new spot' });
@@ -1105,6 +1123,12 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
       zoom = Math.max(0.55, Math.min(1.15, width / 794));
       paper.style.setProperty('--paper-zoom', String(zoom));
       document.querySelector('#zoom-readout')!.textContent = `${Math.round(zoom * 100)}%`;
+    }
+    const modeButton = target.closest<HTMLButtonElement>('[data-document-mode]');
+    if (modeButton?.dataset.documentMode === 'preview' || modeButton?.dataset.documentMode === 'edit') {
+      documentMode = modeButton.dataset.documentMode;
+      syncDocumentMode();
+      return;
     }
     const jump = target.closest<HTMLElement>('[data-comment-jump]');
     if (jump?.dataset.commentJump) {

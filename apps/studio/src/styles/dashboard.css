@@ -73,6 +73,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .canvas-kicker { color: var(--text-muted); font-size: 9px; font-weight: 650; letter-spacing: .12em; }
 .canvas-controls { display: flex; align-items: center; gap: 6px; }
 .canvas-controls .icon-button { width: 27px; height: 27px; color: var(--text-secondary); }
+.document-mode { display: flex; align-items: center; padding: 2px; border: 1px solid var(--control-outline); border-radius: 4px; background: #101317; }
+.mode-button { min-height: 25px; padding: 0 9px; border: 0; border-radius: 2px; background: transparent; color: var(--text-secondary); font-size: 10px; cursor: pointer; }
+.mode-button[aria-pressed="true"] { background: #30363d; color: var(--text-primary); }
+.mode-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .zoom-readout { min-width: 36px; color: var(--text-secondary); font: 10px var(--font-mono); text-align: center; }
 .fit-button { min-height: 27px; padding: 0 8px; color: var(--text-secondary); font-size: 10px; }
 .canvas-controls .control-divider { height: 18px; margin: 0 4px; }
@@ -84,6 +88,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .cv-headline { color: #535b65; font-size: 14px; }
 .cv-contact { margin-top: 11px; color: #68727b; font-size: 11px; }
 .paper [data-field]:focus { outline: 1px solid #4c8dff; outline-offset: 3px; }
+.paper[data-mode="preview"] [data-field] { cursor: default; }
+.paper[data-mode="preview"] [data-field]:focus { outline: 0; }
+.paper[data-mode="preview"] .cv-current-toggle,
+.paper[data-mode="preview"] .cv-inline-actions,
+.paper[data-mode="preview"] .cv-add-entry,
+.paper[data-mode="preview"] .cv-remove-result { display: none; }
 .cv-section { margin-top: 24px; }
 .cv-section h2 { margin: 0 0 11px; color: #57616c; font-size: 10px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; }
 .cv-section p { margin: 5px 0 0; white-space: pre-wrap; }
