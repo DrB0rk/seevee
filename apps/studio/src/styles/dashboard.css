@@ -31,7 +31,7 @@ button, input, textarea, select { font: inherit; }
 button { color: inherit; }
 button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .eyebrow { color: var(--text-muted); font-size: 10px; font-weight: 650; letter-spacing: .11em; line-height: 1.3; }
-.studio { --editor-width: 324px; height: 100dvh; min-height: 0; overflow: hidden; display: grid; grid-template-rows: 58px minmax(0, 1fr) 28px; grid-template-columns: 250px minmax(380px, 1fr) 10px var(--editor-width); grid-template-areas: "top top top top" "structure work resize editor" "status status status status"; background: var(--app-background); }
+.studio { --editor-width: 360px; height: 100dvh; min-height: 0; overflow: hidden; display: grid; grid-template-rows: 58px minmax(0, 1fr) 28px; grid-template-columns: 250px minmax(380px, 1fr) 10px var(--editor-width); grid-template-areas: "top top top top" "structure work resize editor" "status status status status"; background: var(--app-background); }
 
 .topbar { grid-area: top; display: flex; align-items: center; gap: 18px; min-width: 0; padding: 0 18px; background: var(--panel-background); border-bottom: 1px solid var(--separator); }
 .brand { display: inline-flex; align-items: center; gap: 8px; color: var(--text-primary); text-decoration: none; }
@@ -304,19 +304,38 @@ button, select { transition: background-color 120ms ease, border-color 120ms eas
 .pasteboard { background: var(--canvas-pasteboard); }
 .paper { box-shadow: 0 10px 34px #0007, 0 0 0 1px #ffffff24; }
 .paper [data-field]:focus { outline: 2px solid #2f6fda; outline-offset: 2px; }
-.editor-heading { padding: 18px 18px 16px; }
+.editor-heading { padding: 20px 20px 17px; border-bottom-color: #414a54; background: #1b2026; }
+.editor-heading .eyebrow { color: #9ba8b6; font-size: 9px; }
 .panel-heading h1, .editor-heading h2 { font-size: 15px; }
-.editor-heading p { color: var(--text-secondary); font-size: 12px; }
-.editor-content { padding: 13px 18px 22px; }
-.dashboard-comments h3 { font-size: 12px; }
-.field { gap: 6px; margin: 13px 0; }
-.field > span { color: var(--text-secondary); font-size: 12px; }
-.field input, .field textarea { min-height: 38px; padding: 8px 10px; border-color: var(--control-outline); border-radius: 4px; background: var(--control-background); font-size: 12px; }
-.field textarea { min-height: 78px; }
+.editor-heading p { margin-top: 6px; color: #a8b1bc; font-size: 11px; line-height: 1.45; }
+.editor-content { padding: 16px 18px 24px; background: #13171b; }
+.editor-section { margin-bottom: 14px; border-color: #38414a; border-radius: 5px; background: #191e23; }
+.editor-section-heading { min-height: 40px; padding-inline: 12px; border-bottom-color: #3a434d; background: #222830; }
+.editor-section-heading h3 { color: #e1e6eb; font-size: 10px; letter-spacing: .075em; }
+.editor-section-heading span { padding: 3px 7px; border: 1px solid #3f4954; border-radius: 10px; color: #b2bdc8; font-size: 9px; }
+.editor-section-body { padding-inline: 11px; }
+.editor-group { border-bottom-color: #343d46; }
+.group-heading { min-height: 50px; padding-inline: 4px; }
+.group-heading-title { font-size: 13px; font-weight: 620; }
+.group-heading-meta { color: #a2acb7; font-size: 11px; }
+.editor-group[open] > .group-heading { border-bottom: 1px solid #36404a; }
+.editor-group[open] > .group-body { padding: 10px 8px 15px; }
+.group-remove { min-height: 30px; margin: 0 0 5px; padding: 3px 8px; border: 1px solid #684443; border-radius: 4px; color: #f0a6a1; }
+.field { gap: 6px; margin: 14px 0; }
+.field > span { color: #c4cbd3; font-size: 11px; font-weight: 550; }
+.field input, .field textarea { min-height: 40px; padding: 9px 10px; border-color: #76828f; border-radius: 4px; background: #20262d; color: #f2f4f6; font-size: 12px; }
+.field textarea { min-height: 88px; line-height: 1.5; }
 .field input::placeholder, .field textarea::placeholder { color: #98a2ad; }
-.add-entry { min-height: 38px; border-color: #697580; border-radius: 4px; font-size: 12px; }
-.text-button { font-size: 11px; }
-.dashboard-comments { max-height: 220px; padding: 12px 18px; }
+.field input:hover, .field textarea:hover { border-color: #83909c; }
+.field input:focus, .field textarea:focus { border-color: var(--accent); background: #222a32; }
+.add-entry { min-height: 40px; border-color: #596671; border-radius: 4px; background: #1b2229; color: #d2dce6; font-size: 12px; }
+.add-entry:hover { border-style: solid; background: #242d36; }
+.text-button { min-height: 30px; font-size: 11px; }
+.dashboard-comments { max-height: min(30vh, 320px); padding: 14px 18px; border-top: 1px solid #4a5662; background: #1a1f25; }
+.dashboard-comments h3 { font-size: 11px; }
+.comment-card { border-color: #434d57; border-radius: 4px; background: #222830; }
+.comment-body { font-size: 12px; line-height: 1.55; }
+.editor-footer { min-height: 42px; padding: 12px 18px; border-top-color: #424b55; background: #1b2026; }
 .comment-card-actions > button:not(.comment-jump):hover { color: var(--text-primary); }
 .comment-dialog { border-radius: 6px; box-shadow: 0 16px 48px #0008; }
 .comment-dialog .field textarea { font-size: 13px; }

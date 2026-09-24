@@ -109,7 +109,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     </div>
   </main>
 
-  <div class="editor-resize" id="editor-resize" role="separator" aria-orientation="vertical" aria-label="Resize content sidebar" aria-valuemin="260" aria-valuemax="560" aria-valuenow="324" tabindex="0" title="Drag to resize the content sidebar"></div>
+  <div class="editor-resize" id="editor-resize" role="separator" aria-orientation="vertical" aria-label="Resize content sidebar" aria-valuemin="280" aria-valuemax="720" aria-valuenow="360" tabindex="0" title="Drag to resize the content sidebar"></div>
   <aside class="editor-panel" aria-label="Edit CV content">
     <div class="editor-heading">
       <span class="eyebrow">CONTENT</span>
@@ -188,8 +188,8 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
   const editorResize = document.querySelector<HTMLElement>('#editor-resize')!;
   const editorWidthStorageKey = 'seevee.dashboard.editor-width';
   const narrowLayout = window.matchMedia('(max-width: 880px)');
-  const minEditorWidth = 260;
-  let editorWidth = 324;
+  const minEditorWidth = 280;
+  let editorWidth = 360;
   try {
     const savedWidth = Number(localStorage.getItem(editorWidthStorageKey));
     if (Number.isFinite(savedWidth) && savedWidth >= minEditorWidth) editorWidth = savedWidth;
@@ -198,7 +198,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
   function setEditorWidth(width: number, persist = true) {
     const leftWidth = window.matchMedia('(max-width: 1120px)').matches ? 210 : 250;
     const workMinWidth = window.matchMedia('(max-width: 1120px)').matches ? 330 : 380;
-    const maxWidth = Math.max(minEditorWidth, Math.min(560, studio.clientWidth - leftWidth - workMinWidth - 10));
+    const maxWidth = Math.max(minEditorWidth, Math.min(720, studio.clientWidth - leftWidth - workMinWidth - 10));
     editorWidth = Math.max(minEditorWidth, Math.min(maxWidth, width));
     studio.style.setProperty('--editor-width', `${editorWidth}px`);
     editorResize.setAttribute('aria-valuenow', String(Math.round(editorWidth)));
@@ -229,7 +229,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
   editorResize.addEventListener('pointercancel', stopEditorResize);
   editorResize.addEventListener('keydown', (event) => {
     if (narrowLayout.matches) return;
-    const currentMax = Number(editorResize.getAttribute('aria-valuemax')) || 560;
+    const currentMax = Number(editorResize.getAttribute('aria-valuemax')) || 720;
     if (event.key === 'ArrowLeft') setEditorWidth(editorWidth + 16);
     else if (event.key === 'ArrowRight') setEditorWidth(editorWidth - 16);
     else if (event.key === 'Home') setEditorWidth(minEditorWidth);
