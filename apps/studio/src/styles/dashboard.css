@@ -81,7 +81,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .fit-button { min-height: 27px; padding: 0 8px; color: var(--text-secondary); font-size: 10px; }
 .canvas-controls .control-divider { height: 18px; margin: 0 4px; }
 .pasteboard { flex: 1; min-height: 0; overflow: auto; display: flex; justify-content: center; align-items: flex-start; padding: 34px 28px 60px; background: var(--canvas-pasteboard); }
-.paper { --paper-zoom: 1; position: relative; flex: 0 0 auto; width: 794px; min-height: 1123px; padding: 68px 70px 74px; transform: scale(var(--paper-zoom)); transform-origin: top center; margin-bottom: calc((var(--paper-zoom) - 1) * 1123px); background: var(--paper); color: #202329; box-shadow: 0 3px 20px #0008, 0 0 0 1px var(--paper-edge); font-family: Arial, Helvetica, sans-serif; font-size: 13px; line-height: 1.55; }
+.paper-stack { display: flex; flex-direction: column; align-items: center; gap: 28px; min-width: 0; }
+.paper { position: relative; flex: 0 0 auto; box-sizing: border-box; width: var(--page-width-mm, 210mm); height: var(--page-height-mm, 297mm); overflow: hidden; padding: var(--page-top-mm, 18mm) var(--page-right-mm, 18mm) var(--page-bottom-mm, 18mm) var(--page-left-mm, 18mm); transform: scale(var(--paper-zoom, 1)); transform-origin: top center; margin-bottom: calc((var(--paper-zoom, 1) - 1) * var(--page-height-mm, 297mm)); background: var(--paper); color: #202329; box-shadow: 0 3px 20px #0008, 0 0 0 1px var(--paper-edge); font-family: Arial, Helvetica, sans-serif; font-size: 13px; line-height: 1.55; }
+.paper-measure { gap: 0; }
 .cv-header { padding-bottom: 28px; border-bottom: 1px solid #d8dce0; }
 .cv-name, .cv-headline, .cv-contact, .cv-summary textarea { display: block; width: 100%; padding: 0; border: 1px solid transparent; background: transparent; color: inherit; }
 .cv-name { margin: -4px 0 3px; font-family: Georgia, "Times New Roman", serif; font-size: 34px; line-height: 1.18; letter-spacing: -.03em; }
@@ -139,7 +141,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .workspace-error { padding: 32px 5px; }
 .workspace-error h2 { margin: 10px 0 5px; font-family: Georgia, serif; font-size: 27px; font-weight: 500; }
 .workspace-error p { color: #535b65; }
-.paper.is-placing-comment { cursor: crosshair; }
+.paper-stack.is-placing-comment .paper { cursor: crosshair; }
 .comment-marker { position: absolute; z-index: 2; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; transform: translate(-50%, -50%); border: 2px solid #fff; border-radius: 50%; background: #923a2c; color: #fff; font-size: 11px; font-weight: 700; box-shadow: 0 2px 7px #0008; cursor: grab; touch-action: none; transition: transform 120ms ease, background-color 120ms ease; }
 .comment-marker:hover { z-index: 3; transform: translate(-50%, -50%) scale(1.12); background: #70291f; }
 .comment-marker:focus-visible { z-index: 3; outline: 3px solid #2362b9; outline-offset: 2px; }
@@ -291,7 +293,7 @@ button:active { background-color: var(--control-hover); }
   .save-state { max-width: 145px; overflow: hidden; text-overflow: ellipsis; }
   .structure-panel { border-top: 1px solid var(--separator); }
   .editor-panel { border-top: 1px solid var(--separator); }
-  .paper { width: min(794px, calc(100vw - 48px)); min-height: 1000px; padding: 40px 35px; }
+  .paper-stack { align-items: flex-start; }
 }
 @media (max-width: 560px) {
   html, body { height: auto; min-height: 100%; overflow: auto; }
@@ -306,7 +308,7 @@ button:active { background-color: var(--control-hover); }
   .canvas-controls { gap: 3px; }
   .fit-button { padding: 0 5px; }
   .pasteboard { padding: 18px 8px 35px; }
-  .paper { width: calc(100vw - 28px); min-height: 950px; padding: 32px 25px; transform: none; margin-bottom: 0; }
+  .paper { transform: scale(var(--paper-zoom, 1)); }
   .structure-panel { max-height: 24vh; min-height: 140px; border-right: 0; }
   .editor-panel { min-height: 320px; }
   .section-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -339,7 +341,9 @@ button:active { background-color: var(--control-hover); }
   .studio { display: block; min-height: 0; background: #fff; }
   .topbar, .structure-panel, .canvas-bar, .editor-panel, .statusbar { display: none !important; }
   .work-area, .pasteboard { display: block; min-height: 0; overflow: visible; padding: 0; background: #fff; }
-  .paper { width: 210mm; min-height: 297mm; margin: 0; padding: 18mm; transform: none; box-shadow: none; }
+  .paper-stack { display: block; }
+  .paper { width: var(--page-width-mm); height: var(--page-height-mm); margin: 0; transform: none; box-shadow: none; break-after: page; page-break-after: always; }
+  .paper:last-child { break-after: auto; page-break-after: auto; }
   .paper input, .paper textarea { color: inherit; outline: 0 !important; }
   .paper textarea { overflow: visible; resize: none; }
   .cv-inline-actions, .cv-remove-result, .cv-add-entry, .cv-add-date, .cv-current-toggle { display: none !important; }

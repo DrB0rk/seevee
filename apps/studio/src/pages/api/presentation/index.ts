@@ -32,6 +32,9 @@ export const GET: APIRoute = async () => {
         versionId: data.template.versionId,
         preset: geometry.preset,
         orientation: geometry.orientation,
+        widthMm: geometry.widthMm,
+        heightMm: geometry.heightMm,
+        edges: data.page.edges ?? { top: 12, right: 12, bottom: 12, left: 12 },
       };
       items.push({ ok: true, presentation: summary });
       continue;

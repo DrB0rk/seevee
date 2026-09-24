@@ -119,6 +119,7 @@ export const PUT: APIRoute = async ({ params, request }) => {
     if (!region || region.type !== 'PageRegionSelector') return jsonResponse({ ok: false, reason: 'comment has no page location to move' }, 400);
     region.x = parsed.data.placement.x;
     region.y = parsed.data.placement.y;
+    if (parsed.data.placement.page !== undefined) region.page = parsed.data.placement.page;
     if (parsed.data.placement.element !== undefined) {
       updatedThread.target.selectors = updatedThread.target.selectors.filter((selector) => !['NodeSelector', 'FieldSelector', 'SectionSelector', 'TextQuoteSelector'].includes(selector.type));
       if (parsed.data.placement.selector) updatedThread.target.selectors.push(parsed.data.placement.selector);
@@ -184,6 +185,7 @@ const updateSchema = z.object({
   threadId: z.string().min(3),
   body: z.string().trim().min(1).optional(),
   placement: z.object({
+    page: z.number().int().min(1).optional(),
     x: z.number().min(0).max(0.985),
     y: z.number().min(0).max(0.985),
     element: z.string().max(240).optional(),

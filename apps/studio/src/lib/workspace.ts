@@ -95,6 +95,9 @@ export interface PresentationSummary {
   versionId: string;
   preset: PageProfile['preset'];
   orientation: PageProfile['orientation'];
+  widthMm: number;
+  heightMm: number;
+  edges: { top: number; right: number; bottom: number; left: number };
 }
 
 export interface CommentSummary {

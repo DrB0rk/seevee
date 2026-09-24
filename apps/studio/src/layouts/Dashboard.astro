@@ -77,9 +77,9 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
       </div>
     </div>
     <div class="pasteboard" id="pasteboard">
-      <article class="paper" id="cv-paper" aria-label="Editable CV preview">
-        <p class="paper-loading">Loading your CV…</p>
-      </article>
+      <div class="paper-stack" id="cv-paper" aria-label="CV preview">
+        <article class="paper" data-page-number="1" aria-label="Page 1"><p class="paper-loading">Loading your CV…</p></article>
+      </div>
     </div>
   </main>
 
@@ -165,6 +165,9 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
   const saveLabel = document.querySelector<HTMLElement>('#save-label')!;
   const revisionLabel = document.querySelector<HTMLElement>('#revision-label')!;
   const pasteboard = document.querySelector<HTMLElement>('#pasteboard')!;
+  const printPageStyle = document.createElement('style');
+  printPageStyle.id = 'active-paper-profile';
+  document.head.append(printPageStyle);
   const commentButton = document.querySelector<HTMLButtonElement>('#place-comment')!;
   const commentDialog = document.querySelector<HTMLDialogElement>('#comment-dialog')!;
   const commentForm = document.querySelector<HTMLFormElement>('#comment-form')!;
@@ -186,6 +189,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
   let commentsDocument: CommentsDoc | null = null;
   let commentRevision = 0;
   let presentationContext = { revision: 0, versionId: 'tplclassic0000000000000000001' };
+  let pageProfile = { width: 210, height: 297, edges: { top: 18, right: 18, bottom: 18, left: 18 } };
   let editingThreadId: string | null = null;
   let movingCommentId: string | null = null;
   let draggingComment: { id: string; pointerId: number; moved: boolean } | null = null;
@@ -231,6 +235,107 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     document.querySelectorAll<HTMLButtonElement>('[data-document-mode]').forEach((button) => {
       button.setAttribute('aria-pressed', String(button.dataset.documentMode === documentMode));
     });
+  }
+
+  function paginatePreviewContent(content: string) {
+    printPageStyle.textContent = `@page { size: ${pageProfile.width}mm ${pageProfile.height}mm; margin: 0; }`;
+    for (const [name, value] of Object.entries({
+      '--page-width-mm': pageProfile.width,
+      '--page-height-mm': pageProfile.height,
+      '--page-top-mm': pageProfile.edges.top,
+      '--page-right-mm': pageProfile.edges.right,
+      '--page-bottom-mm': pageProfile.edges.bottom,
+      '--page-left-mm': pageProfile.edges.left,
+    })) paper.style.setProperty(name, `${value}mm`);
+
+    const measure = document.createElement('div');
+    measure.className = 'paper-stack paper-measure';
+    measure.dataset.mode = documentMode;
+    Object.assign(measure.style, { position: 'fixed', inset: '0 auto auto -10000px', visibility: 'hidden', width: `${pageProfile.width}mm` });
+    for (const [name, value] of Object.entries({
+      '--page-width-mm': pageProfile.width,
+      '--page-height-mm': pageProfile.height,
+      '--page-top-mm': pageProfile.edges.top,
+      '--page-right-mm': pageProfile.edges.right,
+      '--page-bottom-mm': pageProfile.edges.bottom,
+      '--page-left-mm': pageProfile.edges.left,
+    })) measure.style.setProperty(name, `${value}mm`);
+    measure.style.setProperty('--paper-zoom', '1');
+    document.body.append(measure);
+
+    const source = document.createElement('div');
+    source.innerHTML = content;
+    const pages: HTMLElement[] = [];
+    const makePage = () => {
+      const page = document.createElement('article');
+      page.className = 'paper';
+      page.dataset.mode = documentMode;
+      page.dataset.pageNumber = String(pages.length + 1);
+      page.setAttribute('aria-label', `Page ${pages.length + 1}`);
+      measure.append(page);
+      pages.push(page);
+      return page;
+    };
+    const sizeTextareas = (pageToSize: HTMLElement) => pageToSize.querySelectorAll<HTMLTextAreaElement>('textarea').forEach((textarea) => {
+      textarea.style.height = 'auto';
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    });
+    let page = makePage();
+    const header = source.querySelector('.cv-header');
+    if (header) page.append(header.cloneNode(true));
+    for (const sourceSection of Array.from(source.querySelectorAll<HTMLElement>('.cv-section'))) {
+      const heading = sourceSection.querySelector(':scope > h2');
+      const nodes = Array.from(sourceSection.children).filter((node) => node !== heading);
+      const items: Array<{ node: Element; skill?: boolean }> = [];
+      for (const node of nodes) {
+        if (sourceSection.dataset.cvSection?.includes('skills') && node.matches('p')) {
+          for (const skill of Array.from(node.children)) items.push({ node: skill, skill: true });
+        } else items.push({ node });
+      }
+      let section: HTMLElement | null = null;
+      const startSection = (targetPage: HTMLElement) => {
+        section = sourceSection.cloneNode(false) as HTMLElement;
+        if (heading) section.append(heading.cloneNode(true));
+        targetPage.append(section);
+        return section;
+      };
+      for (const item of items) {
+        if (!section || section.parentElement !== page) startSection(page);
+        const hadSectionItems = Boolean(section!.querySelector('.cv-entry, [data-node-id], .cv-skill'));
+        let wrapper: HTMLElement | null = null;
+        if (item.skill) {
+          wrapper = section!.querySelector(':scope > p') ?? document.createElement('p');
+          if (!wrapper.parentElement) section!.append(wrapper);
+          wrapper.append(item.node.cloneNode(true));
+        } else section!.append(item.node.cloneNode(true));
+        sizeTextareas(page);
+        if (page.scrollHeight > page.clientHeight && (hadSectionItems || page.querySelectorAll('.cv-section').length > 1 || Boolean(page.querySelector('.cv-header')))) {
+          if (item.skill && wrapper) {
+            wrapper.lastElementChild?.remove();
+            if (!wrapper.children.length) wrapper.remove();
+          }
+          else section!.lastElementChild?.remove();
+          if (!section!.children.length || (heading && section!.children.length === 1)) section!.remove();
+          page = makePage();
+          section = startSection(page);
+          if (item.skill) {
+            const nextWrapper = document.createElement('p');
+            nextWrapper.append(item.node.cloneNode(true));
+            section.append(nextWrapper);
+          } else section.append(item.node.cloneNode(true));
+          sizeTextareas(page);
+        }
+      }
+    }
+    const pinnedPageCount = Math.max(0, ...orderedComments().map(([, thread]) => placementOf(thread)?.page ?? 0));
+    while (pages.length < pinnedPageCount) makePage();
+    measure.remove();
+    paper.replaceChildren(...pages);
+    paper.querySelectorAll<HTMLTextAreaElement>('textarea').forEach((textarea) => {
+      textarea.style.height = 'auto';
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    });
+    syncDocumentMode();
   }
 
   function renderEditor() {
@@ -343,7 +448,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     const summary = identity.summary?.trim();
     const skillRows = Object.values(cv.data.entities.skills ?? {});
     const skills = `<section class="cv-section" data-cv-section="${escapeHtml(sectionIdFor('skills'))}"><h2>Skills</h2><p>${skillRows.map((skill) => `<span class="cv-skill" data-node-id="${escapeHtml(skill.id)}" data-node-type="skill">${inlineField(`skills.${skill.id}.name`, skill.name, 'Skill', 'cv-skill-input')}<span class="cv-skill-separator">·</span>${inlineField(`skills.${skill.id}.category`, skill.category ?? '', 'Category', 'cv-skill-category')}</span>`).join(' ')}</p><button type="button" class="cv-add-entry" data-add-entry="skills">+ Add skill</button></section>`;
-    paper.innerHTML = `<header class="cv-header">
+    const content = `<header class="cv-header">
       <input class="cv-name" aria-label="Name" data-field="identity.name.display" value="${escapeHtml(identity.name.display)}" placeholder="Your name">
       <input class="cv-headline" aria-label="Headline" data-field="identity.headline" value="${escapeHtml(identity.headline ?? '')}" placeholder="Professional headline">
       <input class="cv-contact" aria-label="Email" data-field="contact.email" value="${escapeHtml(contacts)}" placeholder="Email or contact details">
@@ -351,11 +456,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
       <section class="cv-section cv-summary" data-cv-section="${escapeHtml(sectionIdFor('summary'))}"><h2>Profile</h2>${inlineText('identity.summary', summary ?? '', 'Profile summary', 'cv-inline-text cv-summary-text')}</section>
       ${experiences}
       ${education}${projects}${skills}`;
-    syncDocumentMode();
-    paper.querySelectorAll<HTMLTextAreaElement>('textarea').forEach((textarea) => {
-      textarea.style.height = 'auto';
-      textarea.style.height = `${textarea.scrollHeight}px`;
-    });
+    paginatePreviewContent(content);
     document.querySelector('#preview-name')!.textContent = identity.name.display || 'Untitled CV';
     renderCommentMarkers();
   }
@@ -435,7 +536,9 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     paper.querySelectorAll('.comment-marker').forEach((marker) => marker.remove());
     for (const [id, thread] of orderedComments()) {
       const placement = placementOf(thread);
-      if (!placement || placement.page !== 1) continue;
+      if (!placement) continue;
+      const page = paper.querySelector<HTMLElement>(`.paper[data-page-number="${placement.page}"]`);
+      if (!page) continue;
       const marker = document.createElement('button');
       marker.type = 'button';
       marker.className = 'comment-marker';
@@ -445,7 +548,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
       marker.textContent = String((commentsDocument?.data.threadOrder.indexOf(id) ?? 0) + 1);
       marker.setAttribute('aria-label', `Comment ${marker.textContent} at ${placement.element}`);
       marker.title = `${thread.messages[thread.messageOrder.at(-1) ?? '']?.body ?? 'Comment'} · drag or right-click for actions`;
-      paper.append(marker);
+      page.append(marker);
     }
   }
 
@@ -529,7 +632,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
       actions.push({ id: 'move-comment', label: 'Move pin to a new spot' });
       actions.push({ id: 'delete-comment', label: 'Delete this comment', danger: true });
     }
-    contextTarget = { target: pageTarget, ...locationOnPage(clientX, clientY), ...(commentId ? { commentId } : {}), described };
+    contextTarget = { target: pageTarget, ...locationOnPage(clientX, clientY, pageTarget), ...(commentId ? { commentId } : {}), described };
     const commentThread = commentId ? commentsDocument?.data.threads[commentId] : undefined;
     const commentNumber = commentId ? (commentsDocument?.data.threadOrder.indexOf(commentId) ?? 0) + 1 : 0;
     const menuHeading = commentId ? `Comment ${commentNumber}` : described.element;
@@ -547,7 +650,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     if (!cv) return;
     const described = describePlacement(target);
     pendingPlacement = {
-      page: 1, x, y, element: described.element,
+      page: Number(target.closest<HTMLElement>('.paper')?.dataset.pageNumber ?? 1), x, y, element: described.element,
       ...(described.contextText ? { contextText: described.contextText } : {}),
       ...(described.fieldPath ? { fieldPath: described.fieldPath } : {}),
       ...(described.selector?.nodeId ? { nodeId: String(described.selector.nodeId), nodeType: String(described.selector.nodeType), pointer: String(described.selector.field ?? '') } : {}),
@@ -659,7 +762,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     const element = clicked.closest('.comment-marker')
       ? document.elementsFromPoint(event.clientX, event.clientY).find((item) => !item.closest('.comment-marker') && paper.contains(item)) ?? paper
       : clicked;
-    const point = locationOnPage(event.clientX, event.clientY);
+    const point = locationOnPage(event.clientX, event.clientY, clicked);
     if (movingCommentId) {
       if (clicked.closest<HTMLElement>('.comment-marker')?.dataset.commentJump === movingCommentId) return;
       const described = describePlacement(element);
@@ -669,7 +772,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
         contextText: described.contextText ?? null,
         fieldPath: described.fieldPath ?? null,
         selector: described.selector,
-      }).then(finishCommentMove).catch((error) => setStatus('error', error instanceof Error ? error.message : 'Could not move comment.'));
+      }, point.page).then(finishCommentMove).catch((error) => setStatus('error', error instanceof Error ? error.message : 'Could not move comment.'));
       return;
     }
     placeCommentAt(element, point.x, point.y);
@@ -755,19 +858,21 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     renderComments();
   }
 
-  function locationOnPage(clientX: number, clientY: number) {
-    const rect = paper.getBoundingClientRect();
+  function locationOnPage(clientX: number, clientY: number, pageElement?: Element | null) {
+    const page = pageElement?.closest<HTMLElement>('.paper') ?? paper.querySelector<HTMLElement>('.paper');
+    const rect = page?.getBoundingClientRect() ?? paper.getBoundingClientRect();
     return {
+      page: Number(page?.dataset.pageNumber ?? 1),
       x: Math.max(0, Math.min(0.985, (clientX - rect.left) / rect.width)),
       y: Math.max(0, Math.min(0.985, (clientY - rect.top) / rect.height)),
     };
   }
 
-  async function moveComment(threadId: string, x: number, y: number, location?: { element: string; contextText: string | null; fieldPath: string | null; selector: Record<string, unknown> | null }) {
+  async function moveComment(threadId: string, x: number, y: number, location?: { element: string; contextText: string | null; fieldPath: string | null; selector: Record<string, unknown> | null }, page = 1) {
     if (!cv) return;
     const response = await fetch(`/api/comments/${encodeURIComponent(cv.id)}`, {
       method: 'PUT', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ expectedRevision: commentRevision, threadId, placement: { x, y, ...location } }),
+      body: JSON.stringify({ expectedRevision: commentRevision, threadId, placement: { page, x, y, ...location } }),
     });
     const result = await response.json() as { ok: boolean; document?: CommentsDoc; reason?: string };
     if (!response.ok || !result.document) throw new Error(result.reason ?? 'Could not move comment.');
@@ -845,11 +950,20 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     editCount = 0;
     savedCount = 0;
     presentationContext = { revision: 0, versionId: 'tplclassic0000000000000000001' };
+    pageProfile = { width: 210, height: 297, edges: { top: 18, right: 18, bottom: 18, left: 18 } };
     try {
       const response = await fetch('/api/presentation');
-      const items = await response.json() as Array<{ ok: true; presentation: { cvId: string; revision: number; versionId: string } } | { ok: false }>;
+    const items = await response.json() as Array<{ ok: true; presentation: { cvId: string; revision: number; versionId: string; orientation: 'portrait' | 'landscape'; widthMm: number; heightMm: number; edges: { top: number; right: number; bottom: number; left: number } } } | { ok: false }>;
       const match = items.find((item) => item.ok && item.presentation.cvId === cv!.id);
-      if (match?.ok) presentationContext = { revision: match.presentation.revision, versionId: match.presentation.versionId };
+      if (match?.ok) {
+        const { presentation } = match;
+        presentationContext = { revision: presentation.revision, versionId: presentation.versionId };
+        pageProfile = {
+          width: presentation.orientation === 'landscape' ? presentation.heightMm : presentation.widthMm,
+          height: presentation.orientation === 'landscape' ? presentation.widthMm : presentation.heightMm,
+          edges: presentation.edges,
+        };
+      }
     } catch { /* Keep the default render context if presentation discovery is unavailable. */ }
     commentsDocument = null;
     commentRevision = 0;
@@ -1120,7 +1234,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     }
     if (target.closest('#fit-page')) {
       const width = pasteboard.clientWidth - 72;
-      zoom = Math.max(0.55, Math.min(1.15, width / 794));
+      zoom = Math.max(0.55, Math.min(1.15, width / (pageProfile.width * 96 / 25.4)));
       paper.style.setProperty('--paper-zoom', String(zoom));
       document.querySelector('#zoom-readout')!.textContent = `${Math.round(zoom * 100)}%`;
     }
@@ -1205,6 +1319,9 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     else if (event.key === 'Escape' && movingCommentId) finishCommentMove();
   });
   paper.addEventListener('click', captureCommentPlacement, true);
+  paper.addEventListener('focusout', (event) => {
+    if (event.target instanceof HTMLElement && event.target.hasAttribute('data-field')) window.setTimeout(renderPreview, 0);
+  });
   paper.addEventListener('pointerdown', (event) => {
     const marker = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('.comment-marker') : null;
     if (!marker?.dataset.commentJump) return;
@@ -1217,7 +1334,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     if (!draggingComment || draggingComment.pointerId !== event.pointerId) return;
     const marker = paper.querySelector<HTMLElement>(`.comment-marker[data-comment-jump="${CSS.escape(draggingComment.id)}"]`);
     if (!marker) return;
-    const point = locationOnPage(event.clientX, event.clientY);
+    const point = locationOnPage(event.clientX, event.clientY, marker);
     marker.style.left = `${point.x * 100}%`;
     marker.style.top = `${point.y * 100}%`;
     draggingComment.moved = true;
@@ -1228,11 +1345,11 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     const drag = draggingComment;
     draggingComment = null;
     if (!drag.moved) return;
-    const point = locationOnPage(event.clientX, event.clientY);
     const destination = document.elementsFromPoint(event.clientX, event.clientY).find((element) => !element.closest('.comment-marker'));
     const element = destination instanceof Element ? destination : paper;
+    const point = locationOnPage(event.clientX, event.clientY, element);
     const described = describePlacement(element);
-    void moveComment(drag.id, point.x, point.y, { element: described.element, contextText: described.contextText ?? null, fieldPath: described.fieldPath ?? null, selector: described.selector }).catch((error) => setStatus('error', error instanceof Error ? error.message : 'Could not move comment.'));
+    void moveComment(drag.id, point.x, point.y, { element: described.element, contextText: described.contextText ?? null, fieldPath: described.fieldPath ?? null, selector: described.selector }, point.page).catch((error) => setStatus('error', error instanceof Error ? error.message : 'Could not move comment.'));
     event.preventDefault();
   });
   paper.addEventListener('keydown', (event) => {
@@ -1245,7 +1362,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     const delta = event.shiftKey ? 0.05 : 0.01;
     const x = Math.max(0, Math.min(0.985, current.x + (event.key === 'ArrowRight' ? delta : event.key === 'ArrowLeft' ? -delta : 0)));
     const y = Math.max(0, Math.min(0.985, current.y + (event.key === 'ArrowDown' ? delta : event.key === 'ArrowUp' ? -delta : 0)));
-    void moveComment(marker.dataset.commentJump, x, y).catch((error) => setStatus('error', error instanceof Error ? error.message : 'Could not move comment.'));
+    void moveComment(marker.dataset.commentJump, x, y, undefined, current.page).catch((error) => setStatus('error', error instanceof Error ? error.message : 'Could not move comment.'));
   });
   document.querySelector<HTMLButtonElement>('#comment-cancel')?.addEventListener('click', () => {
     commentDialog.close();
