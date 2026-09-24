@@ -66,7 +66,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
       <div class="canvas-controls" aria-label="Preview controls">
         <button class="button button-subtle" type="button" id="place-comment" aria-pressed="false" title="Choose a place on the CV for a comment">Place comment</button>
         <button class="icon-button" type="button" data-zoom="-" aria-label="Zoom out">−</button>
-        <output class="zoom-readout" id="zoom-readout">82%</output>
+        <output class="zoom-readout" id="zoom-readout">100%</output>
         <button class="icon-button" type="button" data-zoom="+" aria-label="Zoom in">+</button>
         <span class="control-divider" aria-hidden="true"></span>
         <button class="button button-subtle fit-button" type="button" id="fit-page">Fit page</button>
@@ -175,7 +175,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
   let savedCount = 0;
   let saveTimer: number | undefined;
   let saving = false;
-  let zoom = 0.82;
+  let zoom = 1;
   let placingComment = false;
   let pendingPlacement: Placement | null = null;
   let commentsDocument: CommentsDoc | null = null;

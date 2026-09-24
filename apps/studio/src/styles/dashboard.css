@@ -77,7 +77,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .fit-button { min-height: 27px; padding: 0 8px; color: var(--text-secondary); font-size: 10px; }
 .canvas-controls .control-divider { height: 18px; margin: 0 4px; }
 .pasteboard { flex: 1; min-height: 0; overflow: auto; display: flex; justify-content: center; align-items: flex-start; padding: 34px 28px 60px; background: var(--canvas-pasteboard); }
-.paper { --paper-zoom: .82; position: relative; flex: 0 0 auto; width: 794px; min-height: 1123px; padding: 68px 70px 74px; transform: scale(var(--paper-zoom)); transform-origin: top center; margin-bottom: calc((var(--paper-zoom) - 1) * 1123px); background: var(--paper); color: #202329; box-shadow: 0 3px 20px #0008, 0 0 0 1px var(--paper-edge); font-family: Arial, Helvetica, sans-serif; font-size: 13px; line-height: 1.55; }
+.paper { --paper-zoom: 1; position: relative; flex: 0 0 auto; width: 794px; min-height: 1123px; padding: 68px 70px 74px; transform: scale(var(--paper-zoom)); transform-origin: top center; margin-bottom: calc((var(--paper-zoom) - 1) * 1123px); background: var(--paper); color: #202329; box-shadow: 0 3px 20px #0008, 0 0 0 1px var(--paper-edge); font-family: Arial, Helvetica, sans-serif; font-size: 13px; line-height: 1.55; }
 .cv-header { padding-bottom: 28px; border-bottom: 1px solid #d8dce0; }
 .cv-name, .cv-headline, .cv-contact, .cv-summary textarea { display: block; width: 100%; padding: 0; border: 1px solid transparent; background: transparent; color: inherit; }
 .cv-name { margin: -4px 0 3px; font-family: Georgia, "Times New Roman", serif; font-size: 34px; line-height: 1.18; letter-spacing: -.03em; }
