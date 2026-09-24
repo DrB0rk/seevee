@@ -64,6 +64,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
         <span id="preview-name">Untitled CV</span>
       </div>
       <div class="canvas-controls" aria-label="Preview controls">
+        <button class="button button-subtle" type="button" id="place-comment" aria-pressed="false" title="Choose a place on the CV for a comment">Place comment</button>
         <button class="icon-button" type="button" data-zoom="-" aria-label="Zoom out">−</button>
         <output class="zoom-readout" id="zoom-readout">82%</output>
         <button class="icon-button" type="button" data-zoom="+" aria-label="Zoom in">+</button>
@@ -87,6 +88,10 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     <div class="editor-content" id="editor-content">
       <p class="quiet-message">Your fields will appear here.</p>
     </div>
+    <section class="dashboard-comments" aria-label="Comments for this CV">
+      <h3>Comments <span id="comment-count">0</span></h3>
+      <div id="comment-list"><p class="quiet-message">No comments yet. Choose “Place comment” to pin one to the page.</p></div>
+    </section>
     <div class="editor-footer">
       <span class="revision-label" id="revision-label">Revision —</span>
       <span>Local workspace</span>
@@ -98,6 +103,15 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     <span class="status-path" title={workspaceId}>{workspaceId}</span>
     <span class="status-help">Edit the paper or use the fields on the right</span>
   </footer>
+  <dialog class="comment-dialog" id="comment-dialog" aria-labelledby="comment-title">
+    <form id="comment-form">
+      <h2 id="comment-title">Leave a comment</h2>
+      <p id="comment-placement-label">Choose a point on the page.</p>
+      <label class="field" for="comment-body"><span>What should the agent change?</span><textarea id="comment-body" name="body" rows="5" required></textarea></label>
+      <div class="comment-dialog-actions"><button type="button" class="button button-subtle" id="comment-cancel">Cancel</button><button type="submit" class="button button-primary" id="comment-save">Save comment</button></div>
+    </form>
+  </dialog>
+  <div class="editor-context-menu" id="editor-context-menu" role="menu" aria-label="CV actions" hidden></div>
 </div>
 
 <script>
@@ -121,18 +135,22 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
           id: string; type: 'experience';
           organization: { name: string };
           role: { title: string };
-          period: { start: { precision: string; year: number }; end?: { year: number }; ongoing?: boolean };
+          period: { start: { precision: string; year: number }; end?: { precision: string; year: number }; ongoing?: boolean };
           summary?: string | null;
           bulletOrder: string[];
           bullets: Record<string, { id: string; text: string }>;
         }>;
-        skills?: Record<string, { id: string; name: string; keywords: string[] }>;
-        education?: Record<string, { id: string; institution: { name: string }; program: { name: string; degree?: string | null }; period: { start: { year: number }; end?: { year: number } } }>;
+        skills?: Record<string, { id: string; type: 'skill'; name: string; category?: string | null; keywords: string[] }>;
+        education?: Record<string, { id: string; institution: { name: string }; program: { name: string; degree?: string | null }; period: { start: { precision: 'year'; year: number }; end?: { precision: 'year'; year: number }; ongoing?: boolean }; details: string[] }>;
+        projects?: Record<string, { id: string; type: 'project'; name: string; summary?: string | null; period?: { start: { precision: string; year: number }; end?: { precision: string; year: number }; ongoing?: boolean } | null; linkRefs: string[]; technologyRefs: string[]; role?: { id: string; type: 'role'; title: string }; bulletOrder?: string[]; bullets?: Record<string, { id: string; text: string }> }>;
       };
     };
   };
 
   type CvListItem = { ok: true; cv: { id: string; name: string; headline: string | null; revision: number } } | { ok: false; path: string; reason: string };
+  type Placement = { page: number; x: number; y: number; element: string; contextText?: string; fieldPath?: string; nodeId?: string; nodeType?: string; pointer?: string; sectionId?: string };
+  type StoredThread = { id: string; category?: string; priority?: string; status?: string; target: { selectors: Array<Record<string, unknown>>; extensions?: Record<string, unknown> }; messageOrder: string[]; messages: Record<string, { body: string; createdAt: string; author?: { display?: string } }> };
+  type CommentsDoc = { revision: number; data: { threadOrder: string[]; threads: Record<string, StoredThread> } };
 
   const studio = document.querySelector<HTMLElement>('#studio')!;
   const picker = document.querySelector<HTMLSelectElement>('#cv-picker')!;
@@ -143,6 +161,14 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
   const saveLabel = document.querySelector<HTMLElement>('#save-label')!;
   const revisionLabel = document.querySelector<HTMLElement>('#revision-label')!;
   const pasteboard = document.querySelector<HTMLElement>('#pasteboard')!;
+  const commentButton = document.querySelector<HTMLButtonElement>('#place-comment')!;
+  const commentDialog = document.querySelector<HTMLDialogElement>('#comment-dialog')!;
+  const commentForm = document.querySelector<HTMLFormElement>('#comment-form')!;
+  const commentBody = document.querySelector<HTMLTextAreaElement>('#comment-body')!;
+  const commentLabel = document.querySelector<HTMLElement>('#comment-placement-label')!;
+  const commentList = document.querySelector<HTMLElement>('#comment-list')!;
+  const commentCount = document.querySelector<HTMLElement>('#comment-count')!;
+  const contextMenu = document.querySelector<HTMLElement>('#editor-context-menu')!;
   let cv: CvDoc | null = null;
   let baseRevision = 0;
   let editCount = 0;
@@ -150,14 +176,18 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
   let saveTimer: number | undefined;
   let saving = false;
   let zoom = 0.82;
+  let placingComment = false;
+  let pendingPlacement: Placement | null = null;
+  let commentsDocument: CommentsDoc | null = null;
+  let commentRevision = 0;
+  let presentationContext = { revision: 0, versionId: 'tplclassic0000000000000000001' };
+  let editingThreadId: string | null = null;
+  let movingCommentId: string | null = null;
+  let draggingComment: { id: string; pointerId: number; moved: boolean } | null = null;
+  let contextTarget: { target: Element; x: number; y: number; commentId?: string; described: ReturnType<typeof describePlacement> } | null = null;
 
   const escapeHtml = (value: unknown) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!);
-  const dateLabel = (period: { start?: { year?: number }; end?: { year?: number }; ongoing?: boolean }) => {
-    const start = period?.start?.year;
-    const end = period?.ongoing ? 'Present' : period?.end?.year;
-    if (!start) return '';
-    return `${start}${end ? ` — ${end}` : ''}`;
-  };
+  const sectionIdFor = (type: string) => cv?.data.sectionOrder.find((id) => cv?.data.sections[id]?.type === type) ?? '';
 
   function setStatus(state: 'loading' | 'saving' | 'saved' | 'error' | 'conflict', message: string) {
     saveState.dataset.state = state;
@@ -176,20 +206,57 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     return `<label class="field"><span>${escapeHtml(label)}</span><input type="text" data-field="${escapeHtml(path)}" value="${escapeHtml(value)}" placeholder="${escapeHtml(placeholder)}"></label>`;
   }
 
+  function yearField(path: string, value: unknown, label: string) {
+    return `<label class="field"><span>${escapeHtml(label)}</span><input type="number" min="1900" max="2200" step="1" data-field="${escapeHtml(path)}" value="${escapeHtml(value)}" placeholder="YYYY"></label>`;
+  }
+
+  function inlineField(path: string, value: unknown, label: string, className = 'cv-inline-field', type = 'text') {
+    return `<input type="${type}"${type === 'number' ? ' min="1900" max="2200" step="1"' : ''} class="${className}" data-field="${escapeHtml(path)}" aria-label="${escapeHtml(label)}" value="${escapeHtml(value)}" placeholder="${escapeHtml(label)}">`;
+  }
+
+  function inlineText(path: string, value: unknown, label: string, className = 'cv-inline-text') {
+    return `<textarea rows="1" class="${className}" data-field="${escapeHtml(path)}" aria-label="${escapeHtml(label)}" placeholder="${escapeHtml(label)}">${escapeHtml(value)}</textarea>`;
+  }
+
   function renderEditor() {
     if (!cv) return;
     const identity = cv.data.identity;
     const experiences = experienceIds().map((id) => {
       const item = cv!.data.entities.experience![id]!;
-      const firstBullet = item.bulletOrder[0];
       return `<section class="editor-group experience-editor" id="edit-${escapeHtml(id)}">
         <div class="group-heading"><h3>Experience</h3><button class="text-button danger-text" type="button" data-remove-experience="${escapeHtml(id)}">Remove</button></div>
         ${field(`experience.${id}.role.title`, item.role.title, 'Role title', 'Role')}
         ${field(`experience.${id}.organization.name`, item.organization.name, 'Organization', 'Organization')}
+        ${yearField(`experience.${id}.period.start.year`, item.period.start.year, 'Start year')}
+        ${item.period.ongoing ? '<label class="field field-checkbox"><span>Current role</span><input type="checkbox" data-ongoing-for="' + escapeHtml(id) + '" checked></label>' : `${yearField(`experience.${id}.period.end.year`, item.period.end?.year ?? '', 'End year')}<label class="field field-checkbox"><span>Current role</span><input type="checkbox" data-ongoing-for="${escapeHtml(id)}"></label>`}
         ${field(`experience.${id}.summary`, item.summary ?? '', 'A short description of your work', 'Description', true)}
-        ${firstBullet ? field(`experience.${id}.bullets.${firstBullet}.text`, item.bullets[firstBullet]?.text ?? '', 'What changed because of your work?', 'Key result', true) : ''}
+        ${item.bulletOrder.map((bulletId, index) => `${field(`experience.${id}.bullets.${bulletId}.text`, item.bullets[bulletId]?.text ?? '', 'What changed because of your work?', `Result ${index + 1}`, true)}<button type="button" class="text-button danger-text" data-remove-bullet="experience.${escapeHtml(id)}.${escapeHtml(bulletId)}">Remove result</button>`).join('')}
+        <button class="text-button" type="button" data-add-bullet="${escapeHtml(id)}">+ Add result</button>
       </section>`;
     }).join('');
+    const education = Object.values(cv.data.entities.education ?? {}).map((item) => `<section class="editor-group" id="edit-education-${escapeHtml(item.id)}">
+      <div class="group-heading"><h3>Education</h3><button class="text-button danger-text" type="button" data-remove-entry="education.${escapeHtml(item.id)}">Remove</button></div>
+      ${field(`education.${item.id}.program.name`, item.program.name, 'Program or course', 'Program')}
+      ${field(`education.${item.id}.program.degree`, item.program.degree ?? '', 'Degree or qualification', 'Degree')}
+      ${field(`education.${item.id}.institution.name`, item.institution.name, 'School or institution', 'Institution')}
+      ${yearField(`education.${item.id}.period.start.year`, item.period.start.year, 'Start year')}
+      ${yearField(`education.${item.id}.period.end.year`, item.period.end?.year ?? '', 'End year')}
+      ${(item.details.length ? item.details : ['']).map((detail, index) => field(`education.${item.id}.details.${index}`, detail, 'Additional detail', `Detail ${index + 1}`, true)).join('')}
+    </section>`).join('');
+    const projects = Object.values(cv.data.entities.projects ?? {}).map((item) => `<section class="editor-group" id="edit-project-${escapeHtml(item.id)}">
+      <div class="group-heading"><h3>Project</h3><button class="text-button danger-text" type="button" data-remove-entry="projects.${escapeHtml(item.id)}">Remove</button></div>
+      ${field(`projects.${item.id}.name`, item.name, 'Project name', 'Name')}
+      ${item.role ? field(`projects.${item.id}.role.title`, item.role.title, 'Project role', 'Role') : `<button type="button" class="text-button" data-add-project-role="${escapeHtml(item.id)}">+ Add role</button>`}
+      ${field(`projects.${item.id}.summary`, item.summary ?? '', 'What did you build?', 'Description', true)}
+      ${(item.bulletOrder ?? []).map((bulletId, index) => `${field(`projects.${item.id}.bullets.${bulletId}.text`, item.bullets?.[bulletId]?.text ?? '', 'Project result', `Result ${index + 1}`, true)}<button type="button" class="text-button danger-text" data-remove-bullet="projects.${escapeHtml(item.id)}.${escapeHtml(bulletId)}">Remove result</button>`).join('')}
+      <button type="button" class="text-button" data-add-project-bullet="${escapeHtml(item.id)}">+ Add result</button>
+      ${item.period ? `${yearField(`projects.${item.id}.period.start.year`, item.period.start.year, 'Start year')}${item.period.ongoing ? '' : yearField(`projects.${item.id}.period.end.year`, item.period.end?.year ?? '', 'End year')}<label class="field field-checkbox"><span>Current project</span><input type="checkbox" data-ongoing-project-for="${escapeHtml(item.id)}"${item.period.ongoing ? ' checked' : ''}></label>` : `<button type="button" class="text-button" data-add-project-dates="${escapeHtml(item.id)}">+ Add dates</button>`}
+    </section>`).join('');
+    const skills = Object.values(cv.data.entities.skills ?? {}).map((item) => `<section class="editor-group" id="edit-skill-${escapeHtml(item.id)}">
+      <div class="group-heading"><h3>Skill</h3><button class="text-button danger-text" type="button" data-remove-entry="skills.${escapeHtml(item.id)}">Remove</button></div>
+      ${field(`skills.${item.id}.name`, item.name, 'Skill', 'Name')}
+      ${field(`skills.${item.id}.category`, item.category ?? '', 'e.g. Languages', 'Category')}
+    </section>`).join('');
     const email = identity.contact.find((item) => item.kind === 'email')?.value ?? '';
     editor.innerHTML = `<section class="editor-group" id="edit-identity">
       <div class="group-heading"><h3>Identity</h3><span class="group-index">01</span></div>
@@ -197,7 +264,11 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
       ${field('identity.headline', identity.headline ?? '', 'Role or professional focus', 'Headline')}
       ${field('contact.email', email, 'name@example.com', 'Email')}
       ${field('identity.summary', identity.summary ?? '', 'A concise introduction to your work', 'Summary', true)}
-    </section>${experiences}<button type="button" class="add-entry" id="add-experience-inline">+ Add experience</button>`;
+    </section><div id="edit-experience">${experiences}</div>
+      ${education}<button type="button" class="add-entry" data-add-entry="education">+ Add education</button>
+      ${projects}<button type="button" class="add-entry" data-add-entry="projects">+ Add project</button>
+      ${skills}<button type="button" class="add-entry" data-add-entry="skills">+ Add skill</button>
+      <button type="button" class="add-entry" id="add-experience-inline">+ Add experience</button>`;
     revisionLabel.textContent = `Revision ${cv.revision}`;
   }
 
@@ -207,29 +278,54 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     const contacts = identity.contact.find((entry) => entry.kind === 'email')?.value ?? identity.contact[0]?.value ?? '';
     const experienceEntries = experienceIds().map((id) => {
       const item = cv!.data.entities.experience![id]!;
-      const dates = dateLabel(item.period);
-      const bullets = item.bulletOrder.map((bulletId) => item.bullets[bulletId]?.text).filter(Boolean)
-        .map((text) => `<li>${escapeHtml(text)}</li>`).join('');
-      return `<div class="cv-entry">
-        <div class="cv-entry-head"><strong>${escapeHtml(item.role.title || 'Role')}</strong><span>${escapeHtml(dates)}</span></div>
-        <p class="cv-organization">${escapeHtml(item.organization.name)}</p>
-        ${item.summary ? `<p>${escapeHtml(item.summary)}</p>` : ''}
+      const ongoing = Boolean(item.period.ongoing);
+      const bullets = item.bulletOrder.map((bulletId, index) => item.bullets[bulletId]
+        ? `<li data-node-id="${escapeHtml(bulletId)}" data-node-type="bullet">${inlineText(`experience.${id}.bullets.${bulletId}.text`, item.bullets[bulletId]?.text, `Result ${index + 1}`, 'cv-inline-text cv-inline-result')}<button type="button" class="cv-remove-result danger-text" data-remove-bullet="experience.${escapeHtml(id)}.${escapeHtml(bulletId)}" aria-label="Remove result ${index + 1}">Remove</button></li>`
+        : '').join('');
+      return `<div class="cv-entry" data-node-id="${escapeHtml(id)}" data-node-type="experience">
+        <div class="cv-entry-head"><strong>${inlineField(`experience.${id}.role.title`, item.role.title, 'Role title', 'cv-inline-title')}</strong><div class="cv-date-range">${inlineField(`experience.${id}.period.start.year`, item.period.start.year, 'Start year', 'cv-inline-year', 'number')}<span>–</span>${ongoing ? '<span class="cv-present">Present</span>' : inlineField(`experience.${id}.period.end.year`, item.period.end?.year ?? '', 'End year', 'cv-inline-year', 'number')}</div></div>
+        <p class="cv-organization">${inlineField(`experience.${id}.organization.name`, item.organization.name, 'Organization', 'cv-inline-organization')}</p>
+        <label class="cv-current-toggle"><input type="checkbox" data-ongoing-for="${escapeHtml(id)}"${ongoing ? ' checked' : ''}> Current role</label>
+        ${inlineText(`experience.${id}.summary`, item.summary ?? '', 'Role description', 'cv-inline-text cv-inline-description')}
         ${bullets ? `<ul>${bullets}</ul>` : ''}
+        <div class="cv-inline-actions"><button type="button" data-add-bullet="${escapeHtml(id)}">+ Add result</button><button type="button" class="danger-text" data-remove-experience="${escapeHtml(id)}">Remove experience</button></div>
       </div>`;
     }).join('');
-    const experiences = experienceEntries ? `<section class="cv-section"><h2>Experience</h2>${experienceEntries}</section>` : '';
+    const experiences = `<section class="cv-section" data-cv-section="${escapeHtml(sectionIdFor('experience'))}"><h2>Experience</h2>${experienceEntries || '<p class="cv-empty-note">Add a role to show your experience.</p>'}<button type="button" class="cv-add-entry" data-add-experience>+ Add experience</button></section>`;
+    const educationRows = Object.values(cv.data.entities.education ?? {}).map((item) => `<div class="cv-entry" data-node-id="${escapeHtml(item.id)}" data-node-type="education">
+      <div class="cv-entry-head"><strong>${inlineField(`education.${item.id}.program.name`, item.program.name, 'Program', 'cv-inline-title')}</strong><div class="cv-date-range">${inlineField(`education.${item.id}.period.start.year`, item.period.start.year, 'Start year', 'cv-inline-year', 'number')}<span>–</span>${inlineField(`education.${item.id}.period.end.year`, item.period.end?.year ?? '', 'End year', 'cv-inline-year', 'number')}</div></div>
+      <p class="cv-organization">${inlineField(`education.${item.id}.institution.name`, item.institution.name, 'Institution', 'cv-inline-organization')}<span class="cv-degree-separator"> · </span>${inlineField(`education.${item.id}.program.degree`, item.program.degree ?? '', 'Degree', 'cv-inline-organization')}</p>
+      ${(item.details.length ? item.details : ['']).map((detail, index) => inlineText(`education.${item.id}.details.${index}`, detail, `Education detail ${index + 1}`, 'cv-inline-text cv-inline-description')).join('')}
+      <div class="cv-inline-actions"><button type="button" class="danger-text" data-remove-entry="education.${escapeHtml(item.id)}">Remove education</button></div>
+    </div>`).join('');
+    const education = `<section class="cv-section" data-cv-section="${escapeHtml(sectionIdFor('education'))}"><h2>Education</h2>${educationRows || '<p class="cv-empty-note">Add a course or qualification.</p>'}<button type="button" class="cv-add-entry" data-add-entry="education">+ Add education</button></section>`;
+    const projectRows = Object.values(cv.data.entities.projects ?? {}).map((item) => `<div class="cv-entry" data-node-id="${escapeHtml(item.id)}" data-node-type="project">
+      ${inlineField(`projects.${item.id}.name`, item.name, 'Project name', 'cv-inline-title')}
+      ${item.role ? inlineField(`projects.${item.id}.role.title`, item.role.title, 'Project role', 'cv-inline-organization') : `<button type="button" class="cv-add-date" data-add-project-role="${escapeHtml(item.id)}">+ Add role</button>`}
+      ${inlineText(`projects.${item.id}.summary`, item.summary ?? '', 'Project description', 'cv-inline-text cv-inline-description')}
+      ${(item.bulletOrder ?? []).length ? `<ul>${(item.bulletOrder ?? []).map((bulletId, index) => `<li data-node-id="${escapeHtml(bulletId)}" data-node-type="bullet">${inlineText(`projects.${item.id}.bullets.${bulletId}.text`, item.bullets?.[bulletId]?.text ?? '', `Project result ${index + 1}`, 'cv-inline-text cv-inline-result')}<button type="button" class="cv-remove-result danger-text" data-remove-bullet="projects.${escapeHtml(item.id)}.${escapeHtml(bulletId)}" aria-label="Remove project result ${index + 1}">Remove</button></li>`).join('')}</ul>` : ''}
+      <div class="cv-inline-actions"><button type="button" data-add-project-bullet="${escapeHtml(item.id)}">+ Add result</button></div>
+      ${item.period ? `<div class="cv-date-range cv-project-dates">${inlineField(`projects.${item.id}.period.start.year`, item.period.start.year, 'Start year', 'cv-inline-year', 'number')}<span>–</span>${item.period.ongoing ? '<span class="cv-present">Present</span>' : inlineField(`projects.${item.id}.period.end.year`, item.period.end?.year ?? '', 'End year', 'cv-inline-year', 'number')}<label class="cv-current-toggle"><input type="checkbox" data-ongoing-project-for="${escapeHtml(item.id)}"${item.period.ongoing ? ' checked' : ''}> Current</label></div>` : '<button type="button" class="cv-add-date" data-add-project-dates="' + escapeHtml(item.id) + '">+ Add dates</button>'}
+      <div class="cv-inline-actions"><button type="button" class="danger-text" data-remove-entry="projects.${escapeHtml(item.id)}">Remove project</button></div>
+    </div>`).join('');
+    const projects = `<section class="cv-section" data-cv-section="${escapeHtml(sectionIdFor('projects'))}"><h2>Projects</h2>${projectRows || '<p class="cv-empty-note">Add a project to feature here.</p>'}<button type="button" class="cv-add-entry" data-add-entry="projects">+ Add project</button></section>`;
     const summary = identity.summary?.trim();
     const skillRows = Object.values(cv.data.entities.skills ?? {});
-    const skills = skillRows.length ? `<section class="cv-section"><h2>Skills</h2><p>${skillRows.map((skill) => escapeHtml(skill.name)).join(' · ')}</p></section>` : '';
+    const skills = `<section class="cv-section" data-cv-section="${escapeHtml(sectionIdFor('skills'))}"><h2>Skills</h2><p>${skillRows.map((skill) => `<span class="cv-skill" data-node-id="${escapeHtml(skill.id)}" data-node-type="skill">${inlineField(`skills.${skill.id}.name`, skill.name, 'Skill', 'cv-skill-input')}<span class="cv-skill-separator">·</span>${inlineField(`skills.${skill.id}.category`, skill.category ?? '', 'Category', 'cv-skill-category')}</span>`).join(' ')}</p><button type="button" class="cv-add-entry" data-add-entry="skills">+ Add skill</button></section>`;
     paper.innerHTML = `<header class="cv-header">
       <input class="cv-name" aria-label="Name" data-field="identity.name.display" value="${escapeHtml(identity.name.display)}" placeholder="Your name">
       <input class="cv-headline" aria-label="Headline" data-field="identity.headline" value="${escapeHtml(identity.headline ?? '')}" placeholder="Professional headline">
       <input class="cv-contact" aria-label="Email" data-field="contact.email" value="${escapeHtml(contacts)}" placeholder="Email or contact details">
     </header>
-    <section class="cv-section cv-summary"><h2>Profile</h2><textarea aria-label="Profile summary" data-field="identity.summary" placeholder="Write a short introduction">${escapeHtml(summary)}</textarea></section>
-    ${experiences || `<section class="cv-section empty-section"><h2>Experience</h2><p>Add your first role to build this section.</p><button type="button" data-add-experience>+ Add experience</button></section>`}
-    ${skills}`;
+      <section class="cv-section cv-summary" data-cv-section="${escapeHtml(sectionIdFor('summary'))}"><h2>Profile</h2>${inlineText('identity.summary', summary ?? '', 'Profile summary', 'cv-inline-text cv-summary-text')}</section>
+      ${experiences}
+      ${education}${projects}${skills}`;
+    paper.querySelectorAll<HTMLTextAreaElement>('textarea').forEach((textarea) => {
+      textarea.style.height = 'auto';
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    });
     document.querySelector('#preview-name')!.textContent = identity.name.display || 'Untitled CV';
+    renderCommentMarkers();
   }
 
   function renderSections() {
@@ -237,7 +333,10 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     const sections = cv.data.sectionOrder.map((id) => cv!.data.sections[id]).filter((item) => item?.visible);
     sectionList.innerHTML = sections.map((section, index) => {
       const firstExperience = section.type === 'experience' ? experienceIds()[0] : undefined;
-      const target = firstExperience ? `edit-${firstExperience}` : 'edit-identity';
+      const firstEducation = Object.keys(cv!.data.entities.education ?? {})[0];
+      const firstProject = Object.keys(cv!.data.entities.projects ?? {})[0];
+      const firstSkill = Object.keys(cv!.data.entities.skills ?? {})[0];
+      const target = firstExperience ? `edit-${firstExperience}` : section.type === 'education' && firstEducation ? `edit-education-${firstEducation}` : section.type === 'projects' && firstProject ? `edit-project-${firstProject}` : section.type === 'skills' && firstSkill ? `edit-skill-${firstSkill}` : 'edit-identity';
       return `<button type="button" class="section-link" data-section="${target}"><span class="section-number">${String(index + 1).padStart(2, '0')}</span><span>${escapeHtml(section.title)}</span></button>`;
     }).join('');
     if (experienceIds().length === 0 && !sections.some((section) => section.type === 'experience')) {
@@ -252,6 +351,385 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     renderSections();
   }
 
+  function orderedComments(): Array<[string, StoredThread]> {
+    if (!commentsDocument) return [];
+    return commentsDocument.data.threadOrder.flatMap((id) => {
+      const thread = commentsDocument?.data.threads[id];
+      return thread ? [[id, thread] as [string, StoredThread]] : [];
+    });
+  }
+
+  function placementOf(thread: StoredThread): { page: number; x: number; y: number; element: string; contextText?: string } | null {
+    const saved = thread.target.extensions?.['seevee.placement'];
+    if (saved && typeof saved === 'object') {
+      const value = saved as Record<string, unknown>;
+      if (typeof value.x === 'number' && typeof value.y === 'number') {
+        return {
+          page: typeof value.page === 'number' ? value.page : 1,
+          x: value.x,
+          y: value.y,
+          element: typeof value.element === 'string' ? value.element : 'Page area',
+          ...(typeof value.contextText === 'string' && value.contextText ? { contextText: value.contextText } : {}),
+        };
+      }
+    }
+    const region = thread.target.selectors.find((selector) => selector.type === 'PageRegionSelector');
+    if (!region || typeof region.x !== 'number' || typeof region.y !== 'number') return null;
+    return { page: typeof region.page === 'number' ? region.page : 1, x: region.x, y: region.y, element: 'Page area' };
+  }
+
+  function renderComments() {
+    const threads = orderedComments();
+    commentCount.textContent = String(threads.length);
+    commentList.innerHTML = threads.length ? threads.map(([id, thread]) => {
+      const first = thread.messages[thread.messageOrder.at(-1) ?? ''];
+      const placement = placementOf(thread);
+      const category = (thread.category ?? 'general').replaceAll('_', ' ');
+      const priority = thread.priority ?? 'normal';
+      const status = thread.status ?? 'open';
+      const number = (commentsDocument?.data.threadOrder.indexOf(id) ?? 0) + 1;
+      const location = placement ? `Page ${placement.page} · ${placement.element}` : 'CV comment';
+      return `<article class="comment-card" data-comment-status="${escapeHtml(status)}">
+        <div class="comment-card-heading"><span class="comment-number">${String(number).padStart(2, '0')}</span><span class="comment-category">${escapeHtml(category)}</span><span class="comment-priority" data-priority="${escapeHtml(priority)}">${escapeHtml(priority)}</span><span class="comment-status" data-status="${escapeHtml(status)}">${escapeHtml(status.replaceAll('_', ' '))}</span></div>
+        <p class="comment-body">${escapeHtml(first?.body ?? 'Comment')}</p>
+        <div class="comment-location" title="${escapeHtml(placement?.contextText ?? location)}"><span aria-hidden="true">↳</span>${escapeHtml(location)}${first?.author?.display ? ` · ${escapeHtml(first.author.display)}` : ''}</div>
+        <div class="comment-card-actions"><button type="button" class="comment-jump" data-comment-jump="${escapeHtml(id)}">Show pin</button><button type="button" data-comment-edit="${escapeHtml(id)}">Edit</button><button type="button" data-comment-move="${escapeHtml(id)}" aria-label="Move comment pin ${number}">Move</button><button type="button" class="danger-text" data-comment-delete="${escapeHtml(id)}" aria-label="Delete comment ${number}">Delete</button></div>
+      </article>`;
+    }).join('') : '<p class="quiet-message">No comments yet. Choose “Place comment” to pin one to the page.</p>';
+    renderCommentMarkers();
+  }
+
+  function renderCommentMarkers() {
+    paper.querySelectorAll('.comment-marker').forEach((marker) => marker.remove());
+    for (const [id, thread] of orderedComments()) {
+      const placement = placementOf(thread);
+      if (!placement || placement.page !== 1) continue;
+      const marker = document.createElement('button');
+      marker.type = 'button';
+      marker.className = 'comment-marker';
+      marker.dataset.commentJump = id;
+      marker.style.left = `${placement.x * 100}%`;
+      marker.style.top = `${placement.y * 100}%`;
+      marker.textContent = String((commentsDocument?.data.threadOrder.indexOf(id) ?? 0) + 1);
+      marker.setAttribute('aria-label', `Comment ${marker.textContent} at ${placement.element}`);
+      marker.title = `${thread.messages[thread.messageOrder.at(-1) ?? '']?.body ?? 'Comment'} · drag or right-click for actions`;
+      paper.append(marker);
+    }
+  }
+
+  function selectorForElement(target: Element): Record<string, unknown> | null {
+    const fieldTarget = target.closest<HTMLElement>('[data-field]');
+    const fieldPath = fieldTarget?.dataset.field;
+    const sectionId = target.closest<HTMLElement>('[data-cv-section]')?.dataset.cvSection;
+    if (fieldPath && cv) {
+      const bits = fieldPath.split('.');
+      let nodeId = cv.data.identity.id;
+      let nodeType = 'person';
+      let pointer = `/${bits.slice(1).map((bit) => bit.replace(/~/g, '~0').replace(/\//g, '~1')).join('/')}`;
+      if (bits[0] === 'contact') pointer = '/contact/0/value';
+      if (bits[0] === 'experience') {
+        nodeId = bits[1]!;
+        nodeType = 'experience';
+        pointer = `/${bits.slice(2).map((bit) => bit.replace(/~/g, '~0').replace(/\//g, '~1')).join('/')}`;
+      } else if (bits[0] === 'education' || bits[0] === 'projects' || bits[0] === 'skills') {
+        nodeId = bits[1]!;
+        nodeType = bits[0] === 'projects' ? 'project' : bits[0].slice(0, -1);
+        pointer = `/${bits.slice(2).map((bit) => bit.replace(/~/g, '~0').replace(/\//g, '~1')).join('/')}`;
+      }
+      return { type: 'FieldSelector', nodeId, nodeType, field: pointer };
+    }
+    const node = target.closest<HTMLElement>('[data-node-id][data-node-type]');
+    if (node?.dataset.nodeId && node.dataset.nodeType) return { type: 'NodeSelector', nodeId: node.dataset.nodeId, nodeType: node.dataset.nodeType };
+    if (sectionId) return { type: 'SectionSelector', sectionId };
+    return null;
+  }
+
+  function describePlacement(target: Element) {
+    const field = target.closest<HTMLElement>('[data-field]');
+    const section = target.closest<HTMLElement>('[data-cv-section]');
+    const node = target.closest<HTMLElement>('[data-node-id][data-node-type]');
+    const fieldPath = field?.dataset.field;
+    const element = field?.getAttribute('aria-label')
+      ?? (fieldPath ? fieldPathLabel(fieldPath) : undefined)
+      ?? (node ? `${node.dataset.nodeType === 'bullet' ? 'Result' : node.dataset.nodeType ?? 'CV item'} · ${node.querySelector('strong')?.textContent?.trim() ?? node.textContent?.trim()}` : undefined)
+      ?? section?.querySelector('h2')?.textContent?.trim()
+      ?? 'Page area';
+    const textContext = target.closest<HTMLElement>('li, p, h1, h2, strong, span');
+    const contextSource = field
+      ? (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement ? field.value : field.textContent)
+      : textContext?.textContent ?? node?.textContent ?? section?.textContent ?? '';
+    const contextText = contextSource?.replace(/\s+/g, ' ').trim().slice(0, 280) || undefined;
+    return { element, contextText, fieldPath, selector: selectorForElement(target) };
+  }
+
+  function closeContextMenu() {
+    contextMenu.hidden = true;
+    contextMenu.replaceChildren();
+    contextTarget = null;
+  }
+
+  function openContextMenu(target: Element, clientX: number, clientY: number) {
+    const marker = target.closest<HTMLElement>('.comment-marker');
+    const commentId = marker?.dataset.commentJump;
+    const pageTarget = marker
+      ? document.elementsFromPoint(clientX, clientY).find((element) => element !== marker && !element.closest('.comment-marker') && paper.contains(element)) ?? paper
+      : target;
+    const field = pageTarget.closest<HTMLElement>('[data-field]');
+    const entry = pageTarget.closest<HTMLElement>('[data-node-id][data-node-type]');
+    const section = pageTarget.closest<HTMLElement>('[data-cv-section]');
+    const described = describePlacement(pageTarget);
+    const actions: Array<{ id: string; label: string; danger?: boolean }> = [
+      { id: 'comment', label: commentId ? 'Add another comment here' : 'Add a comment here' },
+    ];
+    if (field?.dataset.field) actions.push({ id: 'edit-field', label: `Edit ${fieldPathLabel(field.dataset.field)} in content panel` });
+    else if (entry?.dataset.nodeId) actions.push({ id: 'edit-entry', label: 'Edit this entry in content panel' });
+    const sectionType = cv?.data.sections[section?.dataset.cvSection ?? '']?.type;
+    const experience = pageTarget.closest<HTMLElement>('[data-node-type="experience"]');
+    if (experience?.dataset.nodeId) actions.push({ id: 'add-result', label: 'Add result to this experience' });
+    if (sectionType === 'experience' && !entry) actions.push({ id: 'add-experience', label: 'Add experience' });
+    if (sectionType === 'education') actions.push({ id: 'add-education', label: 'Add education' });
+    if (sectionType === 'projects') actions.push({ id: 'add-project', label: 'Add project' });
+    if (sectionType === 'skills') actions.push({ id: 'add-skill', label: 'Add skill' });
+    if (commentId) {
+      actions.push({ id: 'edit-comment', label: 'Edit this comment' });
+      actions.push({ id: 'move-comment', label: 'Move pin to a new spot' });
+      actions.push({ id: 'delete-comment', label: 'Delete this comment', danger: true });
+    }
+    contextTarget = { target: pageTarget, ...locationOnPage(clientX, clientY), ...(commentId ? { commentId } : {}), described };
+    const commentThread = commentId ? commentsDocument?.data.threads[commentId] : undefined;
+    const commentNumber = commentId ? (commentsDocument?.data.threadOrder.indexOf(commentId) ?? 0) + 1 : 0;
+    const menuHeading = commentId ? `Comment ${commentNumber}` : described.element;
+    const menuSummary = commentThread?.messages[commentThread.messageOrder.at(-1) ?? '']?.body;
+    contextMenu.innerHTML = `<div class="context-menu-heading">${escapeHtml(menuHeading)}</div>${menuSummary ? `<p class="context-menu-summary">${escapeHtml(menuSummary)}</p>` : ''}<div class="context-menu-items">${actions.map((action) => `<button type="button" role="menuitem" data-context-action="${action.id}"${action.danger ? ' class="danger-text"' : ''}>${escapeHtml(action.label)}</button>`).join('')}</div>`;
+    contextMenu.hidden = false;
+    const left = Math.max(8, Math.min(clientX, window.innerWidth - contextMenu.offsetWidth - 8));
+    const top = Math.max(8, Math.min(clientY, window.innerHeight - contextMenu.offsetHeight - 8));
+    contextMenu.style.left = `${left}px`;
+    contextMenu.style.top = `${top}px`;
+    contextMenu.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus();
+  }
+
+  function placeCommentAt(target: Element, x: number, y: number) {
+    if (!cv) return;
+    const described = describePlacement(target);
+    pendingPlacement = {
+      page: 1, x, y, element: described.element,
+      ...(described.contextText ? { contextText: described.contextText } : {}),
+      ...(described.fieldPath ? { fieldPath: described.fieldPath } : {}),
+      ...(described.selector?.nodeId ? { nodeId: String(described.selector.nodeId), nodeType: String(described.selector.nodeType), pointer: String(described.selector.field ?? '') } : {}),
+      ...(described.selector?.sectionId ? { sectionId: String(described.selector.sectionId) } : {}),
+    };
+    placingComment = false;
+    movingCommentId = null;
+    commentButton.setAttribute('aria-pressed', 'false');
+    commentButton.textContent = 'Place comment';
+    commentButton.title = 'Choose a place on the CV for a comment';
+    paper.classList.remove('is-placing-comment');
+    editingThreadId = null;
+    document.querySelector('#comment-title')!.textContent = 'Leave a comment';
+    document.querySelector('#comment-save')!.textContent = 'Save comment';
+    commentLabel.textContent = `Page 1 · ${described.element}${described.contextText ? ` · “${described.contextText}”` : ''}`;
+    commentBody.value = '';
+    commentDialog.showModal();
+    commentBody.focus();
+  }
+
+  function focusEditorFor(target: Element, fieldPath?: string) {
+    const node = target.closest<HTMLElement>('[data-node-id][data-node-type]');
+    const inferredPath = node?.dataset.nodeType === 'bullet'
+      ? `experience.${target.closest<HTMLElement>('[data-node-type="experience"]')?.dataset.nodeId}.bullets.${node.dataset.nodeId}.text`
+      : fieldPath;
+    const control = inferredPath
+      ? editor.querySelector<HTMLElement>(`[data-field="${CSS.escape(inferredPath)}"]`)
+      : null;
+    const nodeId = node?.dataset.nodeId;
+    const groupId = inferredPath?.startsWith('experience.') ? `edit-${inferredPath.split('.')[1]}`
+      : inferredPath?.startsWith('education.') ? `edit-education-${inferredPath.split('.')[1]}`
+        : inferredPath?.startsWith('projects.') ? `edit-project-${inferredPath.split('.')[1]}`
+          : inferredPath?.startsWith('skills.') ? `edit-skill-${inferredPath.split('.')[1]}`
+            : node?.dataset.nodeType === 'education' ? `edit-education-${nodeId}`
+              : node?.dataset.nodeType === 'project' ? `edit-project-${nodeId}`
+                : node?.dataset.nodeType === 'skill' ? `edit-skill-${nodeId}`
+                  : nodeId ? `edit-${nodeId}` : 'edit-identity';
+    const group = editor.querySelector<HTMLElement>(`#${CSS.escape(groupId)}`);
+    (control ?? group)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    control?.focus({ preventScroll: true });
+  }
+
+  function fieldPathLabel(path: string) {
+    const parts = path.split('.');
+    const labels: Record<string, string> = {
+      display: 'Name', headline: 'Headline', summary: 'Summary', email: 'Email',
+      title: 'Role title', text: 'Result text', name: 'Name', degree: 'Degree',
+      category: 'Category',
+    };
+    const label = labels[parts.at(-1) ?? ''] ?? parts.at(-1) ?? 'CV field';
+    const group = parts[0] === 'experience' ? 'Experience'
+      : parts[0] === 'education' ? 'Education'
+        : parts[0] === 'projects' ? 'Project'
+          : parts[0] === 'skills' ? 'Skill'
+            : '';
+    return group ? `${group} · ${label}` : label;
+  }
+
+  async function beginCommentPlacement() {
+    if (!cv || !commentButton) return;
+    if (editCount !== savedCount || saving) await flushSave();
+    if (editCount !== savedCount || saveState.dataset.state === 'error' || saveState.dataset.state === 'conflict') return;
+    placingComment = !placingComment;
+    movingCommentId = null;
+    commentButton.setAttribute('aria-pressed', String(placingComment));
+    commentButton.textContent = placingComment ? 'Click the page…' : 'Place comment';
+    commentButton.title = placingComment ? 'Click the CV page to add a comment' : 'Choose a place on the CV for a comment';
+    paper.classList.toggle('is-placing-comment', placingComment);
+  }
+
+  async function beginCommentMove(threadId: string) {
+    if (!cv) return;
+    if (editCount !== savedCount || saving) await flushSave();
+    if (editCount !== savedCount || saveState.dataset.state === 'error' || saveState.dataset.state === 'conflict') return;
+    movingCommentId = threadId;
+    placingComment = true;
+    commentButton.setAttribute('aria-pressed', 'true');
+    commentButton.textContent = 'Click a new pin location…';
+    commentButton.title = 'Click the CV page to move the selected comment pin';
+    paper.classList.add('is-placing-comment');
+  }
+
+  function finishCommentMove() {
+    movingCommentId = null;
+    placingComment = false;
+    commentButton.setAttribute('aria-pressed', 'false');
+    commentButton.textContent = 'Place comment';
+    commentButton.title = 'Choose a place on the CV for a comment';
+    paper.classList.remove('is-placing-comment');
+  }
+
+  function captureCommentPlacement(event: MouseEvent) {
+    if (!placingComment || !cv) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const clicked = event.target instanceof Element ? event.target : paper;
+    const element = clicked.closest('.comment-marker')
+      ? document.elementsFromPoint(event.clientX, event.clientY).find((item) => !item.closest('.comment-marker') && paper.contains(item)) ?? paper
+      : clicked;
+    const point = locationOnPage(event.clientX, event.clientY);
+    if (movingCommentId) {
+      if (clicked.closest<HTMLElement>('.comment-marker')?.dataset.commentJump === movingCommentId) return;
+      const described = describePlacement(element);
+      const threadId = movingCommentId;
+      void moveComment(threadId, point.x, point.y, {
+        element: described.element,
+        contextText: described.contextText ?? null,
+        fieldPath: described.fieldPath ?? null,
+        selector: described.selector,
+      }).then(finishCommentMove).catch((error) => setStatus('error', error instanceof Error ? error.message : 'Could not move comment.'));
+      return;
+    }
+    placeCommentAt(element, point.x, point.y);
+  }
+
+  async function saveComment(body: string) {
+    if (!cv || !body.trim()) return;
+    if (editingThreadId) {
+      const response = await fetch(`/api/comments/${encodeURIComponent(cv.id)}`, {
+        method: 'PUT', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ expectedRevision: commentRevision, threadId: editingThreadId, body: body.trim() }),
+      });
+      const result = await response.json() as { ok: boolean; document?: CommentsDoc; reason?: string };
+      if (!response.ok || !result.document) throw new Error(result.reason ?? 'Could not update comment.');
+      commentsDocument = result.document;
+      commentRevision = result.document.revision;
+      editingThreadId = null;
+      renderComments();
+      return;
+    }
+    if (!pendingPlacement) return;
+    const now = new Date().toISOString();
+    const threadId = `comment_${crypto.randomUUID().replace(/-/g, '')}`;
+    const messageId = `message_${crypto.randomUUID().replace(/-/g, '')}`;
+    const page = pendingPlacement;
+    const selectors: Array<Record<string, unknown>> = [];
+    if (page.fieldPath && page.nodeId && page.nodeType && page.pointer) selectors.push({ type: 'FieldSelector', nodeId: page.nodeId, nodeType: page.nodeType, field: page.pointer });
+    else if (page.sectionId) selectors.push({ type: 'SectionSelector', sectionId: page.sectionId });
+    else if (page.nodeId && page.nodeType) selectors.push({ type: 'NodeSelector', nodeId: page.nodeId, nodeType: page.nodeType });
+    selectors.push({
+      type: 'PageRegionSelector', page: page.page, x: page.x, y: page.y, width: 0.015, height: 0.015,
+      renderContext: { cvRevision: cv.revision, presentationRevision: presentationContext.revision, templateVersionId: presentationContext.versionId },
+    });
+    const thread = {
+      id: threadId, category: 'general', priority: 'normal', status: 'open',
+      target: {
+        source: { resource: 'cv', resourceId: cv.id, revisionAtCreation: cv.revision },
+        selectors,
+        extensions: { 'seevee.placement': { page: page.page, x: page.x, y: page.y, element: page.element, contextText: page.contextText ?? null, fieldPath: page.fieldPath ?? null } },
+      },
+      messageOrder: [messageId],
+      messages: { [messageId]: { id: messageId, author: { kind: 'user', display: 'You' }, body: body.trim(), createdAt: now } },
+      agentWork: { state: 'pending', claimedByRunId: null, changeSetIds: [] },
+      resolution: null, createdAt: now, updatedAt: now,
+    };
+    const response = await fetch(`/api/comments/${encodeURIComponent(cv.id)}`, {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ expectedRevision: commentRevision, thread }),
+    });
+    const result = await response.json() as { ok: boolean; document?: CommentsDoc; reason?: string };
+    if (!response.ok || !result.document) throw new Error(result.reason ?? 'Could not save comment.');
+    commentsDocument = result.document;
+    commentRevision = result.document.revision;
+    pendingPlacement = null;
+    renderComments();
+  }
+
+  function editComment(threadId: string) {
+    const thread = commentsDocument?.data.threads[threadId];
+    if (!thread) return;
+    editingThreadId = threadId;
+    pendingPlacement = null;
+    const message = thread.messages[thread.messageOrder.at(-1) ?? ''];
+    document.querySelector('#comment-title')!.textContent = 'Edit comment';
+    document.querySelector('#comment-save')!.textContent = 'Save changes';
+    const placement = placementOf(thread);
+    commentLabel.textContent = placement ? `Page ${placement.page} · ${placement.element}` : 'CV comment';
+    commentBody.value = message?.body ?? '';
+    commentDialog.showModal();
+    commentBody.focus();
+  }
+
+  async function deleteComment(threadId: string) {
+    if (!cv) return;
+    const response = await fetch(`/api/comments/${encodeURIComponent(cv.id)}`, {
+      method: 'DELETE', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ expectedRevision: commentRevision, threadId }),
+    });
+    const result = await response.json() as { ok: boolean; document?: CommentsDoc; reason?: string };
+    if (!response.ok || !result.document) throw new Error(result.reason ?? 'Could not delete comment.');
+    commentsDocument = result.document;
+    commentRevision = result.document.revision;
+    renderComments();
+  }
+
+  function locationOnPage(clientX: number, clientY: number) {
+    const rect = paper.getBoundingClientRect();
+    return {
+      x: Math.max(0, Math.min(0.985, (clientX - rect.left) / rect.width)),
+      y: Math.max(0, Math.min(0.985, (clientY - rect.top) / rect.height)),
+    };
+  }
+
+  async function moveComment(threadId: string, x: number, y: number, location?: { element: string; contextText: string | null; fieldPath: string | null; selector: Record<string, unknown> | null }) {
+    if (!cv) return;
+    const response = await fetch(`/api/comments/${encodeURIComponent(cv.id)}`, {
+      method: 'PUT', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ expectedRevision: commentRevision, threadId, placement: { x, y, ...location } }),
+    });
+    const result = await response.json() as { ok: boolean; document?: CommentsDoc; reason?: string };
+    if (!response.ok || !result.document) throw new Error(result.reason ?? 'Could not move comment.');
+    commentsDocument = result.document;
+    commentRevision = result.document.revision;
+    renderComments();
+  }
+
   function setPath(path: string, value: string) {
     if (!cv) return;
     const bits = path.split('.');
@@ -263,13 +741,31 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
       } else email.value = value;
       return;
     }
+    if (['experience', 'education', 'projects'].includes(bits[0]!) && bits[2] === 'period' && (bits[3] === 'start' || bits[3] === 'end') && bits[4] === 'year') {
+      const entity = cv.data.entities[bits[0] as 'experience' | 'education' | 'projects']?.[bits[1]!] as Record<string, unknown> | undefined;
+      const period = entity?.period as Record<string, unknown> | undefined;
+      if (!entity || !period || (bits[3] === 'start' && value === '')) return;
+      if (bits[3] === 'end' && value === '') {
+        delete period.end;
+        return;
+      }
+      const year = Number(value);
+      if (!Number.isInteger(year) || year < 1900 || year > 2200) return;
+      const dateKey = bits[3]!;
+      const date = (period[dateKey] && typeof period[dateKey] === 'object' ? period[dateKey] : { precision: 'year' }) as Record<string, unknown>;
+      date.precision ??= 'year';
+      date.year = year;
+      period[dateKey] = date;
+      if (dateKey === 'end' && 'ongoing' in period) period.ongoing = false;
+      return;
+    }
     let target: Record<string, unknown> = cv as unknown as Record<string, unknown>;
     for (const key of bits.slice(0, -1)) {
       const next = target[key];
       if (!next || typeof next !== 'object') return;
       target = next as Record<string, unknown>;
     }
-    target[bits.at(-1)!] = value;
+    target[bits.at(-1)!] = bits.at(-1) === 'year' && value ? Number(value) : value;
   }
 
   async function loadCv(id?: string) {
@@ -278,7 +774,14 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     if (!listResponse.ok) throw new Error('Could not read CVs from this workspace.');
     const items = await listResponse.json() as CvListItem[];
     const available = items.filter((item): item is Extract<CvListItem, { ok: true }> => item.ok);
-    if (!available.length) throw new Error('No valid CV is registered in this workspace. Run seevee init again to create one.');
+    if (!available.length) {
+      const failures = items.filter((item): item is Extract<CvListItem, { ok: false }> => !item.ok);
+      if (failures.length) {
+        const details = failures.map((item) => `${item.path}: ${item.reason}`).join('; ');
+        throw new Error(`No registered CV could be loaded. ${details} Run seevee validate to inspect the workspace data.`);
+      }
+      throw new Error('No CV is registered in this workspace. Run seevee init to create one.');
+    }
     picker.replaceChildren(...available.map((item) => {
       const option = document.createElement('option');
       option.value = item.cv.id;
@@ -295,7 +798,25 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     baseRevision = cv.revision;
     editCount = 0;
     savedCount = 0;
+    presentationContext = { revision: 0, versionId: 'tplclassic0000000000000000001' };
+    try {
+      const response = await fetch('/api/presentation');
+      const items = await response.json() as Array<{ ok: true; presentation: { cvId: string; revision: number; versionId: string } } | { ok: false }>;
+      const match = items.find((item) => item.ok && item.presentation.cvId === cv!.id);
+      if (match?.ok) presentationContext = { revision: match.presentation.revision, versionId: match.presentation.versionId };
+    } catch { /* Keep the default render context if presentation discovery is unavailable. */ }
+    commentsDocument = null;
+    commentRevision = 0;
+    try {
+      const response = await fetch(`/api/comments/${encodeURIComponent(cv.id)}`);
+      if (response.ok) {
+        const result = await response.json() as { document?: CommentsDoc };
+        commentsDocument = result.document ?? null;
+        commentRevision = commentsDocument?.revision ?? 0;
+      }
+    } catch { /* Comment loading can recover on the next workspace reload. */ }
     render();
+    renderComments();
     setStatus('saved', 'All changes saved');
   }
 
@@ -381,6 +902,58 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     window.setTimeout(() => document.querySelector<HTMLInputElement>(`[data-field="experience.${id}.role.title"]`)?.focus(), 0);
   }
 
+  function addEntry(kind: 'education' | 'projects' | 'skills') {
+    if (!cv) return;
+    const id = `${kind}_${Date.now().toString(36)}`;
+    if (kind === 'education') {
+      cv.data.entities.education ??= {};
+      cv.data.entities.education[id] = {
+        id,
+        institution: { name: 'Institution' },
+        program: { name: 'Program', degree: null },
+        period: { start: { precision: 'year', year: new Date().getFullYear() }, end: { precision: 'year', year: new Date().getFullYear() } },
+        details: [],
+      };
+    } else if (kind === 'projects') {
+      cv.data.entities.projects ??= {};
+      cv.data.entities.projects[id] = { id, type: 'project', name: 'Project', summary: '', linkRefs: [], technologyRefs: [] };
+    } else {
+      cv.data.entities.skills ??= {};
+      cv.data.entities.skills[id] = { id, type: 'skill', name: 'Skill', keywords: [] };
+    }
+    const section = Object.values(cv.data.sections).find((item) => item.type === kind);
+    if (section) section.nodeOrder = [...(section.nodeOrder ?? []), id];
+    else {
+      const sectionId = `sec_${kind}_${Date.now().toString(36)}`;
+      cv.data.sections[sectionId] = { id: sectionId, type: kind, title: kind === 'projects' ? 'Projects' : kind[0]!.toUpperCase() + kind.slice(1), visible: true, nodeOrder: [id] };
+      cv.data.sectionOrder.push(sectionId);
+    }
+    markChanged();
+    render();
+  }
+
+  function addBullet(experienceId: string) {
+    const experience = cv?.data.entities.experience?.[experienceId];
+    if (!experience) return;
+    const id = `bullet_${Date.now().toString(36)}`;
+    experience.bullets[id] = { id, text: 'Describe a result you delivered.' };
+    experience.bulletOrder.push(id);
+    markChanged();
+    render();
+  }
+
+  function addProjectBullet(projectId: string) {
+    const project = cv?.data.entities.projects?.[projectId];
+    if (!project) return;
+    const id = `project_bullet_${Date.now().toString(36)}`;
+    project.bullets ??= {};
+    project.bulletOrder ??= [];
+    project.bullets[id] = { id, text: 'Describe a project result.' };
+    project.bulletOrder.push(id);
+    markChanged();
+    render();
+  }
+
   function removeExperience(id: string) {
     if (!cv?.data.entities.experience?.[id]) return;
     delete cv.data.entities.experience[id];
@@ -398,8 +971,36 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     if (!path || !cv) return;
     setPath(path, target.value);
     const editingPaper = paper.contains(target);
+    if (editingPaper && target instanceof HTMLTextAreaElement) {
+      target.style.height = 'auto';
+      target.style.height = `${target.scrollHeight}px`;
+    }
     if (editingPaper) document.querySelector('#preview-name')!.textContent = cv.data.identity.name.display || 'Untitled CV';
     markChanged(!editingPaper);
+  });
+
+  studio.addEventListener('change', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement) || !cv) return;
+    if (target.type === 'number' && target.value === '' && target.dataset.field) {
+      let current: unknown = cv;
+      for (const key of target.dataset.field.split('.')) current = current && typeof current === 'object' ? (current as Record<string, unknown>)[key] : undefined;
+      target.value = current === undefined || current === null ? '' : String(current);
+    }
+    if (target.dataset.ongoingFor) {
+      const experience = cv.data.entities.experience?.[target.dataset.ongoingFor];
+      if (!experience) return;
+      experience.period.ongoing = target.checked;
+      if (target.checked) delete experience.period.end;
+    } else if (target.dataset.ongoingProjectFor) {
+      const project = cv.data.entities.projects?.[target.dataset.ongoingProjectFor];
+      if (!project?.period) return;
+      project.period.ongoing = target.checked;
+      if (target.checked) delete project.period.end;
+    } else return;
+    markChanged(false);
+    renderEditor();
+    renderPreview();
   });
 
   studio.addEventListener('click', (event) => {
@@ -407,6 +1008,50 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     if (!(target instanceof Element)) return;
     const add = target.closest('[data-add-experience], #add-experience-inline, #add-experience');
     if (add) return addExperience();
+    const addKind = target.closest<HTMLElement>('[data-add-entry]')?.dataset.addEntry;
+    if (addKind === 'education' || addKind === 'projects' || addKind === 'skills') return addEntry(addKind);
+    const bulletOwner = target.closest<HTMLElement>('[data-add-bullet]')?.dataset.addBullet;
+    if (bulletOwner) return addBullet(bulletOwner);
+    const projectBullet = target.closest<HTMLElement>('[data-add-project-bullet]')?.dataset.addProjectBullet;
+    if (projectBullet) return addProjectBullet(projectBullet);
+    const removeBullet = target.closest<HTMLElement>('[data-remove-bullet]')?.dataset.removeBullet;
+    if (removeBullet && cv) {
+      const [kind, ownerId, bulletId] = removeBullet.split('.');
+      const experience = kind === 'experience' ? cv.data.entities.experience?.[ownerId ?? ''] : undefined;
+      const project = kind === 'projects' ? cv.data.entities.projects?.[ownerId ?? ''] : undefined;
+      const bullets = experience?.bullets ?? project?.bullets;
+      if (bullets && bulletId) {
+        delete bullets[bulletId];
+        if (experience) experience.bulletOrder = experience.bulletOrder.filter((id) => id !== bulletId);
+        if (project) project.bulletOrder = project.bulletOrder?.filter((id) => id !== bulletId);
+        markChanged();
+        render();
+      }
+      return;
+    }
+    const projectDates = target.closest<HTMLElement>('[data-add-project-dates]')?.dataset.addProjectDates;
+    if (projectDates && cv?.data.entities.projects?.[projectDates]) {
+      cv.data.entities.projects[projectDates]!.period = { start: { precision: 'year', year: new Date().getFullYear() } };
+      markChanged();
+      render();
+      return;
+    }
+    const projectRole = target.closest<HTMLElement>('[data-add-project-role]')?.dataset.addProjectRole;
+    if (projectRole && cv?.data.entities.projects?.[projectRole]) {
+      cv.data.entities.projects[projectRole]!.role = { id: `role_${Date.now().toString(36)}`, type: 'role', title: 'Project role' };
+      markChanged();
+      render();
+      return;
+    }
+    const removeEntry = target.closest<HTMLElement>('[data-remove-entry]')?.dataset.removeEntry;
+    if (removeEntry && cv) {
+      const [kind, id] = removeEntry.split('.') as ['education' | 'projects' | 'skills', string];
+      delete cv.data.entities[kind]?.[id];
+      for (const item of Object.values(cv.data.sections)) if (item.nodeOrder) item.nodeOrder = item.nodeOrder.filter((nodeId) => nodeId !== id);
+      markChanged();
+      render();
+      return;
+    }
     const remove = target.closest<HTMLElement>('[data-remove-experience]');
     if (remove?.dataset.removeExperience) return removeExperience(remove.dataset.removeExperience);
     const section = target.closest<HTMLElement>('[data-section]');
@@ -428,6 +1073,135 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
       paper.style.setProperty('--paper-zoom', String(zoom));
       document.querySelector('#zoom-readout')!.textContent = `${Math.round(zoom * 100)}%`;
     }
+    const jump = target.closest<HTMLElement>('[data-comment-jump]');
+    if (jump?.dataset.commentJump) {
+      paper.querySelector<HTMLElement>(`.comment-marker[data-comment-jump="${CSS.escape(jump.dataset.commentJump)}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+    }
+    const edit = target.closest<HTMLElement>('[data-comment-edit]')?.dataset.commentEdit;
+    if (edit) return editComment(edit);
+    const move = target.closest<HTMLElement>('[data-comment-move]')?.dataset.commentMove;
+    if (move) {
+      void beginCommentMove(move);
+      return;
+    }
+    const removeComment = target.closest<HTMLElement>('[data-comment-delete]')?.dataset.commentDelete;
+    if (removeComment) void deleteComment(removeComment).catch((error) => setStatus('error', error instanceof Error ? error.message : 'Could not delete comment.'));
+  });
+
+  commentButton.addEventListener('click', () => void beginCommentPlacement());
+  paper.addEventListener('contextmenu', (event) => {
+    if (!(event.target instanceof Element)) return;
+    event.preventDefault();
+    const bounds = event.target.getBoundingClientRect();
+    const x = event.clientX || bounds.left + bounds.width / 2;
+    const y = event.clientY || bounds.top + bounds.height / 2;
+    openContextMenu(event.target, x, y);
+  });
+  contextMenu.addEventListener('click', (event) => {
+    const action = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('[data-context-action]')?.dataset.contextAction : undefined;
+    const context = contextTarget;
+    if (!action || !context) return;
+    closeContextMenu();
+    if (action === 'comment') return placeCommentAt(context.target, context.x, context.y);
+    if (action === 'edit-comment' && context.commentId) return editComment(context.commentId);
+    if (action === 'move-comment' && context.commentId) {
+      void beginCommentMove(context.commentId);
+      return;
+    }
+    if (action === 'delete-comment' && context.commentId) {
+      void deleteComment(context.commentId).catch((error) => setStatus('error', error instanceof Error ? error.message : 'Could not delete comment.'));
+      return;
+    }
+    if (action === 'edit-field') return focusEditorFor(context.target, context.described.fieldPath);
+    if (action === 'edit-entry') return focusEditorFor(context.target);
+    if (action === 'add-result') {
+      const id = context.target.closest<HTMLElement>('[data-node-type="experience"]')?.dataset.nodeId;
+      if (id) void addBullet(id);
+      return;
+    }
+    const kind = action === 'add-education' ? 'education' : action === 'add-project' ? 'projects' : action === 'add-skill' ? 'skills' : null;
+    if (kind) {
+      editor.querySelector<HTMLButtonElement>(`[data-add-entry="${kind}"]`)?.click();
+      return;
+    }
+    if (action === 'add-experience') void addExperience();
+  });
+  contextMenu.addEventListener('keydown', (event) => {
+    const items = Array.from(contextMenu.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'));
+    const index = items.indexOf(document.activeElement as HTMLButtonElement);
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      const target = contextTarget?.target;
+      closeContextMenu();
+      if (target instanceof HTMLElement) target.focus();
+    } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Home' || event.key === 'End') {
+      event.preventDefault();
+      const next = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1 : (index + (event.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length;
+      items[next]?.focus();
+    }
+  });
+  document.addEventListener('pointerdown', (event) => {
+    if (!contextMenu.hidden && event.target instanceof Node && !contextMenu.contains(event.target)) closeContextMenu();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !contextMenu.hidden) closeContextMenu();
+    else if (event.key === 'Escape' && movingCommentId) finishCommentMove();
+  });
+  paper.addEventListener('click', captureCommentPlacement, true);
+  paper.addEventListener('pointerdown', (event) => {
+    const marker = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('.comment-marker') : null;
+    if (!marker?.dataset.commentJump) return;
+    draggingComment = { id: marker.dataset.commentJump, pointerId: event.pointerId, moved: false };
+    marker.setPointerCapture(event.pointerId);
+    event.preventDefault();
+    event.stopPropagation();
+  });
+  paper.addEventListener('pointermove', (event) => {
+    if (!draggingComment || draggingComment.pointerId !== event.pointerId) return;
+    const marker = paper.querySelector<HTMLElement>(`.comment-marker[data-comment-jump="${CSS.escape(draggingComment.id)}"]`);
+    if (!marker) return;
+    const point = locationOnPage(event.clientX, event.clientY);
+    marker.style.left = `${point.x * 100}%`;
+    marker.style.top = `${point.y * 100}%`;
+    draggingComment.moved = true;
+    event.preventDefault();
+  });
+  paper.addEventListener('pointerup', (event) => {
+    if (!draggingComment || draggingComment.pointerId !== event.pointerId) return;
+    const drag = draggingComment;
+    draggingComment = null;
+    if (!drag.moved) return;
+    const point = locationOnPage(event.clientX, event.clientY);
+    const destination = document.elementsFromPoint(event.clientX, event.clientY).find((element) => !element.closest('.comment-marker'));
+    const element = destination instanceof Element ? destination : paper;
+    const described = describePlacement(element);
+    void moveComment(drag.id, point.x, point.y, { element: described.element, contextText: described.contextText ?? null, fieldPath: described.fieldPath ?? null, selector: described.selector }).catch((error) => setStatus('error', error instanceof Error ? error.message : 'Could not move comment.'));
+    event.preventDefault();
+  });
+  paper.addEventListener('keydown', (event) => {
+    const marker = event.target instanceof Element ? event.target.closest<HTMLElement>('.comment-marker') : null;
+    if (!marker?.dataset.commentJump || !['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+    const thread = commentsDocument?.data.threads[marker.dataset.commentJump];
+    const current = thread ? placementOf(thread) : null;
+    if (!current) return;
+    event.preventDefault();
+    const delta = event.shiftKey ? 0.05 : 0.01;
+    const x = Math.max(0, Math.min(0.985, current.x + (event.key === 'ArrowRight' ? delta : event.key === 'ArrowLeft' ? -delta : 0)));
+    const y = Math.max(0, Math.min(0.985, current.y + (event.key === 'ArrowDown' ? delta : event.key === 'ArrowUp' ? -delta : 0)));
+    void moveComment(marker.dataset.commentJump, x, y).catch((error) => setStatus('error', error instanceof Error ? error.message : 'Could not move comment.'));
+  });
+  document.querySelector<HTMLButtonElement>('#comment-cancel')?.addEventListener('click', () => {
+    commentDialog.close();
+    pendingPlacement = null;
+  });
+  commentDialog.addEventListener('cancel', () => { pendingPlacement = null; });
+  commentForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const button = document.querySelector<HTMLButtonElement>('#comment-save');
+    if (button) button.disabled = true;
+    void saveComment(commentBody.value).then(() => commentDialog.close()).catch((error) => {
+      commentLabel.textContent = error instanceof Error ? error.message : 'Could not save comment.';
+    }).finally(() => { if (button) button.disabled = false; });
   });
 
   picker.addEventListener('change', () => void loadCv(picker.value).catch((error) => setStatus('error', error.message)));

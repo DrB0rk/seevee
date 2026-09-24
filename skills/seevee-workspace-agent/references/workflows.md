@@ -1,5 +1,18 @@
 # Seevee agent workflows
 
+## Create a new CV
+
+Creating a CV includes its visible design. Do not finish after writing `cvs/<id>.json`.
+
+1. Create the schema-valid CV document with stable IDs and verified facts.
+2. Create a presentation registered to that CV, with an explicit page profile and visual tokens.
+3. Choose a source template. Use the installed `classic` template as the styled default when the user has not supplied a direction; adapt or create a local Astro/CSS template when the request calls for a distinct look.
+4. Register the template in `seevee.json` and point the presentation at its template/version IDs.
+5. Validate the manifest, CV, presentation, and workspace references together.
+6. Render the CV and correct page breaks, typography, spacing, and overflow before calling the new CV complete.
+
+Do not ask the user to configure a template before producing a first visual result. Use the supplied brief when present, otherwise use the installed Classic design and make its styling visible in the new presentation.
+
 ## Ingest a source
 
 1. Register and hash the source.

@@ -254,20 +254,22 @@ BUNDLE_DIR="$STAGE_DIR/seevee-${PLATFORM}"
 [ -f "$BUNDLE_DIR/VERSION" ] || fail 'The bundle is missing its VERSION file.'
 [ "$(cat "$BUNDLE_DIR/VERSION")" = "$VERSION" ] || fail 'Bundle version does not match the requested release.'
 [ -x "$BUNDLE_DIR/bin/seevee" ] || fail 'The bundle launcher is missing or not executable.'
+[ -f "$BUNDLE_DIR/runtime/cli/dist/cli.js" ] || fail 'The bundle is missing the Seevee CLI.'
+[ -f "$BUNDLE_DIR/runtime/studio/dist/server/entry.mjs" ] || fail 'The bundle is missing the dashboard server.'
+[ -f "$BUNDLE_DIR/runtime/agent/seevee-workspace-agent/SKILL.md" ] || fail 'The bundle is missing the workspace-agent guide.'
+[ -f "$BUNDLE_DIR/runtime/agent/seevee-workspace-agent/references/workflows.md" ] || fail 'The bundle is missing the agent workflow instructions.'
+[ -f "$BUNDLE_DIR/runtime/templates/classic/v1/template.json" ] || fail 'The bundle is missing the default Classic CV template.'
+[ -f "$BUNDLE_DIR/runtime/templates/classic/v1/src/Resume.astro" ] || fail 'The bundle is missing the Classic template source.'
 
-if [ -e "$INSTALL_DIR" ]; then
-  OLD_DIR="$DATA_ROOT/.old-v${VERSION}-$$"
-  mv "$INSTALL_DIR" "$OLD_DIR" || fail 'Could not prepare the existing installation for update.'
-  if mv "$BUNDLE_DIR" "$INSTALL_DIR"; then
-    rm -rf "$OLD_DIR"
-  else
-    mv "$OLD_DIR" "$INSTALL_DIR" 2>/dev/null || true
-    fail 'Could not finish installing the new version.'
-  fi
-else
-  mv "$BUNDLE_DIR" "$INSTALL_DIR" || fail 'Could not place the application files.'
+step 'Checking the staged command'
+if ! VERSION_OUTPUT="$("$BUNDLE_DIR/bin/seevee" --version 2>&1)"; then
+  printf '%s\n' "$VERSION_OUTPUT" >&2
+  fail 'The downloaded Seevee command did not start.'
 fi
-rm -rf "$STAGE_DIR"
+case "$VERSION_OUTPUT" in
+  *"\"cli\": \"$VERSION\""*) success 'Staged command is ready' ;;
+  *) printf '%s\n' "$VERSION_OUTPUT" >&2; fail 'The staged command reported an unexpected version.' ;;
+esac
 
 shell_quote() {
   printf "'"
@@ -278,17 +280,51 @@ TARGET="$(shell_quote "$INSTALL_DIR/bin/seevee")"
 LAUNCHER_TMP="$BIN_DIR/.seevee-$$"
 printf '#!/usr/bin/env sh\nexec %s "$@"\n' "$TARGET" > "$LAUNCHER_TMP"
 chmod +x "$LAUNCHER_TMP"
-mv "$LAUNCHER_TMP" "$LAUNCHER"
+
+OLD_DIR="$DATA_ROOT/.old-v${VERSION}-$$"
+LAUNCHER_OLD="$BIN_DIR/.seevee-old-$$"
+if [ -e "$INSTALL_DIR" ]; then
+  mv "$INSTALL_DIR" "$OLD_DIR" || fail 'Could not prepare the existing installation for update.'
+fi
+if ! mv "$BUNDLE_DIR" "$INSTALL_DIR"; then
+  if [ -e "$OLD_DIR" ]; then mv "$OLD_DIR" "$INSTALL_DIR" 2>/dev/null || true; fi
+  fail 'Could not place the application files.'
+fi
+if [ -e "$LAUNCHER" ] || [ -L "$LAUNCHER" ]; then
+  if ! mv "$LAUNCHER" "$LAUNCHER_OLD"; then
+    rm -rf "$INSTALL_DIR"
+    if [ -e "$OLD_DIR" ]; then mv "$OLD_DIR" "$INSTALL_DIR" 2>/dev/null || true; fi
+    fail 'Could not prepare the existing Seevee command for update.'
+  fi
+fi
+if ! mv "$LAUNCHER_TMP" "$LAUNCHER"; then
+  if [ -e "$LAUNCHER_OLD" ] || [ -L "$LAUNCHER_OLD" ]; then mv "$LAUNCHER_OLD" "$LAUNCHER" 2>/dev/null || true; fi
+  rm -rf "$INSTALL_DIR"
+  if [ -e "$OLD_DIR" ]; then mv "$OLD_DIR" "$INSTALL_DIR" 2>/dev/null || true; fi
+  fail 'Could not activate the installed Seevee command.'
+fi
 
 step 'Checking the installed command'
 if ! VERSION_OUTPUT="$("$LAUNCHER" --version 2>&1)"; then
   printf '%s\n' "$VERSION_OUTPUT" >&2
+  mv "$LAUNCHER" "$LAUNCHER_TMP" 2>/dev/null || true
+  if [ -e "$LAUNCHER_OLD" ] || [ -L "$LAUNCHER_OLD" ]; then mv "$LAUNCHER_OLD" "$LAUNCHER" 2>/dev/null || true; fi
+  rm -rf "$INSTALL_DIR"
+  if [ -e "$OLD_DIR" ]; then mv "$OLD_DIR" "$INSTALL_DIR" 2>/dev/null || true; fi
   fail 'The installed command did not start. Check that Node.js 20+ is on PATH.'
 fi
 case "$VERSION_OUTPUT" in
-  *"$VERSION"*) success "Seevee v${VERSION} is ready" ;;
-  *) printf '%s\n' "$VERSION_OUTPUT" >&2; fail 'The installed command reported an unexpected version.' ;;
+  *"\"cli\": \"$VERSION\""*) success "Seevee v${VERSION} is ready" ;;
+  *)
+    printf '%s\n' "$VERSION_OUTPUT" >&2
+    mv "$LAUNCHER" "$LAUNCHER_TMP" 2>/dev/null || true
+    if [ -e "$LAUNCHER_OLD" ] || [ -L "$LAUNCHER_OLD" ]; then mv "$LAUNCHER_OLD" "$LAUNCHER" 2>/dev/null || true; fi
+    rm -rf "$INSTALL_DIR"
+    if [ -e "$OLD_DIR" ]; then mv "$OLD_DIR" "$INSTALL_DIR" 2>/dev/null || true; fi
+    fail 'The installed command reported an unexpected version.'
+    ;;
 esac
+rm -rf "$OLD_DIR" "$LAUNCHER_OLD" "$STAGE_DIR"
 
 if ! printf '%s' ":${PATH}:" | grep -Fq ":${BIN_DIR}:"; then
   printf '\n%bNext step%b Add Seevee to PATH, then run %bseevee init%b in a workspace:\n  export PATH="%s:$PATH"\n' \

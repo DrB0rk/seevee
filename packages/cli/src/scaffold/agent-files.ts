@@ -1,5 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import process from 'node:process';
+import { fileURLToPath } from 'node:url';
 
 import type { DiscoveredWorkspace } from '../runtime/workspace-discovery.js';
 
@@ -36,6 +38,8 @@ the Seevee workspace-agent at \`.seevee/agent/seevee-workspace-agent/\`.
   page profile, tokens).
 - \`templates/local/\` — user-owned template source. The dashboard reads
   only what you reference from a presentation.
+- \`seevee init\` installs the styled Classic Astro template and registers
+  it as the default presentation for a new CV workspace.
 
 ## Editing rules
 
@@ -59,6 +63,9 @@ the Seevee workspace-agent at \`.seevee/agent/seevee-workspace-agent/\`.
   bullets before inventing new entities.
 - Render bindings (overflow, truncation) live on the presentation, never
   on the CV.
+- Creating a CV is not complete with JSON alone. Create/register its
+  presentation and use the installed Classic visual template by default;
+  render it and account for page breaks before finishing.
 
 ## Comments workflow
 
@@ -67,6 +74,14 @@ the Seevee workspace-agent at \`.seevee/agent/seevee-workspace-agent/\`.
   resource revision or the comment is dismissed.
 - Resolutions must be deterministic and explainable; deterministic
   comments may be auto-resolved via \`workspace.policy.autoResolveDeterministicComments\`.
+
+## Dashboard and comment pins
+
+- Start or reopen the local dashboard with \`seevee start\`; use \`seevee open\` to open it, \`seevee status\` to find its URL, and \`seevee stop\` to stop it cleanly.
+- Read the registered comments resource for the selected CV, finding it by matching its \`cvId\` in \`seevee.json\`. Follow \`data.threadOrder\` and use the latest message in each thread's \`messageOrder\`.
+- Dashboard comments put the strongest semantic selector (\`FieldSelector\`, \`NodeSelector\`, or \`SectionSelector\`) before the \`PageRegionSelector\` visual fallback. The \`seevee.placement\` extension records a readable element label, a short snapshot of visible text, and normalized page coordinates. Resolve stable IDs against the current CV first; treat the saved text and page location as clues if revisions have changed.
+- Dashboard-created comments default to category \`general\` and priority \`normal\`; classify the requested work from its message. If the latest message does not say what should change, ask rather than guessing.
+- Keep comments open until the requested change is made and validated. Do not resolve a thread just because it was read or attempted.
 
 ## Validation
 
@@ -110,13 +125,33 @@ export async function writeAgentFiles(
   await fs.mkdir(agentDir, { recursive: true });
   const readme = path.join(agentDir, 'README.md');
   await writeAtomic(readme, AGENT_README_HEADER);
-  await fs.mkdir(path.join(agentDir, 'seevee-workspace-agent'), { recursive: true });
+  const skillTarget = path.join(agentDir, 'seevee-workspace-agent');
+  const skillSource = await findAgentSkillSource();
+  await fs.mkdir(skillTarget, { recursive: true });
+  await fs.cp(skillSource, skillTarget, { recursive: true, force: true });
 
   return {
     createdTopLevel,
     readmePath: readme,
     agentDirPath: agentDir,
   };
+}
+
+async function findAgentSkillSource(): Promise<string> {
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const candidates = [
+    process.env['SEEVEE_AGENT_SKILL_DIR'],
+    path.resolve(here, '../../../agent/seevee-workspace-agent'),
+    path.resolve(here, '../../../../skills/seevee-workspace-agent'),
+  ].filter((candidate): candidate is string => Boolean(candidate));
+  for (const candidate of candidates) {
+    try {
+      if ((await fs.stat(path.join(candidate, 'SKILL.md'))).isFile()) return candidate;
+    } catch {
+      // Try the source-tree or bundled runtime location next.
+    }
+  }
+  throw new Error('Seevee workspace-agent skill is missing from this installation. Reinstall Seevee and run `seevee init` again.');
 }
 
 async function writeIfMissing(file: string, content: string, allowOverwrite: boolean): Promise<boolean> {

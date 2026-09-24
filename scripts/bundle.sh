@@ -163,8 +163,11 @@ fi
 # 5. Stage the runtime tree
 # ---------------------------------------------------------------------------
 RUNTIME="$STAGE/$ARCHIVE_BASE/runtime"
-mkdir -p "$RUNTIME/studio"
+mkdir -p "$RUNTIME/studio" "$RUNTIME/agent" "$RUNTIME/templates"
 cp -R "$ROOT_DIR/apps/studio/dist" "$RUNTIME/studio/"
+cp -R "$ROOT_DIR/skills/seevee-workspace-agent" "$RUNTIME/agent/"
+mkdir -p "$RUNTIME/templates/classic"
+cp -R "$ROOT_DIR/templates/classic/v1" "$RUNTIME/templates/classic/"
 
 # Astro's standalone entry records build-machine absolute asset paths. Rewrite
 # only those two paths so an extracted bundle can move to any install folder.

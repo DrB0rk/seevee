@@ -8,6 +8,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
+import { fileURLToPath } from 'node:url';
 
 import type { CommandContext, CommandResult } from '../cli.js';
 import { CliUsageError, LifecycleError } from '../cli.js';
@@ -44,6 +45,7 @@ export async function runInit(ctx: CommandContext): Promise<CommandResult> {
   const marker = await fileExists(ws.workspaceFile);
   if (marker) {
     await migrateLegacyWorkspace(ws);
+    await ensureDefaultTemplateRegistration(ws);
     await validateExistingWorkspace(ws);
   } else {
     await createFreshWorkspace(ws);
@@ -141,7 +143,7 @@ async function fileExists(p: string): Promise<boolean> {
 }
 
 async function validateExistingWorkspace(ws: DiscoveredWorkspace): Promise<void> {
-  const resources = ['cvs', 'provenance', 'comments', 'presentations'];
+  const resources = ['cvs', 'provenance', 'comments', 'presentations', 'templates'];
   for (const dir of resources) {
     const dirPath = path.join(ws.root, dir);
     let entries: string[];
@@ -184,11 +186,101 @@ async function createFreshWorkspace(ws: DiscoveredWorkspace): Promise<void> {
     await fs.mkdir(path.join(ws.root, d), { recursive: true });
   }
   const documents = buildWorkspaceDocuments(path.basename(ws.root));
+  await installDefaultTemplate(ws);
   await atomicWrite(ws.workspaceFile, JSON.stringify(documents.workspace, null, 2) + '\n');
   await atomicWrite(path.join(ws.root, 'cvs', 'main.json'), JSON.stringify(documents.cv, null, 2) + '\n');
   await atomicWrite(path.join(ws.root, 'provenance', 'main.json'), JSON.stringify(documents.provenance, null, 2) + '\n');
   await atomicWrite(path.join(ws.root, 'comments', 'main.json'), JSON.stringify(documents.comments, null, 2) + '\n');
   await atomicWrite(path.join(ws.root, 'presentations', 'main.json'), JSON.stringify(documents.presentation, null, 2) + '\n');
+}
+
+async function installDefaultTemplate(ws: DiscoveredWorkspace): Promise<void> {
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const candidates = [
+    process.env['SEEVEE_CLASSIC_TEMPLATE_DIR'],
+    path.resolve(here, '../../../templates/classic/v1'),
+    path.resolve(here, '../../../../templates/classic/v1'),
+  ].filter((candidate): candidate is string => Boolean(candidate));
+  for (const source of candidates) {
+    try {
+      if (!(await fs.stat(path.join(source, 'template.json'))).isFile()) continue;
+      const destination = path.join(ws.root, 'templates/local/classic');
+      await fs.mkdir(path.dirname(destination), { recursive: true });
+      await fs.cp(source, destination, { recursive: true, force: false, errorOnExist: false });
+      return;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+        throw new LifecycleError(`Could not install the default Classic CV template: ${(error as Error).message}`);
+      }
+      // Try the source-checkout or bundled runtime location next.
+    }
+  }
+  throw new LifecycleError('The default Classic CV template is missing from this Seevee installation. Reinstall Seevee and run `seevee init` again.');
+}
+
+async function ensureDefaultTemplateRegistration(ws: DiscoveredWorkspace): Promise<void> {
+  let workspace: Record<string, unknown>;
+  try {
+    workspace = JSON.parse(await fs.readFile(ws.workspaceFile, 'utf8')) as Record<string, unknown>;
+  } catch {
+    return;
+  }
+  if (workspace.kind !== 'seevee.workspace' || !workspace.data || typeof workspace.data !== 'object') return;
+  const data = workspace.data as Record<string, unknown>;
+  if (!data.resources || typeof data.resources !== 'object') return;
+  const resources = data.resources as Record<string, unknown>;
+  await installDefaultTemplate(ws);
+  if (!resources.templates || typeof resources.templates !== 'object') resources.templates = {};
+  const templates = resources.templates as Record<string, unknown>;
+  const now = new Date().toISOString();
+  let changed = false;
+  if (!templates.classic) {
+    templates.classic = {
+      id: 'classic',
+      relativePath: 'templates/local/classic/template.json',
+      currentVersionId: 'tplclassic0000000000000000001',
+      updatedAt: now,
+    };
+    changed = true;
+  }
+
+  const presentations = resources.presentations;
+  if (presentations && typeof presentations === 'object') {
+    for (const entry of Object.values(presentations as Record<string, unknown>)) {
+      if (!entry || typeof entry !== 'object') continue;
+      const resource = entry as Record<string, unknown>;
+      if (resource.templateId !== 'tpl_classic' && resource.versionId !== 'tpl_classic_v1') continue;
+      if (typeof resource.relativePath !== 'string') continue;
+      const file = path.resolve(ws.root, resource.relativePath);
+      if (file === ws.root || !file.startsWith(`${ws.root}${path.sep}`)) continue;
+      let document: Record<string, unknown>;
+      try {
+        document = JSON.parse(await fs.readFile(file, 'utf8')) as Record<string, unknown>;
+      } catch {
+        continue;
+      }
+      if (!document.data || typeof document.data !== 'object') continue;
+      const presentationData = document.data as Record<string, unknown>;
+      if (!presentationData.template || typeof presentationData.template !== 'object') continue;
+      const selection = presentationData.template as Record<string, unknown>;
+      selection.templateId = 'classic';
+      selection.versionId = 'tplclassic0000000000000000001';
+      document.revision = typeof document.revision === 'number' ? document.revision + 1 : 1;
+      document.updatedAt = now;
+      await atomicWrite(file, JSON.stringify(document, null, 2) + '\n');
+      resource.templateId = 'classic';
+      resource.versionId = 'tplclassic0000000000000000001';
+      resource.revision = document.revision;
+      resource.updatedAt = now;
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    workspace.revision = typeof workspace.revision === 'number' ? workspace.revision + 1 : 1;
+    workspace.updatedAt = now;
+    await atomicWrite(ws.workspaceFile, JSON.stringify(workspace, null, 2) + '\n');
+  }
 }
 
 async function atomicWrite(file: string, content: string): Promise<void> {
@@ -234,16 +326,21 @@ function buildWorkspaceDocuments(name: string) {
   });
   const presentation = emptyResource('seevee.presentation', {
     cvId: 'main',
-    template: { templateId: 'tpl_classic', versionId: 'tpl_classic_v1' },
+    template: { templateId: 'classic', versionId: 'tplclassic0000000000000000001' },
     page: { preset: 'A4', orientation: 'portrait', edges: { top: 12, right: 12, bottom: 12, left: 12 } },
     pagination: { targetMin: 1, targetMax: 2, breakBehavior: 'auto' },
-    tokens: {},
+    tokens: {
+      'accent-color': { type: 'color', value: '#1f2937' },
+      'font-family': { type: 'string', value: 'Inter, system-ui, sans-serif' },
+      'base-font-size': { type: 'number', value: 11 },
+      'line-height': { type: 'number', value: 1.4 },
+    },
     sectionOverrides: {},
     templateOverrides: {},
   });
   const cvEntry = { id: 'main', relativePath: 'cvs/main.json', revision: 1, updatedAt: stamp };
   const presentationEntry = {
-    id: 'main', relativePath: 'presentations/main.json', templateId: 'tpl_classic', versionId: 'tpl_classic_v1', revision: 1, updatedAt: stamp,
+    id: 'main', relativePath: 'presentations/main.json', templateId: 'classic', versionId: 'tplclassic0000000000000000001', revision: 1, updatedAt: stamp,
   };
   return {
     workspace: {
@@ -255,7 +352,9 @@ function buildWorkspaceDocuments(name: string) {
           cvs: { main: cvEntry }, presentations: { main: presentationEntry },
           provenance: { main: { id: 'main', relativePath: 'provenance/main.json', cvId: 'main', revision: 1, updatedAt: stamp } },
           comments: { main: { id: 'main', relativePath: 'comments/main.json', cvId: 'main', revision: 1, updatedAt: stamp } },
-          sources: {}, templates: {}, stylePresets: {}, changeSets: {}, agentRuns: {},
+          sources: {},
+          templates: { classic: { id: 'classic', relativePath: 'templates/local/classic/template.json', currentVersionId: 'tplclassic0000000000000000001', updatedAt: stamp } },
+          stylePresets: {}, changeSets: {}, agentRuns: {},
         },
         policy: { allowAgentFactInference: false, requireEvidenceForNumericClaims: true, allowForceExportWithOverflow: false, autoResolveDeterministicComments: true },
       },
@@ -290,6 +389,7 @@ async function migrateLegacyWorkspace(ws: DiscoveredWorkspace): Promise<void> {
   }
   const name = typeof legacy.data?.name === 'string' && legacy.data.name.trim() ? legacy.data.name : path.basename(ws.root);
   const documents = buildWorkspaceDocuments(name);
+  await installDefaultTemplate(ws);
   if (typeof legacy.id === 'string' && legacy.id.length > 2) documents.workspace.id = legacy.id;
   const existingCvPath = path.join(ws.root, 'cvs/main.json');
   try {

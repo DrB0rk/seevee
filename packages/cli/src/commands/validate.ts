@@ -107,8 +107,12 @@ export async function validateResource(
   }
 
   const envelopeType =
-    parsed && typeof parsed === 'object' && 'type' in parsed
-      ? (parsed as Record<string, unknown>).type
+    parsed && typeof parsed === 'object'
+      ? ('kind' in parsed
+          ? (parsed as Record<string, unknown>).kind
+          : 'type' in parsed
+            ? (parsed as Record<string, unknown>).type
+            : undefined)
       : undefined;
   const entry =
     typeof envelopeType === 'string' ? TYPE_TO_SCHEMA[envelopeType] : undefined;

@@ -21,6 +21,8 @@ A source template is Astro/CSS/asset code defining structure and visual language
 
 A style preset is data referencing a source template and overriding safe presentation tokens. Saving the current style should create a style preset by default. Fork source only when structural/template-code independence is required.
 
+Every new CV must have a registered presentation and a visible source-template style. When the user gives no visual direction, use the installed `classic` template and its declared defaults as the starting design; do not leave a new CV as unstyled data or ask for setup before showing a first result.
+
 ## Template inputs
 
 A template receives only validated inputs:

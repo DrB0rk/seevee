@@ -19,6 +19,7 @@ Use Seevee's structured documents as the source of truth. Do not treat rendered 
    - End-to-end agent procedure and completion rules: `references/workflows.md`.
    - Workspace initialization, CLI/server lifecycle, or working alongside arbitrary external agents: `references/cli-and-workspace.md`.
    - Drafting, tailoring, reviewing, or restructuring CV content: `references/cv-guidance.md`.
+   - Creating a new CV: `references/workflows.md` and `references/templates-and-rendering.md` are both required; create and activate its visual presentation as part of the task, not just its CV JSON.
 3. Read the workspace's current revisions before proposing a mutation.
 4. Use the narrowest mutation surface. Do not replace a whole canonical document for a small edit.
 5. Validate after every committed mutation category.

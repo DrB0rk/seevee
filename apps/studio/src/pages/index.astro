@@ -41,10 +41,20 @@ try {
 }
 ---
 
-<Dashboard
-  workspaceName={workspaceName}
-  workspaceId={workspaceId}
-  serverVersion={serverVersion}
-  pid={pid}
-  startedAt={startedAt}
-/>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Seevee Studio</title>
+  </head>
+  <body>
+    <Dashboard
+      workspaceName={workspaceName}
+      workspaceId={workspaceId}
+      serverVersion={serverVersion}
+      pid={pid}
+      startedAt={startedAt}
+    />
+  </body>
+</html>

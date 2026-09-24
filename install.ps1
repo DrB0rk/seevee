@@ -122,29 +122,34 @@ try {
   if ($BundledVersion -ne $Version) { throw "Bundle version mismatch: expected $Version, found $BundledVersion." }
   if (-not (Test-Path (Join-Path $StagedBundle 'bin\seevee.cmd'))) { throw 'The Windows launcher is missing from the release bundle.' }
   if (-not (Test-Path (Join-Path $StagedBundle 'runtime\cli\dist\cli.js'))) { throw 'The Seevee CLI is missing from the release bundle.' }
+  if (-not (Test-Path (Join-Path $StagedBundle 'runtime\studio\dist\server\entry.mjs'))) { throw 'The dashboard server is missing from the release bundle.' }
+  if (-not (Test-Path (Join-Path $StagedBundle 'runtime\agent\seevee-workspace-agent\SKILL.md'))) { throw 'The workspace-agent guide is missing from the release bundle.' }
+  if (-not (Test-Path (Join-Path $StagedBundle 'runtime\agent\seevee-workspace-agent\references\workflows.md'))) { throw 'The agent workflow instructions are missing from the release bundle.' }
+  if (-not (Test-Path (Join-Path $StagedBundle 'runtime\templates\classic\v1\template.json'))) { throw 'The default Classic CV template is missing from the release bundle.' }
+  if (-not (Test-Path (Join-Path $StagedBundle 'runtime\templates\classic\v1\src\Resume.astro'))) { throw 'The Classic template source is missing from the release bundle.' }
+
+  Write-Step 'Checking the staged command'
+  $PreviousSeeveeVersion = $env:SEEVEE_VERSION
+  $PreviousNodePath = $env:NODE_PATH
+  try {
+    $env:SEEVEE_VERSION = $Version
+    $env:NODE_PATH = Join-Path $StagedBundle 'runtime\node_modules'
+    $StagedVersionOutput = & node (Join-Path $StagedBundle 'runtime\cli\dist\cli.js') --version 2>&1
+    $StagedVersionText = $StagedVersionOutput -join "`n"
+    if ($LASTEXITCODE -ne 0 -or $StagedVersionText -notmatch ('"cli"\s*:\s*"' + [regex]::Escape($Version) + '"')) {
+      throw "The downloaded Seevee command did not pass its version check: $StagedVersionText"
+    }
+  } finally {
+    $env:SEEVEE_VERSION = $PreviousSeeveeVersion
+    $env:NODE_PATH = $PreviousNodePath
+  }
+  Write-Success 'Staged command is ready'
 
   New-Item -ItemType Directory -Path $LauncherDir -Force | Out-Null
   $BackupDir = "$InstallDir.backup-$PID"
-  if (Test-Path $BackupDir) { Remove-Item $BackupDir -Recurse -Force }
-  if (Test-Path $InstallDir) { Move-Item -Path $InstallDir -Destination $BackupDir }
-  try {
-    New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
-    Move-Item -Path $StagedBundle -Destination $BundleDir
-  } catch {
-    if (Test-Path $InstallDir) { Remove-Item $InstallDir -Recurse -Force }
-    if (Test-Path $BackupDir) { Move-Item -Path $BackupDir -Destination $InstallDir }
-    throw
-  }
-  if (Test-Path $BackupDir) { Remove-Item $BackupDir -Recurse -Force }
-
-  $CliEntry = Join-Path $BundleDir 'runtime\cli\dist\cli.js'
-  $env:SEEVEE_VERSION = $Version
-  $VersionOutput = & node $CliEntry --version 2>&1
-  if ($LASTEXITCODE -ne 0 -or ($VersionOutput -join "`n") -notmatch [regex]::Escape($Version)) {
-    throw "The installed CLI did not pass its version check: $($VersionOutput -join ' ')"
-  }
-
   $Launcher = Join-Path $LauncherDir 'seevee.cmd'
+  $LauncherTemp = "$Launcher.tmp-$PID"
+  $LauncherBackup = "$Launcher.backup-$PID"
   $LauncherBody = @"
 @echo off
 setlocal
@@ -153,7 +158,36 @@ set "SEEVEE_VERSION=$Version"
 set "NODE_PATH=%SEEVEE_ROOT%\runtime\node_modules"
 node "%SEEVEE_ROOT%\runtime\cli\dist\cli.js" %*
 "@
-  [System.IO.File]::WriteAllText($Launcher, $LauncherBody, [System.Text.Encoding]::ASCII)
+  [System.IO.File]::WriteAllText($LauncherTemp, $LauncherBody, [System.Text.Encoding]::ASCII)
+  if (Test-Path $BackupDir) { Remove-Item $BackupDir -Recurse -Force }
+  if (Test-Path $LauncherBackup) { Remove-Item $LauncherBackup -Force }
+  $InstallDirTouched = $false
+  try {
+    if (Test-Path $InstallDir) {
+      Move-Item -Path $InstallDir -Destination $BackupDir
+      $InstallDirTouched = $true
+    }
+    New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
+    $InstallDirTouched = $true
+    Move-Item -Path $StagedBundle -Destination $BundleDir
+    if (Test-Path $Launcher) { Move-Item -Path $Launcher -Destination $LauncherBackup }
+    Move-Item -Path $LauncherTemp -Destination $Launcher
+
+    Write-Step 'Checking the installed command'
+    $VersionOutput = & $Launcher --version 2>&1
+    $VersionText = $VersionOutput -join "`n"
+    if ($LASTEXITCODE -ne 0 -or $VersionText -notmatch ('"cli"\s*:\s*"' + [regex]::Escape($Version) + '"')) {
+      throw "The installed command did not pass its version check: $VersionText"
+    }
+  } catch {
+    if (Test-Path $Launcher) { Remove-Item $Launcher -Force }
+    if (Test-Path $LauncherBackup) { Move-Item -Path $LauncherBackup -Destination $Launcher }
+    if ($InstallDirTouched -and (Test-Path $InstallDir)) { Remove-Item $InstallDir -Recurse -Force }
+    if (Test-Path $BackupDir) { Move-Item -Path $BackupDir -Destination $InstallDir }
+    throw
+  }
+  if (Test-Path $BackupDir) { Remove-Item $BackupDir -Recurse -Force }
+  if (Test-Path $LauncherBackup) { Remove-Item $LauncherBackup -Force }
 
   $UserPath = [System.Environment]::GetEnvironmentVariable('Path', 'User')
   if ($UserPath -notlike "*$LauncherDir*") {

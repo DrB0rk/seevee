@@ -69,4 +69,18 @@ else
   exit 1
 fi
 
+if grep -q 'runtime\\studio\\dist\\server\\entry.mjs' "$SCRIPT" && grep -q 'runtime\\agent\\seevee-workspace-agent\\SKILL.md' "$SCRIPT" && grep -q 'runtime\\templates\\classic\\v1\\template.json' "$SCRIPT"; then
+  echo "PASS: install.ps1 checks the full workspace-ready bundle"
+else
+  echo "FAIL: install.ps1 must check the dashboard, agent guide, and Classic template"
+  exit 1
+fi
+
+if grep -q 'Checking the staged command' "$SCRIPT" && grep -q 'Checking the installed command' "$SCRIPT"; then
+  echo "PASS: install.ps1 verifies both staged and activated CLI"
+else
+  echo "FAIL: install.ps1 must verify the CLI before and after activation"
+  exit 1
+fi
+
 echo "All install.ps1 static tests passed"
