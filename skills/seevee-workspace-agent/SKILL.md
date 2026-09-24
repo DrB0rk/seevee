@@ -93,6 +93,7 @@ For visual/template changes:
 - use the template SDK bindings for every semantic/commentable rendered block;
 - keep selected physical page dimensions page-aware;
 - preserve explicit overflow behavior;
+- treat CV output as a static, paginated document: do not add scroll containers, interactive controls, or content that depends on clicks, scripts, hover, or focus; keep all information visible in PDF output;
 - use presentation tokens when the template exposes them, but do not require them;
 - allow fully bespoke Astro/CSS layouts when requested;
 - create/fork source templates whenever source-level design control is the appropriate surface;

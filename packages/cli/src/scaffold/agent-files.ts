@@ -75,6 +75,12 @@ the Seevee workspace-agent at \`.seevee/agent/seevee-workspace-agent/\`.
   dashboard style controls are starting points, not constraints. Keep
   semantic bindings, selected page sizing, accessibility, and export safety
   intact.
+- Treat the CV as a static document that will be printed/exported to PDF.
+  Never add scrollable CV regions (including \`overflow: auto/scroll\`,
+  fixed-height panels, or nested scrolling), editor controls, or content that
+  requires clicks, scripts, hover, or focus to appear. Keep all information
+  visible in the document and let it paginate across the selected page size.
+  These rules apply to CV/template output, not dashboard shell controls.
 
 ## Comments workflow
 

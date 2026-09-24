@@ -12,6 +12,18 @@ The bundled templates are examples and starting points only. For a distinct stru
 
 Keep each template's dashboard preview styles in its own `styles/dashboard.css`. The Studio loads that file for the selected template and scopes it to `.cv-content`; it cannot style the dashboard shell or another template. Use the preview hooks (`.cv-header`, `.cv-section`, `.cv-entry`, `.cv-skill`, and `[data-cv-section-type]`) for the dashboard's editable preview. Keep template print rules in `styles/print.css`. Never change the Studio's `dashboard.css` to style a CV.
 
+## Static document and PDF constraints
+
+The CV itself is a document that must remain complete and readable when printed or exported to PDF. Treat the rendered CV as static content:
+
+- Do not add scrollable regions to the CV, including `overflow: auto`/`scroll`, fixed or max-height content panels, or nested scroll areas. Let the document paginate across physical pages instead.
+- Do not add interaction-dependent CV content such as buttons, form controls, tabs, accordions, carousels, expandable/collapsible sections, or content revealed only by JavaScript, hover, or focus. Keep all CV information visible in the rendered pages.
+- Keep dashboard editing controls in the dashboard shell. Never render editor inputs, buttons, or other controls as part of the CV template or its exported document.
+- Static hyperlinks may be included when useful, but their visible text must remain understandable in print. Do not rely on clicking to reveal essential information.
+- Do not use `position: fixed` or screen-only overlays for CV content. Avoid clipping content with `overflow: hidden`; use the page profile, natural page breaks, and layout diagnostics to fit and paginate it.
+
+These constraints apply to the CV/template output, not to Seevee's surrounding dashboard interface. Custom grids, columns, sidebars, and other static layouts remain available as long as their content flows and paginates within the selected page size.
+
 The canvas renders one or more physical pages. Default:
 
 - preset: A4;
@@ -74,6 +86,7 @@ Every layout must be evaluated against a physical content box. Content blocks de
 Diagnostics should identify clipped semantic node IDs, overflow amount, blank pages, orphan headings and near-overflow.
 
 Do not hide overflow merely to make a validation warning disappear.
+Before activating a template, inspect its rendered output and print stylesheet for scroll containers, controls, hidden/revealed content, clipping, and page-break behavior.
 
 ## Presentation tokens
 
