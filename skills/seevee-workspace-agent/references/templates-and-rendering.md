@@ -10,6 +10,8 @@ Treat the user's visual direction as the design brief. The CV canvas may use any
 
 The bundled templates are examples and starting points only. For a distinct structure or style, fork a source template or create a bespoke local Astro/CSS template and register it with the presentation. Source-level design does not need to be expressible as dashboard tokens. Preserve semantic bindings for editable/commentable content, accessibility, selected physical page dimensions, page breaks, and export diagnostics while designing freely.
 
+Keep each template's dashboard preview styles in its own `styles/dashboard.css`. The Studio loads that file for the selected template and scopes it to `.cv-content`; it cannot style the dashboard shell or another template. Use the preview hooks (`.cv-header`, `.cv-section`, `.cv-entry`, `.cv-skill`, and `[data-cv-section-type]`) for the dashboard's editable preview. Keep template print rules in `styles/print.css`. Never change the Studio's `dashboard.css` to style a CV.
+
 The canvas renders one or more physical pages. Default:
 
 - preset: A4;

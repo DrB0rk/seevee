@@ -1,0 +1,127 @@
+:scope {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(48mm, 0.95fr);
+  align-content: start;
+  column-gap: 7mm;
+}
+
+.cv-header,
+.cv-section[data-cv-section-type="summary"],
+.cv-section[data-cv-section-type="custom"] {
+  grid-column: 1 / -1;
+}
+
+.cv-header {
+  margin-bottom: 7mm;
+  padding: 0 0 4mm;
+  border-bottom: 0.3mm solid #d6e1e7;
+}
+
+.cv-name {
+  margin-bottom: 1mm;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: calc(var(--cv-name-size, 22pt) * 1.16);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+.cv-headline {
+  color: #485d6b;
+  font-size: calc(var(--cv-font-size, 11pt) * 1.08);
+}
+
+.cv-contact {
+  margin-top: 1.5mm;
+  color: #637986;
+  font-size: var(--cv-small-size, 10pt);
+}
+
+.cv-section {
+  min-width: 0;
+  margin-top: 5mm;
+}
+
+.cv-section h2 {
+  margin-bottom: 2.5mm;
+  padding-bottom: 1mm;
+  border-bottom: 0.25mm solid #d6e1e7;
+  color: var(--cv-accent-color, #245d72);
+  font-size: calc(var(--cv-section-size, 13.2pt) * 0.82);
+  letter-spacing: 0.14em;
+}
+
+.cv-section[data-cv-section-type="summary"] {
+  margin-top: 0;
+  padding: 3mm 4mm;
+  border-left: 1mm solid var(--cv-accent-color, #245d72);
+  background: #f2f7f9;
+}
+
+.cv-section[data-cv-section-type="summary"] h2 {
+  border-bottom: 0;
+}
+
+.cv-entry {
+  margin-top: 2.5mm;
+  padding: 2.5mm 3mm;
+  border-top: 0.25mm solid #e0e8ec;
+}
+
+.cv-entry-head {
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1mm 3mm;
+}
+
+.cv-entry-head strong {
+  font-size: calc(var(--cv-font-size, 11pt) * 1.06);
+}
+
+.cv-entry-head span,
+.cv-date-range,
+.cv-organization {
+  color: #5a707c;
+}
+
+.cv-organization {
+  font-size: var(--cv-small-size, 10pt);
+}
+
+.cv-section ul {
+  margin-top: 2mm;
+  padding-left: 4mm;
+}
+
+.cv-section li {
+  margin: 1.5mm 0;
+}
+
+.cv-section li::marker {
+  color: var(--cv-accent-color, #245d72);
+}
+
+.cv-section[data-cv-section-type="skills"] p {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5mm;
+}
+
+.cv-skill {
+  display: inline-flex;
+  max-width: 100%;
+  flex-wrap: wrap;
+  gap: 0 1mm;
+  padding: 0.8mm 1.5mm;
+  border: 0.2mm solid #d6e3e8;
+  border-radius: 2mm;
+  background: #f4f8fa;
+}
+
+.cv-skill-input {
+  width: 8em;
+}
+
+.cv-skill-category {
+  width: 7em;
+  color: #607783;
+}

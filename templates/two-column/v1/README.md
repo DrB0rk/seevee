@@ -34,9 +34,12 @@ The dashboard uses the `data-seevee-*` anchors emitted by `@seevee/template-sdk`
 - `template.json` — manifest; validates against `templateManifestDocumentSchema`.
 - `src/Resume.astro` — the entry Astro component.
 - `src/components/SidebarSection.astro` — reusable sidebar section wrapper.
+- `styles/dashboard.css` — stylesheet scoped to this template's live dashboard CV preview.
 - `styles/print.css` — `@page` rules and print break hints.
 - `fixtures/sparse-cv.json`, `fixtures/normal-cv.json`, `fixtures/dense-cv.json` — sample CV documents for compile-time fixture renders.
 
 ## Intended use
 
 Apply to any CV with enough material to fill both columns. The template degrades gracefully when sections are missing: an empty Skills section renders no items, and an empty Experience section still keeps the summary at the top of the main column.
+
+The dashboard preview stylesheet uses `.cv-header`, `.cv-section`, `.cv-entry`, `.cv-skill`, and `[data-cv-section-type]` hooks. Its rules are scoped to `.cv-content`; they do not affect the dashboard controls or other templates.

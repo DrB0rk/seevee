@@ -294,6 +294,9 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
   window.addEventListener('resize', () => setEditorWidth(editorWidth, false));
   const picker = document.querySelector<HTMLSelectElement>('#cv-picker')!;
   const paper = document.querySelector<HTMLElement>('#cv-paper')!;
+  const templatePreviewStyle = document.createElement('style');
+  templatePreviewStyle.id = 'active-template-preview-style';
+  document.head.append(templatePreviewStyle);
   const editor = document.querySelector<HTMLElement>('#editor-content')!;
   const sectionList = document.querySelector<HTMLElement>('#section-list')!;
   const saveState = document.querySelector<HTMLElement>('#save-state')!;
@@ -517,6 +520,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
   let presentationId: string | null = null;
   let presentationRevision = 0;
   let presentationTokens: Record<string, { type: string; value: unknown }> = {};
+  let templateStyleSequence = 0;
   let presentationSaveQueue: Promise<void> = Promise.resolve();
   const classicStyle = { fontFamily: 'Inter, system-ui, sans-serif', baseFontSize: 11, lineHeight: 1.4, accentColor: '#1f2937' };
   let editingThreadId: string | null = null;
@@ -547,6 +551,22 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     paper.style.setProperty('--cv-small-size', `${baseFontSize - 1}pt`);
     paper.style.setProperty('--cv-line-height', String(lineHeight));
     paper.style.setProperty('--cv-accent-color', accentColor);
+  }
+
+  async function loadTemplatePreviewStyle(templateId: string, versionId: string) {
+    const sequence = ++templateStyleSequence;
+    templatePreviewStyle.textContent = '';
+    try {
+      const query = new URLSearchParams({ templateId, versionId });
+      const response = await fetch(`/api/template-style?${query}`);
+      if (!response.ok) return;
+      const result = await response.json() as { ok: boolean; css?: string };
+      if (sequence === templateStyleSequence && result.ok && typeof result.css === 'string') {
+        templatePreviewStyle.textContent = result.css;
+      }
+    } catch {
+      if (sequence === templateStyleSequence) templatePreviewStyle.textContent = '';
+    }
   }
 
   function syncSettingsControls() {
@@ -788,6 +808,9 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
       page.dataset.mode = documentMode;
       page.dataset.pageNumber = String(pages.length + 1);
       page.setAttribute('aria-label', `Page ${pages.length + 1}`);
+      const contentRoot = document.createElement('div');
+      contentRoot.className = 'cv-content';
+      page.append(contentRoot);
       measure.append(page);
       pages.push(page);
       return page;
@@ -797,8 +820,9 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
       textarea.style.height = `${textarea.scrollHeight}px`;
     });
     let page = makePage();
+    let contentRoot = page.querySelector<HTMLElement>('.cv-content')!;
     const header = source.querySelector('.cv-header');
-    if (header) page.append(header.cloneNode(true));
+    if (header) contentRoot.append(header.cloneNode(true));
     for (const sourceSection of Array.from(source.querySelectorAll<HTMLElement>('.cv-section'))) {
       const heading = sourceSection.querySelector(':scope > h2');
       const nodes = Array.from(sourceSection.children).filter((node) => node !== heading);
@@ -812,11 +836,11 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
       const startSection = (targetPage: HTMLElement) => {
         section = sourceSection.cloneNode(false) as HTMLElement;
         if (heading) section.append(heading.cloneNode(true));
-        targetPage.append(section);
+        targetPage.querySelector<HTMLElement>('.cv-content')!.append(section);
         return section;
       };
       for (const item of items) {
-        if (!section || section.parentElement !== page) startSection(page);
+        if (!section || section.parentElement !== contentRoot) startSection(page);
         const hadSectionItems = Boolean(section!.querySelector('.cv-entry, [data-node-id], .cv-skill'));
         let wrapper: HTMLElement | null = null;
         if (item.skill) {
@@ -833,6 +857,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
           else section!.lastElementChild?.remove();
           if (!section!.children.length || (heading && section!.children.length === 1)) section!.remove();
           page = makePage();
+          contentRoot = page.querySelector<HTMLElement>('.cv-content')!;
           section = startSection(page);
           if (item.skill) {
             const nextWrapper = document.createElement('p');
@@ -988,14 +1013,14 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
         <div class="cv-inline-actions"><button type="button" data-add-bullet="${escapeHtml(id)}">+ Add result</button><button type="button" class="danger-text" data-remove-experience="${escapeHtml(id)}">Remove experience</button></div>
       </div>`;
     }).join('');
-    const experiences = `<section class="cv-section" data-cv-section="${escapeHtml(sectionIdFor('experience'))}"><h2>Experience</h2>${experienceEntries || '<p class="cv-empty-note">Add a role to show your experience.</p>'}<button type="button" class="cv-add-entry" data-add-experience>+ Add experience</button></section>`;
+    const experiences = `<section class="cv-section" data-cv-section-type="experience" data-cv-section="${escapeHtml(sectionIdFor('experience'))}"><h2>Experience</h2>${experienceEntries || '<p class="cv-empty-note">Add a role to show your experience.</p>'}<button type="button" class="cv-add-entry" data-add-experience>+ Add experience</button></section>`;
     const educationRows = Object.values(cv.data.entities.education ?? {}).map((item) => `<div class="cv-entry" data-node-id="${escapeHtml(item.id)}" data-node-type="education">
       <div class="cv-entry-head"><strong>${inlineField(`education.${item.id}.program.name`, item.program.name, 'Program', 'cv-inline-title')}</strong><div class="cv-date-range">${inlineField(`education.${item.id}.period.start.year`, item.period.start.year, 'Start year', 'cv-inline-year', 'number')}<span>–</span>${inlineField(`education.${item.id}.period.end.year`, item.period.end?.year ?? '', 'End year', 'cv-inline-year', 'number')}</div></div>
       <p class="cv-organization">${inlineField(`education.${item.id}.institution.name`, item.institution.name, 'Institution', 'cv-inline-organization')}<span class="cv-degree-separator"> · </span>${inlineField(`education.${item.id}.program.degree`, item.program.degree ?? '', 'Degree', 'cv-inline-organization')}</p>
       ${(item.details.length ? item.details : ['']).map((detail, index) => inlineText(`education.${item.id}.details.${index}`, detail, `Education detail ${index + 1}`, 'cv-inline-text cv-inline-description')).join('')}
       <div class="cv-inline-actions"><button type="button" class="danger-text" data-remove-entry="education.${escapeHtml(item.id)}">Remove education</button></div>
     </div>`).join('');
-    const education = `<section class="cv-section" data-cv-section="${escapeHtml(sectionIdFor('education'))}"><h2>Education</h2>${educationRows || '<p class="cv-empty-note">Add a course or qualification.</p>'}<button type="button" class="cv-add-entry" data-add-entry="education">+ Add education</button></section>`;
+    const education = `<section class="cv-section" data-cv-section-type="education" data-cv-section="${escapeHtml(sectionIdFor('education'))}"><h2>Education</h2>${educationRows || '<p class="cv-empty-note">Add a course or qualification.</p>'}<button type="button" class="cv-add-entry" data-add-entry="education">+ Add education</button></section>`;
     const projectRows = Object.values(cv.data.entities.projects ?? {}).map((item) => `<div class="cv-entry" data-node-id="${escapeHtml(item.id)}" data-node-type="project">
       ${inlineField(`projects.${item.id}.name`, item.name, 'Project name', 'cv-inline-title')}
       ${item.role ? inlineField(`projects.${item.id}.role.title`, item.role.title, 'Project role', 'cv-inline-organization') : `<button type="button" class="cv-add-date" data-add-project-role="${escapeHtml(item.id)}">+ Add role</button>`}
@@ -1005,10 +1030,10 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
       ${item.period ? `<div class="cv-date-range cv-project-dates">${inlineField(`projects.${item.id}.period.start.year`, item.period.start.year, 'Start year', 'cv-inline-year', 'number')}<span>–</span>${item.period.ongoing ? '<span class="cv-present">Present</span>' : inlineField(`projects.${item.id}.period.end.year`, item.period.end?.year ?? '', 'End year', 'cv-inline-year', 'number')}<label class="cv-current-toggle"><input type="checkbox" data-ongoing-project-for="${escapeHtml(item.id)}"${item.period.ongoing ? ' checked' : ''}> Current</label></div>` : '<button type="button" class="cv-add-date" data-add-project-dates="' + escapeHtml(item.id) + '">+ Add dates</button>'}
       <div class="cv-inline-actions"><button type="button" class="danger-text" data-remove-entry="projects.${escapeHtml(item.id)}">Remove project</button></div>
     </div>`).join('');
-    const projects = `<section class="cv-section" data-cv-section="${escapeHtml(sectionIdFor('projects'))}"><h2>Projects</h2>${projectRows || '<p class="cv-empty-note">Add a project to feature here.</p>'}<button type="button" class="cv-add-entry" data-add-entry="projects">+ Add project</button></section>`;
+    const projects = `<section class="cv-section" data-cv-section-type="projects" data-cv-section="${escapeHtml(sectionIdFor('projects'))}"><h2>Projects</h2>${projectRows || '<p class="cv-empty-note">Add a project to feature here.</p>'}<button type="button" class="cv-add-entry" data-add-entry="projects">+ Add project</button></section>`;
     const summary = identity.summary?.trim();
     const skillRows = Object.values(cv.data.entities.skills ?? {});
-    const skills = `<section class="cv-section" data-cv-section="${escapeHtml(sectionIdFor('skills'))}"><h2>Skills</h2><p>${skillRows.map((skill) => `<span class="cv-skill" data-node-id="${escapeHtml(skill.id)}" data-node-type="skill">${inlineField(`skills.${skill.id}.name`, skill.name, 'Skill', 'cv-skill-input')}<span class="cv-skill-separator">·</span>${inlineField(`skills.${skill.id}.category`, skill.category ?? '', 'Category', 'cv-skill-category')}</span>`).join(' ')}</p><button type="button" class="cv-add-entry" data-add-entry="skills">+ Add skill</button></section>`;
+    const skills = `<section class="cv-section" data-cv-section-type="skills" data-cv-section="${escapeHtml(sectionIdFor('skills'))}"><h2>Skills</h2><p>${skillRows.map((skill) => `<span class="cv-skill" data-node-id="${escapeHtml(skill.id)}" data-node-type="skill">${inlineField(`skills.${skill.id}.name`, skill.name, 'Skill', 'cv-skill-input')}<span class="cv-skill-separator">·</span>${inlineField(`skills.${skill.id}.category`, skill.category ?? '', 'Category', 'cv-skill-category')}</span>`).join(' ')}</p><button type="button" class="cv-add-entry" data-add-entry="skills">+ Add skill</button></section>`;
     const customSections = cv.data.sectionOrder.flatMap((sectionId) => {
       const section = cv!.data.sections[sectionId];
       if (!section || section.type !== 'custom' || !section.visible) return [];
@@ -1024,14 +1049,14 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
         }).join('');
         return [`<article class="cv-entry cv-custom-entry" data-node-id="${escapeHtml(item.id)}" data-node-type="customEntity"><h3>${inlineField(`custom.${item.id}.label`, item.label, 'Entry label', 'cv-inline-title')}</h3>${dataFields}<div class="cv-inline-actions"><button type="button" class="danger-text" data-remove-custom-entry="${escapeHtml(item.id)}">Remove entry</button></div></article>`];
       }).join('');
-      return [`<section class="cv-section" data-cv-section="${escapeHtml(section.id)}"><h2>${inlineField(`sections.${section.id}.title`, section.title, 'Section title', 'cv-custom-section-title')}</h2>${entries || '<p class="cv-empty-note">Add an entry to this section.</p>'}<button type="button" class="cv-add-entry" data-add-custom-entry="${escapeHtml(section.id)}">+ Add entry</button></section>`];
+      return [`<section class="cv-section" data-cv-section-type="custom" data-cv-section="${escapeHtml(section.id)}"><h2>${inlineField(`sections.${section.id}.title`, section.title, 'Section title', 'cv-custom-section-title')}</h2>${entries || '<p class="cv-empty-note">Add an entry to this section.</p>'}<button type="button" class="cv-add-entry" data-add-custom-entry="${escapeHtml(section.id)}">+ Add entry</button></section>`];
     }).join('');
     const content = `<header class="cv-header">
       <input class="cv-name" aria-label="Name" data-field="identity.name.display" value="${escapeHtml(identity.name.display)}" placeholder="Your name">
       <input class="cv-headline" aria-label="Headline" data-field="identity.headline" value="${escapeHtml(identity.headline ?? '')}" placeholder="Professional headline">
       <input class="cv-contact" aria-label="Email" data-field="contact.email" value="${escapeHtml(contacts)}" placeholder="Email or contact details">
     </header>
-      <section class="cv-section cv-summary" data-cv-section="${escapeHtml(sectionIdFor('summary'))}"><h2>Profile</h2>${inlineText('identity.summary', summary ?? '', 'Profile summary', 'cv-inline-text cv-summary-text')}</section>
+      <section class="cv-section cv-summary" data-cv-section-type="summary" data-cv-section="${escapeHtml(sectionIdFor('summary'))}"><h2>Profile</h2>${inlineText('identity.summary', summary ?? '', 'Profile summary', 'cv-inline-text cv-summary-text')}</section>
       ${experiences}
       ${education}${projects}${skills}${customSections}`;
     paginatePreviewContent(content);
@@ -1530,18 +1555,21 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     presentationId = null;
     presentationRevision = 0;
     presentationTokens = {};
+    templateStyleSequence += 1;
+    templatePreviewStyle.textContent = '';
     pagePreset = 'A4';
     pageOrientation = 'portrait';
     pageProfile = { width: 210, height: 297, edges: { top: 18, right: 18, bottom: 18, left: 18 } };
     applyDocumentStyle();
     try {
       const response = await fetch('/api/presentation');
-      const items = await response.json() as Array<{ ok: true; presentation: { id: string; cvId: string; revision: number; versionId: string; preset: 'A4' | 'Letter' | 'Legal' | 'custom'; orientation: 'portrait' | 'landscape'; widthMm: number; heightMm: number; edges: { top: number; right: number; bottom: number; left: number }; tokens: Record<string, { type: string; value: unknown }> } } | { ok: false }>;
+      const items = await response.json() as Array<{ ok: true; presentation: { id: string; cvId: string; revision: number; templateId: string; versionId: string; preset: 'A4' | 'Letter' | 'Legal' | 'custom'; orientation: 'portrait' | 'landscape'; widthMm: number; heightMm: number; edges: { top: number; right: number; bottom: number; left: number }; tokens: Record<string, { type: string; value: unknown }> } } | { ok: false }>;
       const match = items.find((item) => item.ok && item.presentation.cvId === cv!.id);
       if (match?.ok) {
         const { presentation } = match;
         presentationId = presentation.id;
         presentationRevision = presentation.revision;
+        await loadTemplatePreviewStyle(presentation.templateId, presentation.versionId);
         pagePreset = presentation.preset;
         pageOrientation = presentation.orientation;
         presentationTokens = presentation.tokens;

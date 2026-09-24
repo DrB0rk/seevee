@@ -68,9 +68,13 @@ the Seevee workspace-agent at \`.seevee/agent/seevee-workspace-agent/\`.
   Classic template only when the user has not provided a visual direction.
 - The user controls the CV's visual layout. Build custom Astro/CSS when
   useful: CSS Grid, Flexbox, multiple columns, sidebars, asymmetry, and
-  other layouts are all allowed. The bundled templates and dashboard style
-  controls are starting points, not constraints. Keep semantic bindings,
-  selected page sizing, accessibility, and export safety intact.
+  other layouts are all allowed. Put each template's dashboard preview
+  styles in its own \`styles/dashboard.css\`; the Studio scopes that file to
+  the CV canvas. Keep print rules in \`styles/print.css\`, and never edit the
+  Studio dashboard stylesheet to style a CV. The bundled templates and
+  dashboard style controls are starting points, not constraints. Keep
+  semantic bindings, selected page sizing, accessibility, and export safety
+  intact.
 
 ## Comments workflow
 
