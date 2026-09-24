@@ -524,6 +524,9 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
   function syncDocumentMode() {
     paper.dataset.mode = documentMode;
     try { localStorage.setItem(modeStorageKey, documentMode); } catch { /* Mode remains active for this session. */ }
+    paper.querySelectorAll<HTMLElement>('.paper').forEach((page) => {
+      page.dataset.mode = documentMode;
+    });
     paper.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[data-field]').forEach((field) => {
       field.readOnly = documentMode === 'preview';
     });
