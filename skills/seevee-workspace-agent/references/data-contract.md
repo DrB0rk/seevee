@@ -82,6 +82,15 @@ Create sections and entries in the dashboard when the user wants to author conte
 
 Do not put template source or a mandatory template selection inside CV JSON. A presentation binds a CV to a template/version. Many presentations may reference the same CV and many CVs may use the same template.
 
+Before changing a CV or resolving comments, read `seevee.json`'s `data.policy`. The dashboard's Agent behavior settings edit these same persisted flags:
+
+- `allowAgentFactInference`: infer missing facts only when enabled; when disabled, leave unsupported details unknown or ask the user;
+- `requireEvidenceForNumericClaims`: attach source evidence to numeric claims when enabled;
+- `allowForceExportWithOverflow`: only force export beyond page bounds when enabled;
+- `autoResolveDeterministicComments`: resolve a comment after applying a matching change only when enabled.
+
+These policies are workspace-level configuration, not CV content. Preserve other policy fields when updating workspace metadata.
+
 ## References
 
 A semantic reference is explicit:

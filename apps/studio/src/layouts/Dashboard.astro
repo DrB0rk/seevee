@@ -22,7 +22,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     <span class="topbar-divider" aria-hidden="true"></span>
     <div class="workspace-label">
       <span class="eyebrow">WORKSPACE</span>
-      <strong>{workspaceName}</strong>
+      <strong id="workspace-name">{workspaceName}</strong>
     </div>
     <label class="cv-select-wrap" for="cv-picker">
       <span class="eyebrow">DOCUMENT</span>
@@ -35,10 +35,63 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
       <span id="save-label">Connecting to workspace</span>
     </div>
     <div class="top-actions">
+      <button class="button button-subtle settings-trigger" id="settings-toggle" type="button" aria-haspopup="dialog" aria-controls="settings-popover" aria-expanded="false">Settings</button>
       <button class="button button-subtle" id="export-pdf" type="button" title="Print or save this CV as a PDF">Export PDF</button>
       <span class="version-label">v{serverVersion}</span>
     </div>
   </header>
+
+  <section class="settings-popover" id="settings-popover" role="dialog" aria-labelledby="settings-title" hidden>
+    <header class="settings-popover-heading"><div><span class="eyebrow">SEEVEE</span><h2 id="settings-title">Settings</h2></div><button class="icon-button" id="settings-close" type="button" aria-label="Close settings">×</button></header>
+    <div class="settings-popover-layout">
+      <nav class="settings-nav" aria-label="Settings sections">
+        <button type="button" data-settings-section="workspace" aria-current="page">Workspace</button>
+        <button type="button" data-settings-section="agent">Agent behavior</button>
+        <button type="button" data-settings-section="dashboard">Dashboard</button>
+        <button type="button" data-settings-section="document">Document</button>
+        <button type="button" data-settings-section="references">Reference files</button>
+        <button type="button" data-settings-section="comments">Comments</button>
+        <button type="button" data-settings-section="about">About Seevee</button>
+      </nav>
+      <div class="settings-panels">
+        <section class="settings-view" data-settings-view="workspace">
+          <h3>Workspace</h3><p class="settings-description">Name and identity stored in this workspace's <code>seevee.json</code>.</p>
+          <label class="settings-field"><span>Workspace name</span><input id="workspace-name-input" type="text" maxlength="120" value={workspaceName} disabled></label>
+          <div class="settings-readonly"><span>Workspace ID</span><code id="settings-workspace-id">{workspaceId}</code></div>
+        </section>
+        <section class="settings-view" data-settings-view="agent" hidden>
+          <h3>Agent behavior</h3><p class="settings-description">These policies are written to <code>seevee.json</code> for workspace agents to follow.</p>
+          <label class="settings-toggle"><span><strong>Allow factual inference</strong><small>Let agents infer facts when source material is incomplete.</small></span><input type="checkbox" data-workspace-policy="allowAgentFactInference" disabled></label>
+          <label class="settings-toggle"><span><strong>Require evidence for numbers</strong><small>Ask agents to support numeric claims with source evidence.</small></span><input type="checkbox" data-workspace-policy="requireEvidenceForNumericClaims" disabled></label>
+          <label class="settings-toggle"><span><strong>Allow export with overflow</strong><small>Allow PDF export when content extends beyond the selected page size.</small></span><input type="checkbox" data-workspace-policy="allowForceExportWithOverflow" disabled></label>
+          <label class="settings-toggle"><span><strong>Auto-resolve deterministic comments</strong><small>Resolve comments automatically when a matching change is applied.</small></span><input type="checkbox" data-workspace-policy="autoResolveDeterministicComments" disabled></label>
+        </section>
+        <section class="settings-view" data-settings-view="dashboard" hidden>
+          <h3>Dashboard</h3><p class="settings-description">These display preferences are saved in this browser.</p>
+          <label class="settings-field"><span>Document zoom <output id="settings-zoom-value">100%</output></span><input id="settings-zoom" type="range" min="55" max="115" step="1" value="100"></label>
+          <label class="settings-field"><span>Content sidebar width <output id="settings-editor-width-value">360 px</output></span><input id="settings-editor-width" type="range" min="280" max="720" step="10" value="360"></label>
+          <button class="button button-subtle settings-reset" id="settings-reset-dashboard" type="button">Reset dashboard preferences</button>
+        </section>
+        <section class="settings-view" data-settings-view="document" hidden>
+          <h3>Document</h3><p class="settings-description">Paper size, margins, typography, and accent color are saved with the active presentation.</p>
+          <button class="button button-subtle" type="button" data-open-settings-target="document-settings">Open document settings</button>
+        </section>
+        <section class="settings-view" data-settings-view="references" hidden>
+          <h3>Reference files</h3><p class="settings-description">Upload source CVs, profile photos, certificates, and other material agents can use.</p>
+          <button class="button button-subtle" type="button" data-open-settings-target="asset-library">Open reference files</button>
+        </section>
+        <section class="settings-view" data-settings-view="comments" hidden>
+          <h3>Comments</h3><p class="settings-description">Review the saved comments for the active CV. Comments include their page location and selected content.</p>
+          <button class="button button-subtle" type="button" data-open-settings-target="dashboard-comments">Show CV comments</button>
+        </section>
+        <section class="settings-view" data-settings-view="about" hidden>
+          <h3>About Seevee</h3><p class="settings-description">Local CV workspace and editor.</p>
+          <dl class="settings-about"><div><dt>Version</dt><dd>v{serverVersion}</dd></div><div><dt>Workspace</dt><dd id="settings-about-workspace-name">{workspaceName}</dd></div><div><dt>Workspace ID</dt><dd><code>{workspaceId}</code></dd></div></dl>
+        </section>
+      </div>
+    </div>
+    <footer class="settings-popover-footer"><span class="settings-save-state" id="workspace-settings-status" role="status" aria-live="polite">Workspace settings are ready.</span><span id="workspace-settings-revision"></span></footer>
+  </section>
 
   <aside class="structure-panel" aria-label="CV structure">
     <div class="panel-heading">
@@ -251,6 +304,18 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
   printPageStyle.id = 'active-paper-profile';
   document.head.append(printPageStyle);
   const settingsStatus = document.querySelector<HTMLElement>('#settings-status')!;
+  const settingsToggle = document.querySelector<HTMLButtonElement>('#settings-toggle')!;
+  const settingsPopover = document.querySelector<HTMLElement>('#settings-popover')!;
+  const settingsStatusLabel = document.querySelector<HTMLElement>('#workspace-settings-status')!;
+  const workspaceNameInput = document.querySelector<HTMLInputElement>('#workspace-name-input')!;
+  const workspaceNameLabel = document.querySelector<HTMLElement>('#workspace-name')!;
+  const zoomPreference = document.querySelector<HTMLInputElement>('#settings-zoom')!;
+  const zoomPreferenceValue = document.querySelector<HTMLOutputElement>('#settings-zoom-value')!;
+  const editorWidthPreference = document.querySelector<HTMLInputElement>('#settings-editor-width')!;
+  const editorWidthPreferenceValue = document.querySelector<HTMLOutputElement>('#settings-editor-width-value')!;
+  let workspaceSettingsRevision: number | null = null;
+  let workspaceSettingsLoaded = false;
+  let workspaceSettingsQueue: Promise<void> = Promise.resolve();
   const assetInput = document.querySelector<HTMLInputElement>('#asset-input')!;
   const assetDropzone = document.querySelector<HTMLButtonElement>('#asset-dropzone')!;
   const assetPurpose = document.querySelector<HTMLSelectElement>('#asset-purpose')!;
@@ -291,7 +356,148 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     paper.style.setProperty('--paper-zoom', String(zoom));
     zoomReadout.textContent = `${Math.round(zoom * 100)}%`;
     try { localStorage.setItem(zoomStorageKey, String(zoom)); } catch { /* Zoom remains active for this session. */ }
+    if (zoomPreference) {
+      zoomPreference.value = String(Math.round(zoom * 100));
+      zoomPreferenceValue.textContent = `${Math.round(zoom * 100)}%`;
+    }
   }
+
+  function setSettingsView(section: string) {
+    settingsPopover.querySelectorAll<HTMLButtonElement>('[data-settings-section]').forEach((button) => {
+      if (button.dataset.settingsSection === section) button.setAttribute('aria-current', 'page');
+      else button.removeAttribute('aria-current');
+    });
+    settingsPopover.querySelectorAll<HTMLElement>('[data-settings-view]').forEach((view) => {
+      view.hidden = view.dataset.settingsView !== section;
+    });
+  }
+
+  function syncSettingsPreferences() {
+    zoomPreference.value = String(Math.round(zoom * 100));
+    zoomPreferenceValue.textContent = `${Math.round(zoom * 100)}%`;
+    editorWidthPreference.value = String(Math.round(editorWidth / 10) * 10);
+    editorWidthPreferenceValue.textContent = `${Math.round(editorWidth)} px`;
+  }
+
+  async function loadWorkspaceSettings() {
+    settingsStatusLabel.dataset.state = 'saving';
+    settingsStatusLabel.textContent = 'Loading workspace settings…';
+    try {
+      const response = await fetch('/api/workspace/settings');
+      const result = await response.json() as { ok: boolean; settings?: { id: string; revision: number; name: string; policy: Record<string, boolean> }; reason?: string };
+      if (!response.ok || !result.settings) throw new Error(result.reason ?? 'Could not load workspace settings.');
+      workspaceSettingsRevision = result.settings.revision;
+      workspaceSettingsLoaded = true;
+      workspaceNameInput.value = result.settings.name;
+      workspaceNameInput.disabled = false;
+      document.querySelectorAll<HTMLInputElement>('[data-workspace-policy]').forEach((input) => {
+        const key = input.dataset.workspacePolicy;
+        if (key) input.checked = result.settings!.policy[key] ?? false;
+        input.disabled = false;
+      });
+      settingsStatusLabel.dataset.state = 'saved';
+      settingsStatusLabel.textContent = 'Workspace settings are saved in seevee.json.';
+      document.querySelector<HTMLElement>('#workspace-settings-revision')!.textContent = `Revision ${workspaceSettingsRevision}`;
+    } catch (error) {
+      settingsStatusLabel.dataset.state = 'error';
+      settingsStatusLabel.textContent = error instanceof Error ? error.message : 'Could not load workspace settings.';
+    }
+  }
+
+  function saveWorkspaceSettings(patch: { name?: string; policy?: Record<string, boolean> }) {
+    workspaceSettingsQueue = workspaceSettingsQueue.then(async () => {
+      if (!workspaceSettingsLoaded || workspaceSettingsRevision === null) return;
+      settingsStatusLabel.dataset.state = 'saving';
+      settingsStatusLabel.textContent = 'Saving workspace settings…';
+      try {
+        const response = await fetch('/api/workspace/settings', {
+          method: 'PATCH', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ expectedRevision: workspaceSettingsRevision, ...patch }),
+        });
+        const result = await response.json() as { ok: boolean; settings?: { revision: number; name: string; policy: Record<string, boolean> }; reason?: string };
+        if (response.status === 409) {
+          workspaceSettingsLoaded = false;
+          await loadWorkspaceSettings();
+          throw new Error('Workspace settings changed elsewhere. Latest values are loaded; apply your change again.');
+        }
+        if (!response.ok || !result.settings) throw new Error(result.reason ?? 'Could not save workspace settings.');
+        workspaceSettingsRevision = result.settings.revision;
+        if (patch.name !== undefined) {
+          workspaceNameInput.value = result.settings.name;
+          workspaceNameLabel.textContent = result.settings.name;
+          document.querySelector<HTMLElement>('#settings-about-workspace-name')!.textContent = result.settings.name;
+        }
+        settingsStatusLabel.dataset.state = 'saved';
+        settingsStatusLabel.textContent = 'Workspace settings saved.';
+        document.querySelector<HTMLElement>('#workspace-settings-revision')!.textContent = `Revision ${workspaceSettingsRevision}`;
+      } catch (error) {
+        settingsStatusLabel.dataset.state = 'error';
+        settingsStatusLabel.textContent = error instanceof Error ? error.message : 'Could not save workspace settings.';
+      }
+    });
+    return workspaceSettingsQueue;
+  }
+
+  function closeSettingsPopover(restoreFocus = true) {
+    settingsPopover.hidden = true;
+    settingsToggle.setAttribute('aria-expanded', 'false');
+    if (restoreFocus) settingsToggle.focus();
+  }
+
+  settingsToggle.addEventListener('click', () => {
+    const opening = settingsPopover.hidden;
+    settingsPopover.hidden = !opening;
+    settingsToggle.setAttribute('aria-expanded', String(opening));
+    if (opening) {
+      setSettingsView('workspace');
+      syncSettingsPreferences();
+      if (!workspaceSettingsLoaded) void loadWorkspaceSettings();
+      settingsPopover.querySelector<HTMLButtonElement>('[data-settings-section="workspace"]')?.focus();
+    }
+  });
+  document.querySelector<HTMLButtonElement>('#settings-close')!.addEventListener('click', () => closeSettingsPopover());
+  settingsPopover.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const section = target.closest<HTMLButtonElement>('[data-settings-section]')?.dataset.settingsSection;
+    if (section) {
+      setSettingsView(section);
+      return;
+    }
+    const destination = target.closest<HTMLElement>('[data-open-settings-target]')?.dataset.openSettingsTarget;
+    if (!destination) return;
+    closeSettingsPopover(false);
+    const targetElement = document.querySelector<HTMLElement>(`#${CSS.escape(destination)}`);
+    if (targetElement instanceof HTMLDetailsElement) targetElement.open = true;
+    targetElement?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+  workspaceNameInput.addEventListener('change', () => {
+    const name = workspaceNameInput.value.trim();
+    if (name) void saveWorkspaceSettings({ name });
+    else workspaceNameInput.value = workspaceNameLabel.textContent ?? '';
+  });
+  document.querySelectorAll<HTMLInputElement>('[data-workspace-policy]').forEach((input) => {
+    input.addEventListener('change', () => {
+      const key = input.dataset.workspacePolicy;
+      if (key) void saveWorkspaceSettings({ policy: { [key]: input.checked } });
+    });
+  });
+  zoomPreference.addEventListener('input', () => setZoom(Number(zoomPreference.value) / 100));
+  editorWidthPreference.addEventListener('input', () => {
+    setEditorWidth(Number(editorWidthPreference.value));
+    editorWidthPreferenceValue.textContent = `${Math.round(editorWidth)} px`;
+  });
+  document.querySelector<HTMLButtonElement>('#settings-reset-dashboard')!.addEventListener('click', () => {
+    setZoom(1);
+    setEditorWidth(360);
+    syncSettingsPreferences();
+  });
+  document.addEventListener('pointerdown', (event) => {
+    if (!settingsPopover.hidden && event.target instanceof Node && !settingsPopover.contains(event.target) && !settingsToggle.contains(event.target)) closeSettingsPopover(false);
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !settingsPopover.hidden) closeSettingsPopover();
+  });
 
   for (const disclosure of Array.from(document.querySelectorAll<HTMLDetailsElement>('#asset-library, #document-settings'))) {
     const key = `${disclosureStoragePrefix}${disclosure.id}`;
