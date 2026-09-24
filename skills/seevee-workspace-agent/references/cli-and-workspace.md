@@ -40,6 +40,7 @@ Useful commands:
 seevee status --json
 seevee validate --json
 seevee doctor --json
+seevee comments list --json
 seevee open
 ~~~
 
@@ -67,4 +68,6 @@ The dashboard is fixed product UI. External agents may design CV templates but s
 
 ## Dashboard comments
 
-Read the selected CV's registered comments resource before editing. Dashboard comments are stored in a JSON sidecar under `comments/` and registered in `seevee.json`; find the resource by matching its `cvId`, rather than assuming its ID or path. Follow `data.threadOrder`, then read the latest message in each thread's `messageOrder`. A dashboard comment stores its strongest semantic selector (`FieldSelector`, `NodeSelector`, or `SectionSelector`) before its `PageRegionSelector` visual fallback. The `seevee.placement` extension retains a readable element label, a short visible-text snapshot, and normalized page coordinates. Resolve semantic IDs against the current CV first; treat the saved label, text and page point as context because they can become stale after edits. Dashboard-created comments default to category `general` and priority `normal`, so infer the work category from the message. If the message is unclear, ask what should change instead of guessing.
+Start with `seevee comments list --json` before editing. It finds the comments resource registered to the active CV, follows thread order, returns the latest message and includes semantic selectors, page placement and agent work state. By default it lists open and in-progress threads; use `seevee comments list --all` to include closed history. The selector order puts the strongest semantic anchor (`FieldSelector`, `NodeSelector`, or `SectionSelector`) before its `PageRegionSelector` fallback. The placement context includes a readable element label, visible-text snapshot, and normalized page coordinates. Resolve stable IDs against the current CV first; treat saved text and coordinates as clues if revisions have changed. Dashboard comments default to category `general` and priority `normal`; infer the work from the message and ask if it is unclear.
+
+For machine workflows, `seevee status --json`, `seevee validate --json`, `seevee doctor --json`, and `seevee comments list --json` return structured data. `seevee export --output <path>` exports the CV. Use `seevee stop` when the task is complete and the dashboard was started for it.

@@ -428,6 +428,7 @@ seevee open [path]          open the active dashboard
 seevee validate [path]      run schema + semantic validation
 seevee doctor [path]        diagnose runtime/browser/schema/template problems
 seevee export [path]        export PDF from canonical state
+seevee comments list [path] list open comments for the active CV (--json supported)
 seevee --version
 seevee --help
 ~~~
@@ -439,7 +440,7 @@ seevee migrate
 seevee template list
 seevee template validate <id>
 seevee template create <name>
-seevee comments list
+seevee comments list --json
 seevee schema print <resource>
 seevee clean --cache
 ~~~

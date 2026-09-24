@@ -24,6 +24,7 @@ import { runOpen } from './commands/open.js';
 import { runValidate } from './commands/validate.js';
 import { runDoctor } from './commands/doctor.js';
 import { runExport } from './commands/export.js';
+import { runComments } from './commands/comments.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -57,6 +58,7 @@ export const COMMANDS = [
   'validate',
   'doctor',
   'export',
+  'comments',
 ] as const;
 export type Command = (typeof COMMANDS)[number];
 
@@ -71,6 +73,7 @@ export interface GlobalFlags {
   allowNetwork: boolean;
   template: string | null;
   output: string | null;
+  all: boolean;
   logLevel: 'silent' | 'error' | 'warn' | 'info' | 'debug';
 }
 
@@ -105,6 +108,7 @@ const DEFAULT_FLAGS: GlobalFlags = {
   allowNetwork: false,
   template: null,
   output: null,
+  all: false,
   logLevel: 'info',
 };
 
@@ -120,6 +124,7 @@ const COMMAND_HANDLERS: Readonly<Record<Command, CommandHandler>> = {
   validate: runValidate,
   doctor: runDoctor,
   export: runExport,
+  comments: runComments,
 };
 
 /**
@@ -150,6 +155,11 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
     }
     if (arg === '--json') {
       flags.json = true;
+      i += 1;
+      continue;
+    }
+    if (arg === '--all') {
+      flags.all = true;
       i += 1;
       continue;
     }
@@ -323,9 +333,11 @@ Commands:
   validate [path]      run schema + semantic validation
   doctor [path]        diagnose runtime/browser/schema/template problems
   export [path]        export PDF from canonical state
+  comments list [path] list actionable comments for the active CV
 
 Flags:
-  --json               emit structured JSON for status/validate/doctor/export
+  --json               emit structured JSON for status/validate/doctor/export/comments
+  --all                include resolved comments (comments list)
   --no-open            skip launching the browser (init, open)
   --port <number>      bind port (default: workspace runtime, else random loopback)
   --host <address>     bind host (default: 127.0.0.1; non-loopback requires --allow-network)

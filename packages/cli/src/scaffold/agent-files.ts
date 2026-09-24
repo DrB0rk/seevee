@@ -84,6 +84,7 @@ the Seevee workspace-agent at \`.seevee/agent/seevee-workspace-agent/\`.
 
 ## Comments workflow
 
+- Start each task with \`seevee comments list --json\` to read all open comments for the active CV. The output includes the latest message, status, priority, semantic selectors, visual placement, and agent work state. Use \`--all\` only when closed threads are relevant.
 - Threads attach via \`target\` selectors (\`node\`, \`field\`, \`section\`,
   \`text-quote\`, \`render-binding\`, \`page-region\`). Match the exact
   resource revision or the comment is dismissed.
@@ -93,7 +94,7 @@ the Seevee workspace-agent at \`.seevee/agent/seevee-workspace-agent/\`.
 ## Dashboard and comment pins
 
 - Start or reopen the local dashboard with \`seevee start\`; use \`seevee open\` to open it, \`seevee status\` to find its URL, and \`seevee stop\` to stop it cleanly.
-- Read the registered comments resource for the selected CV, finding it by matching its \`cvId\` in \`seevee.json\`. Follow \`data.threadOrder\` and use the latest message in each thread's \`messageOrder\`.
+- Read actionable comments first with \`seevee comments list --json\`. It follows the active CV registration and comment thread ordering for you. Use \`seevee comments list --all\` to include resolved and dismissed threads. If the command reports invalid data, inspect the registered resource directly and run \`seevee validate --json\`.
 - Dashboard comments put the strongest semantic selector (\`FieldSelector\`, \`NodeSelector\`, or \`SectionSelector\`) before the \`PageRegionSelector\` visual fallback. The \`seevee.placement\` extension records a readable element label, a short snapshot of visible text, and normalized page coordinates. Resolve stable IDs against the current CV first; treat the saved text and page location as clues if revisions have changed.
 - Dashboard-created comments default to category \`general\` and priority \`normal\`; classify the requested work from its message. If the latest message does not say what should change, ask rather than guessing.
 - Keep comments open until the requested change is made and validated. Do not resolve a thread just because it was read or attempted.
@@ -104,6 +105,10 @@ the Seevee workspace-agent at \`.seevee/agent/seevee-workspace-agent/\`.
 seevee validate                          # validate every canonical resource
 seevee validate --json                   # machine-readable
 seevee doctor                            # workspace + runtime health
+seevee status --json                     # dashboard state and URL
+seevee comments list --json              # actionable comments for active CV
+seevee export --output ./cv.pdf          # export the full CV to PDF
+seevee stop                              # stop the dashboard when finished
 \`\`\`
 
 ## Where to read more
