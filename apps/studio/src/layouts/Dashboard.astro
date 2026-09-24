@@ -264,6 +264,10 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
   const commentList = document.querySelector<HTMLElement>('#comment-list')!;
   const commentCount = document.querySelector<HTMLElement>('#comment-count')!;
   const contextMenu = document.querySelector<HTMLElement>('#editor-context-menu')!;
+  const zoomReadout = document.querySelector<HTMLOutputElement>('#zoom-readout')!;
+  const zoomStorageKey = 'seevee.dashboard.zoom';
+  const modeStorageKey = 'seevee.dashboard.document-mode';
+  const disclosureStoragePrefix = 'seevee.dashboard.disclosure.';
   let cv: CvDoc | null = null;
   let baseRevision = 0;
   let editCount = 0;
@@ -272,6 +276,29 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
   let saving = false;
   let zoom = 1;
   let documentMode: 'preview' | 'edit' = 'preview';
+  try {
+    const savedZoom = Number(localStorage.getItem(zoomStorageKey));
+    if (Number.isFinite(savedZoom) && savedZoom >= 0.55 && savedZoom <= 1.15) zoom = savedZoom;
+    const savedMode = localStorage.getItem(modeStorageKey);
+    if (savedMode === 'preview' || savedMode === 'edit') documentMode = savedMode;
+  } catch { /* Keep the initial dashboard view when browser storage is unavailable. */ }
+  paper.style.setProperty('--paper-zoom', String(zoom));
+  zoomReadout.textContent = `${Math.round(zoom * 100)}%`;
+
+  function setZoom(value: number) {
+    zoom = Math.max(0.55, Math.min(1.15, value));
+    paper.style.setProperty('--paper-zoom', String(zoom));
+    zoomReadout.textContent = `${Math.round(zoom * 100)}%`;
+    try { localStorage.setItem(zoomStorageKey, String(zoom)); } catch { /* Zoom remains active for this session. */ }
+  }
+
+  for (const disclosure of Array.from(document.querySelectorAll<HTMLDetailsElement>('#asset-library, #document-settings'))) {
+    const key = `${disclosureStoragePrefix}${disclosure.id}`;
+    try { disclosure.open = localStorage.getItem(key) === 'true'; } catch { /* Use the markup default. */ }
+    disclosure.addEventListener('toggle', () => {
+      try { localStorage.setItem(key, String(disclosure.open)); } catch { /* Disclosure still works for this session. */ }
+    });
+  }
   let placingComment = false;
   let pendingPlacement: Placement | null = null;
   let commentsDocument: CommentsDoc | null = null;
@@ -494,6 +521,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
 
   function syncDocumentMode() {
     paper.dataset.mode = documentMode;
+    try { localStorage.setItem(modeStorageKey, documentMode); } catch { /* Mode remains active for this session. */ }
     paper.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[data-field]').forEach((field) => {
       field.readOnly = documentMode === 'preview';
     });
@@ -605,8 +633,25 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
 
   function renderEditor() {
     if (!cv) return;
-    const hadGroups = editor.dataset.groupsReady === 'true';
-    const openGroups = new Set(Array.from(editor.querySelectorAll<HTMLDetailsElement>('details.editor-group[open]'), (group) => group.id));
+    const sameEditorCv = editor.dataset.groupsReady === 'true' && editor.dataset.cvId === cv.id;
+    const groupStateKey = `${disclosureStoragePrefix}editor-groups.${cv.id}`;
+    let openGroups = sameEditorCv
+      ? new Set(Array.from(editor.querySelectorAll<HTMLDetailsElement>('details.editor-group[open]'), (group) => group.id))
+      : new Set<string>();
+    if (!sameEditorCv) {
+      let hasSavedGroupState = false;
+      try {
+        const saved = localStorage.getItem(groupStateKey);
+        if (saved !== null) {
+          const parsed: unknown = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            openGroups = new Set(parsed.filter((id): id is string => typeof id === 'string'));
+            hasSavedGroupState = true;
+          }
+        }
+      } catch { /* Use the default open profile group. */ }
+      if (!hasSavedGroupState) openGroups.add('edit-identity');
+    }
     const identity = cv.data.identity;
     const experiences = experienceIds().map((id) => {
       const item = cv!.data.entities.experience![id]!;
@@ -668,8 +713,13 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
       ${editorSection('Projects', `${Object.keys(cv.data.entities.projects ?? {}).length} entries`, `${projects}<button type="button" class="add-entry" data-add-entry="projects">+ Add project</button>`)}
       ${editorSection('Skills', `${Object.keys(cv.data.entities.skills ?? {}).length} entries`, `${skills}<button type="button" class="add-entry" data-add-entry="skills">+ Add skill</button>`)}`;
     editor.dataset.groupsReady = 'true';
+    editor.dataset.cvId = cv.id;
     editor.querySelectorAll<HTMLDetailsElement>('details.editor-group').forEach((group) => {
-      group.open = hadGroups ? openGroups.has(group.id) : group.id === 'edit-identity';
+      group.open = openGroups.has(group.id);
+      group.addEventListener('toggle', () => {
+        const visibleGroups = Array.from(editor.querySelectorAll<HTMLDetailsElement>('details.editor-group[open]'), (item) => item.id);
+        try { localStorage.setItem(groupStateKey, JSON.stringify(visibleGroups)); } catch { /* Accordions still work for this session. */ }
+      });
     });
     revisionLabel.textContent = `Revision ${cv.revision}`;
   }
@@ -1524,16 +1574,12 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     }
     const zoomControl = target.closest<HTMLElement>('[data-zoom]');
     if (zoomControl?.dataset.zoom) {
-      zoom = Math.max(0.55, Math.min(1.15, zoom + (zoomControl.dataset.zoom === '+' ? 0.08 : -0.08)));
-      paper.style.setProperty('--paper-zoom', String(zoom));
-      document.querySelector('#zoom-readout')!.textContent = `${Math.round(zoom * 100)}%`;
+      setZoom(zoom + (zoomControl.dataset.zoom === '+' ? 0.08 : -0.08));
       return;
     }
     if (target.closest('#fit-page')) {
       const width = pasteboard.clientWidth - 72;
-      zoom = Math.max(0.55, Math.min(1.15, width / (pageProfile.width * 96 / 25.4)));
-      paper.style.setProperty('--paper-zoom', String(zoom));
-      document.querySelector('#zoom-readout')!.textContent = `${Math.round(zoom * 100)}%`;
+      setZoom(width / (pageProfile.width * 96 / 25.4));
     }
     const modeButton = target.closest<HTMLButtonElement>('[data-document-mode]');
     if (modeButton?.dataset.documentMode === 'preview' || modeButton?.dataset.documentMode === 'edit') {
