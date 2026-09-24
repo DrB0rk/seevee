@@ -220,7 +220,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .editor-panel { grid-area: editor; display: flex; flex-direction: column; }
 .editor-heading { padding: 20px 17px 15px; border-bottom: 1px solid var(--separator); }
 .editor-heading p { margin: 7px 0 0; color: var(--text-muted); font-size: 11px; }
-.editor-content { flex: 1; min-height: 0; overflow: auto; padding: 13px 16px 20px; scrollbar-gutter: stable; }
+.editor-content { flex: 1; min-height: 0; overflow: auto; padding: 13px 16px 20px; }
 .editor-section { margin: 0 0 12px; border: 1px solid #323940; border-radius: 4px; background: #171b20; }
 .editor-section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-height: 34px; padding: 0 10px; border-bottom: 1px solid #30373f; background: #20252b; }
 .editor-section-heading h3 { margin: 0; color: var(--text-secondary); font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
