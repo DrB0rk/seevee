@@ -109,6 +109,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     </div>
   </main>
 
+  <div class="editor-resize" id="editor-resize" role="separator" aria-orientation="vertical" aria-label="Resize content sidebar" aria-valuemin="260" aria-valuemax="560" aria-valuenow="324" tabindex="0" title="Drag to resize the content sidebar"></div>
   <aside class="editor-panel" aria-label="Edit CV content">
     <div class="editor-heading">
       <span class="eyebrow">CONTENT</span>
@@ -184,6 +185,59 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
   type CommentsDoc = { revision: number; data: { threadOrder: string[]; threads: Record<string, StoredThread> } };
 
   const studio = document.querySelector<HTMLElement>('#studio')!;
+  const editorResize = document.querySelector<HTMLElement>('#editor-resize')!;
+  const editorWidthStorageKey = 'seevee.dashboard.editor-width';
+  const narrowLayout = window.matchMedia('(max-width: 880px)');
+  const minEditorWidth = 260;
+  let editorWidth = 324;
+  try {
+    const savedWidth = Number(localStorage.getItem(editorWidthStorageKey));
+    if (Number.isFinite(savedWidth) && savedWidth >= minEditorWidth) editorWidth = savedWidth;
+  } catch { /* Keep the default width when browser storage is unavailable. */ }
+
+  function setEditorWidth(width: number, persist = true) {
+    const leftWidth = window.matchMedia('(max-width: 1120px)').matches ? 210 : 250;
+    const workMinWidth = window.matchMedia('(max-width: 1120px)').matches ? 330 : 380;
+    const maxWidth = Math.max(minEditorWidth, Math.min(560, studio.clientWidth - leftWidth - workMinWidth - 10));
+    editorWidth = Math.max(minEditorWidth, Math.min(maxWidth, width));
+    studio.style.setProperty('--editor-width', `${editorWidth}px`);
+    editorResize.setAttribute('aria-valuenow', String(Math.round(editorWidth)));
+    editorResize.setAttribute('aria-valuemax', String(Math.round(maxWidth)));
+    editorResize.setAttribute('aria-valuetext', `${Math.round(editorWidth)} pixels`);
+    if (persist) {
+      try { localStorage.setItem(editorWidthStorageKey, String(Math.round(editorWidth))); } catch { /* Resizing still works for this session. */ }
+    }
+  }
+
+  setEditorWidth(editorWidth, false);
+  let resizingEditor = false;
+  editorResize.addEventListener('pointerdown', (event) => {
+    if (narrowLayout.matches || event.button !== 0) return;
+    resizingEditor = true;
+    editorResize.dataset.dragging = 'true';
+    editorResize.setPointerCapture(event.pointerId);
+    event.preventDefault();
+  });
+  editorResize.addEventListener('pointermove', (event) => {
+    if (resizingEditor) setEditorWidth(studio.getBoundingClientRect().right - event.clientX);
+  });
+  const stopEditorResize = () => {
+    resizingEditor = false;
+    delete editorResize.dataset.dragging;
+  };
+  editorResize.addEventListener('pointerup', stopEditorResize);
+  editorResize.addEventListener('pointercancel', stopEditorResize);
+  editorResize.addEventListener('keydown', (event) => {
+    if (narrowLayout.matches) return;
+    const currentMax = Number(editorResize.getAttribute('aria-valuemax')) || 560;
+    if (event.key === 'ArrowLeft') setEditorWidth(editorWidth + 16);
+    else if (event.key === 'ArrowRight') setEditorWidth(editorWidth - 16);
+    else if (event.key === 'Home') setEditorWidth(minEditorWidth);
+    else if (event.key === 'End') setEditorWidth(currentMax);
+    else return;
+    event.preventDefault();
+  });
+  window.addEventListener('resize', () => setEditorWidth(editorWidth, false));
   const picker = document.querySelector<HTMLSelectElement>('#cv-picker')!;
   const paper = document.querySelector<HTMLElement>('#cv-paper')!;
   const editor = document.querySelector<HTMLElement>('#editor-content')!;
@@ -599,7 +653,8 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
       </div>
     </details>`).join('');
     const email = identity.contact.find((item) => item.kind === 'email')?.value ?? '';
-    editor.innerHTML = `<details class="editor-group" id="edit-identity">
+    const editorSection = (title: string, meta: string, body: string) => `<section class="editor-section"><header class="editor-section-heading"><h3>${escapeHtml(title)}</h3><span>${escapeHtml(meta)}</span></header><div class="editor-section-body">${body}</div></section>`;
+    editor.innerHTML = `${editorSection('Profile', 'Name and contact', `<details class="editor-group" id="edit-identity">
       <summary class="group-heading"><span class="group-heading-title">Identity</span><span class="group-heading-meta">Name and profile</span></summary>
       <div class="group-body">
       ${field('identity.name.display', identity.name.display, 'Your name', 'Name')}
@@ -607,11 +662,11 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
       ${field('contact.email', email, 'name@example.com', 'Email')}
       ${field('identity.summary', identity.summary ?? '', 'A concise introduction to your work', 'Summary', true)}
       </div>
-    </details><div id="edit-experience">${experiences}</div>
-      ${education}<button type="button" class="add-entry" data-add-entry="education">+ Add education</button>
-      ${projects}<button type="button" class="add-entry" data-add-entry="projects">+ Add project</button>
-      ${skills}<button type="button" class="add-entry" data-add-entry="skills">+ Add skill</button>
-      <button type="button" class="add-entry" id="add-experience-inline">+ Add experience</button>`;
+    </details>`)}
+      ${editorSection('Experience', `${experienceIds().length} entries`, `<div id="edit-experience">${experiences}</div><button type="button" class="add-entry" id="add-experience-inline">+ Add experience</button>`)}
+      ${editorSection('Education', `${Object.keys(cv.data.entities.education ?? {}).length} entries`, `${education}<button type="button" class="add-entry" data-add-entry="education">+ Add education</button>`)}
+      ${editorSection('Projects', `${Object.keys(cv.data.entities.projects ?? {}).length} entries`, `${projects}<button type="button" class="add-entry" data-add-entry="projects">+ Add project</button>`)}
+      ${editorSection('Skills', `${Object.keys(cv.data.entities.skills ?? {}).length} entries`, `${skills}<button type="button" class="add-entry" data-add-entry="skills">+ Add skill</button>`)}`;
     editor.dataset.groupsReady = 'true';
     editor.querySelectorAll<HTMLDetailsElement>('details.editor-group').forEach((group) => {
       group.open = hadGroups ? openGroups.has(group.id) : group.id === 'edit-identity';
