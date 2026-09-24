@@ -29,6 +29,9 @@ importers:
       '@astrojs/node':
         specifier: ^9.4.0
         version: 9.5.5(astro@5.18.2(@types/node@22.20.4)(rollup@4.63.4)(supports-color@7.2.0)(tsx@4.23.15)(typescript@5.9.3)(yaml@2.9.1))(supports-color@7.2.0)
+      '@seevee/agent-runtime':
+        specifier: workspace:*
+        version: link:../../packages/agent-runtime
       '@seevee/schema':
         specifier: workspace:*
         version: link:../../packages/schema

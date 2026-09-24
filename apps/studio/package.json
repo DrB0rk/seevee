@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@astrojs/node": "^9.4.0",
+    "@seevee/agent-runtime": "workspace:*",
     "@seevee/schema": "workspace:*",
     "astro": "^5.14.0",
     "zod": "^3.24.0"
