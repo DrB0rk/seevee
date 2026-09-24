@@ -49,7 +49,14 @@
           "technologyRefs": []
         }
       },
-      "skills": {},
+      "skills": {
+        "skill_soldering": {
+          "id": "skill_soldering",
+          "type": "skill",
+          "name": "Soldering",
+          "keywords": []
+        }
+      },
       "skillGroups": {},
       "certifications": {},
       "awards": {},

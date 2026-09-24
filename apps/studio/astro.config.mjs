@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import node from '@astrojs/node';
+import react from '@astrojs/react';
 
 // Seevee Studio — Astro app that runs the local dashboard server.
 // Output is 'server' so every page is rendered per-request against the
@@ -8,6 +9,7 @@ import node from '@astrojs/node';
 export default defineConfig({
   output: 'server',
   adapter: node({ mode: 'standalone' }),
+  integrations: [react()],
   server: { host: '127.0.0.1', port: 4321 },
   srcDir: './src',
   publicDir: './public',

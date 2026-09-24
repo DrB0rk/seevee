@@ -33,6 +33,45 @@ export type {
 } from './types.js';
 
 export { executeIngestionRole } from './roles/ingestion.js';
+export { AgentRuntimeManager, AgentRuntimeError } from './control/manager.js';
+export type { AgentEventSink } from './control/manager.js';
+export type {
+  AdapterApprovalResolution,
+  AdapterPromptOptions,
+  AdapterSession,
+  AgentAdapter,
+  CreateAdapterSessionOptions,
+} from './control/adapter.js';
+export {
+  createAgentSessionSchema,
+  promptAgentSchema,
+  resolveAgentApprovalSchema,
+  updateAgentSessionSchema,
+  agentProviderIdSchema,
+  agentCapabilitiesSchema,
+  agentSessionStateSchema,
+  DEFAULT_AGENT_CAPABILITIES,
+} from './control/types.js';
+export type {
+  AgentCapabilities,
+  AgentEvent,
+  AgentEventInput,
+  AgentEventType,
+  AgentPromptDelivery,
+  AgentPromptResult,
+  AgentProviderDescriptor,
+  AgentProviderId,
+  AgentRuntimeSnapshot,
+  AgentSelectOption,
+  AgentSessionConfiguration,
+  AgentSessionState,
+  AgentSessionSummary,
+  CreateAgentSessionRequest,
+  PromptAgentRequest,
+  ResolveAgentApprovalRequest,
+  UpdateAgentSessionRequest,
+} from './control/types.js';
+export { createDefaultAgentAdapters, ClaudeCodeAdapter, CodexAdapter, OmpAdapter } from './adapters/index.js';
 
 export { workspaceGetTool, workspacePutTool, workspaceListTool, workspaceTools } from './tools/workspace.js';
 export {

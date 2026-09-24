@@ -216,7 +216,30 @@ After source work:
 6. compile artifact;
 7. activate only on success.
 
-## 8. Agent run record
+## 8. Local provider control
+
+Studio owns a central process/session manager. Provider-specific modules translate their native structured protocols into the shared agent event and capability contract:
+
+- Claude Code: official Agent SDK using the installed local executable;
+- Codex: App Server JSON-RPC over stdio;
+- OMP: Agent Client Protocol over stdio.
+
+The browser selects only registered provider IDs. It cannot supply an executable, arguments, environment, or working directory. Provider processes use fixed argument arrays and `shell: false`.
+
+The right chat renders the active provider-neutral timeline, native model and
+permission controls, and approval requests. The left sidebar remains the
+direct document editor and comments surface. The browser selects only
+provider IDs and provider-returned option IDs; executable paths, command
+arguments, environment, and working directories remain server-owned.
+
+Every adapter injects the canonical
+`packages/agent-runtime/src/control/seevee-agent.md` instructions through its
+native system/developer-instruction mechanism. Provider-visible reasoning may
+stream live but is not persisted. Tool and approval payloads are bounded and
+secret-like fields are redacted. After a turn finishes, Seevee validates
+changed workspace resources and records deterministic check results.
+
+## 9. Agent run record
 
 Persist:
 
@@ -232,7 +255,7 @@ Persist:
 
 Do not persist private reasoning traces.
 
-## 9. Completion
+## 10. Completion
 
 An agent must not claim success when:
 

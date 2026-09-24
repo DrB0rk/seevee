@@ -12,7 +12,7 @@ Last audited: 2026-09-23
 
 ## Current repository reality
 
-Seevee has usable schema, CLI, ingestion, agent tool, and local dashboard implementations. Template-driven rendering, server-side PDF export, and agent execution remain incomplete. The dashboard supports browser print-to-PDF.
+Seevee has usable schema, CLI, ingestion, agent tools, local dashboard, and central multi-agent control implementations. Template-driven rendering and server-side PDF export remain incomplete. The dashboard supports browser print-to-PDF, a resizable left agent chat, and the restored right document editor.
 
 All packages typecheck (`pnpm typecheck` exit 0). All tests pass (`pnpm test` exit 0). End-to-end smoke verified: `seevee init --no-open → seevee status → seevee stop`.
 
@@ -23,9 +23,9 @@ All packages typecheck (`pnpm typecheck` exit 0). All tests pass (`pnpm test` ex
 | Canonical data contracts (P0) | Implemented | 37 tests pass; drift-check clean; `pnpm typecheck` exit 0 |
 | `packages/schema` | Implemented | 12 Zod resource schemas + migrations + semantic validator + JSON Schema generator |
 | `packages/cli` | Implemented | All commands (init/start/stop/restart/status/open/validate/doctor/export); workspace daemon lock prevents duplicate concurrent starts; 20 tests |
-| `packages/agent-runtime` | Implemented | Typed tool boundary; 35 tests |
+| `packages/agent-runtime` | Implemented | Typed workspace tools plus central process/session manager and Claude Code, Codex App Server, and OMP ACP adapters; 37 tests |
 | `packages/ingest` | Implemented | 9 adapters (text/markdown/json/html/yaml/pdf/docx/image/url); SSRF protection; 57 tests |
-| `apps/studio` | Implemented | Editable Astro dashboard, schema-checked revision-aware CV save API, 11 API routes + watcher + workspace lib; 9 tests |
+| `apps/studio` | Implemented | Astro/React dashboard, revision-aware CV APIs, SSE agent timeline, Settings-driven provider/session configuration, resizable agent sidebar, restored document editor, and 13 tests |
 | `install.sh` / `install.ps1` | Implemented | SHA256SUMS; 12+5 tests |
 | `packages/template-sdk` | Implemented | 36 tests |
 | `packages/renderer` | Implemented | 44 tests |
@@ -39,7 +39,7 @@ All packages typecheck (`pnpm typecheck` exit 0). All tests pass (`pnpm test` ex
 
 - Studio preview displays editable CV content but does not yet use the template renderer package.
 - The Studio server-side PDF API returns HTTP 501; users can export the current editor preview through the browser's print-to-PDF dialog.
-- Studio agent-run API only emits a started event and does not execute an agent.
+- Provider adapters have fixture/unit coverage and live no-model process handshakes, but automated model-backed tool/approval turns are intentionally not run in CI because they require provider credentials and usage.
 - Image ingestion records a placeholder block; it does not perform vision extraction.
 - CLI export integration and Playwright-backed PDF export have not been validated end to end.
 - Only the Linux release bundle has an automated extracted-archive init/health/stop smoke test; other platform bundles are structurally checked but have not been exercised on native operating systems.

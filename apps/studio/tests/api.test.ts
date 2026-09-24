@@ -162,13 +162,60 @@ describe('Studio API', () => {
 
   it('exposes the SSE handshake headers at /api/events', async () => {
     const mod = await import('../src/pages/api/events.js');
-    const res = await settle(mod.GET({} as Parameters<typeof mod.GET>[0]));
+    const request = new Request('http://localhost/api/events');
+    const res = await settle(mod.GET({ request } as Parameters<typeof mod.GET>[0]));
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toMatch(/text\/event-stream/);
     expect(res.headers.get('cache-control')).toBe('no-cache, no-transform');
     if (res.body !== null) {
       await res.body.cancel();
     }
+  });
+
+  it('lists local agent providers through the central control plane', async () => {
+    // Deferred import keeps workspace root discovery after beforeAll installs the fixture root.
+    const mod = await import('../src/pages/api/agents/index.js');
+    const res = await settle(mod.GET({ url: new URL('http://localhost/api/agents') } as Parameters<typeof mod.GET>[0]));
+    const body = await res.json() as {
+      ok: boolean;
+      snapshot: { providers: Array<{ id: string; installed: boolean; capabilities: Record<string, boolean> }> };
+      savedSessions: unknown[];
+    };
+    expect(body.ok).toBe(true);
+    expect(body.snapshot.providers.map((provider) => provider.id).sort()).toEqual(['claude-code', 'codex', 'omp']);
+    expect(Array.isArray(body.savedSessions)).toBe(true);
+    for (const provider of body.snapshot.providers) {
+      expect(typeof provider.installed).toBe('boolean');
+      expect(provider.capabilities['toolCalls']).toBe(true);
+    }
+  });
+
+  it('rejects agent mutations without same-origin markers', async () => {
+    // Deferred import keeps workspace discovery bound to the test fixture.
+    const mod = await import('../src/pages/api/agents/session.js');
+    const request = new Request('http://localhost/api/agents/session', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ provider: 'codex' }),
+    });
+    const res = await settle(mod.POST({ request } as Parameters<typeof mod.POST>[0]));
+    expect(res.status).toBe(403);
+  });
+
+  it('rejects cross-origin agent mutations', async () => {
+    const mod = await import('../src/pages/api/agents/session.js');
+    const request = new Request('http://localhost/api/agents/session', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'host': 'localhost',
+        'origin': 'http://attacker.invalid',
+        'x-seevee-agent': '1',
+      },
+      body: JSON.stringify({ provider: 'codex' }),
+    });
+    const res = await settle(mod.POST({ request } as Parameters<typeof mod.POST>[0]));
+    expect(res.status).toBe(403);
   });
 });
 

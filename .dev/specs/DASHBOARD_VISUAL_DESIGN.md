@@ -55,33 +55,29 @@ Primary target: 1440 x 900 and larger.
 
 ~~~text
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ 52 px top bar                                                              │
-├──────┬────────────────────┬───────────────────────────────┬──────────────────┤
-│ 48px │ 264 px left panel  │          canvas              │ 336 px inspector │
-│ rail │                    │                               │                  │
-│      │ CVs                │       ┌─────────────┐         │ Context          │
-│      │ Sources            │       │   CV page   │         │ Comments         │
-│      │ Templates          │       │             │         │ Audit            │
-│      │ History            │       └─────────────┘         │                  │
-│      │ Agent runs         │                               │                  │
-├──────┴────────────────────┴───────────────────────────────┴──────────────────┤
+│ 54 px top bar                                                              │
+├───────────────┬───┬───────────────────────────────┬───┬──────────────────────┤
+│ 460 px agent  │ R │          canvas              │ R │ 360 px document     │
+│ chat          │ e │                               │ e │ editor               │
+│               │ s │       ┌─────────────┐         │ s │ Sections / fields    │
+│ live timeline│ i │       │   CV page   │         │ i │ Comments             │
+│ tools/approvals│ z│       └─────────────┘         │ z │ Tools / settings     │
+├───────────────┴───┴───────────────────────────────┴───┴──────────────────────┤
 │ 28 px status bar                                                            │
 └──────────────────────────────────────────────────────────────────────────────┘
 ~~~
 
 Default dimensions:
 
-- top bar: 52 px;
-- activity rail: 48 px;
-- left panel: 264 px;
-- right inspector: 336 px;
+- top bar: 54 px;
+- left agent chat: 460 px, minimum 320 px;
+- right document editor: 360 px, minimum 280 px;
 - bottom status bar: 28 px;
-- side-panel minimum width: 220 px;
-- useful canvas minimum width: 520 px.
+- useful canvas minimum width: 380 px before responsive reflow.
 
-Left and right panels are resizable and independently collapsible.
+Both sidebars are independently resizable and persist their widths in browser-local settings. Agent configuration is edited in Settings, not in the chat timeline.
 
-Panel geometry, open tabs and zoom are local UI preferences. They are not written to CV or presentation JSON.
+Panel geometry, open disclosures and zoom are local UI preferences. They are not written to CV or presentation JSON.
 
 ## 4. Application palette
 
@@ -281,34 +277,20 @@ Default document profile remains A4 portrait, 210 x 297 mm, but this is a starti
 
 The CV render must be isolated from application CSS, preferably using an iframe or equivalent style boundary.
 
-## 11. Right inspector
+## 11. Agent chat and document sidebar
 
-The inspector is contextual.
+### Left agent chat
 
-Tabs:
+The left sidebar uses one provider-neutral conversation and activity surface. It displays the active Settings-selected provider, model/state summary, streamed messages, provider-visible reasoning, plans, tool lifecycle, usage, workspace changes, validation, and inline approval requests. It does not duplicate provider selection or saved-session management.
 
-- Properties
-- Comments
-- Diagnostics
+### Right document editor
 
-### Properties
+The right sidebar keeps direct document editing:
 
-When nothing is selected:
-
-- page profile;
-- active template;
-- template-exposed controls;
-- export settings.
-
-When a semantic element is selected:
-
-- node/field identity;
-- content summary;
-- source/provenance status;
-- template-exposed element controls, if any;
-- "Ask agent to modify" action.
-
-A template is not required to expose dashboard-editable visual tokens. A bespoke template may expose zero controls and rely entirely on source edits by the user's chosen agent.
+- compact section navigation;
+- profile, experience, education, project, skill, and custom-section fields;
+- comments;
+- collapsed reference-file and document-setting tools.
 
 ### Comments
 
@@ -412,6 +394,7 @@ Motion should communicate state, not decorate.
 - 160–220 ms panel transitions;
 - no spring/bounce effects;
 - respect reduced-motion settings;
+- use GSAP for new timeline-card, tool-state, approval, and panel transitions; do not animate individual streamed tokens;
 - page render updates should not animate scale/position unless zoom itself changed.
 
 ## 17. Keyboard model

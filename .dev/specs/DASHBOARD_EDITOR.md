@@ -30,19 +30,19 @@ Recommended shell:
 
 ~~~text
 ┌──────────────────────────────────────────────────────────────────────┐
-│ Top bar: workspace | status | undo/redo | template | export        │
-├───────────────┬────────────────────────────────┬─────────────────────┤
-│ Left rail     │                                │ Right inspector     │
-│               │        paged CV canvas         │                     │
-│ Sources       │                                │ Page                │
-│ CV structure  │      [ A4 page 1 ]             │ Typography          │
-│ Templates     │      [ A4 page 2 ]             │ Layout              │
-│ History       │                                │ Comments            │
-│ Agent runs    │                                │ Diagnostics         │
-└───────────────┴────────────────────────────────┴─────────────────────┘
+│ Top bar: workspace | status | save | template | settings | export   │
+├────────────────────┬───┬──────────────────────┬───┬─────────────────┤
+│ Agent chat         │ R │ paged CV canvas      │ R │ Document editor │
+│                    │ e │                      │ e │ Sections        │
+│ provider-neutral   │ s │    [ A4 page 1 ]     │ s │ Fields          │
+│ timeline/tool      │ i │    [ A4 page 2 ]     │ i │ Comments        │
+│ status/approvals   │ z │                      │ z │ Tools/settings  │
+└────────────────────┴───┴──────────────────────┴───┴─────────────────┘
 ~~~
 
-Keep panels resizable/collapsible, but preserve the conceptual regions.
+The left agent chat and right document editor are independently resizable. The left chat defaults to 460 px; the right editor keeps its local width preference. Below the narrow breakpoint both become fixed drawer regions without resizers.
+
+Agent selection, provider version/readiness, session start/resume, model, and permission-mode configuration belong in Settings. The chat window displays the active session and activity but does not provide a second provider selector.
 
 ## 4. Top toolbar
 

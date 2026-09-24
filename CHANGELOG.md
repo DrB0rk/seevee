@@ -6,6 +6,19 @@ This project uses Semantic Versioning. See `.dev/VERSIONING.md` for the project 
 
 ## [Unreleased]
 
+### Added
+
+- Central local agent control with isolated Claude Code Agent SDK, Codex App Server, and OMP ACP adapter modules.
+- Resizable left agent chat with streamed messages, provider-visible reasoning, plans, tool lifecycle, usage, workspace changes, validation, and inline approvals.
+- Settings-driven agent detection, provider selection, session start/resume, model, permission-mode, and saved-session controls.
+- Same-origin agent APIs, resumable SSE agent events, bounded/redacted provider payloads, and atomic runtime session indexing.
+
+### Changed
+
+- Restored the document editor and comments to the right sidebar while moving the unified agent experience to the left.
+- Agent chat width now defaults to 460 px and persists independently from the right editor width.
+- Refined the left chat into a rounded minimal composer with active-document context, read-only model summary, focused send control, and functional document/source/settings shortcuts.
+
 ## [0.1.0-alpha.4] - 2026-09-23
 
 ### Fixed

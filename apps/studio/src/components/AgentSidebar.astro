@@ -1,0 +1,11 @@
+---
+import AgentChat from './agent/AgentChat.tsx';
+
+interface Props {
+  workspaceId: string;
+}
+
+const { workspaceId } = Astro.props as Props;
+---
+
+<AgentChat client:load workspaceId={workspaceId} />

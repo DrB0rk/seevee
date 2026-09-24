@@ -17,7 +17,7 @@ Seevee is a local, agent-driven CV studio.
 
 Give an agent source material, let it normalize your information into structured JSON, and render that information through interchangeable Astro templates. The fixed Seevee dashboard gives you physical-page preview, comments, provenance, history, diagnostics, and PDF export without dictating what your CV has to look like.
 
-> **Project status:** Seevee `v0.1.0-alpha.4` is available as a GitHub prerelease. The local dashboard supports editing profile, experience, and skills data with autosave and a live document preview, plus browser print-to-PDF export. Template-driven rendering, server-side PDF export, live agent execution, and image recognition remain incomplete.
+> **Project status:** Seevee `v0.1.0-alpha.4` is available as a GitHub prerelease. The local dashboard now includes a resizable provider-neutral agent chat for installed Claude Code, Codex, and OMP processes, Settings-driven agent selection/configuration, the direct document editor, live tool/approval status, workspace validation, and browser print-to-PDF export. Template-driven rendering, server-side PDF export, and image recognition remain incomplete.
 
 ## The idea
 
@@ -122,14 +122,14 @@ The dashboard itself is intentionally consistent: a dark technical workstation a
 
 ~~~text
 ┌─────────────────────────────────────────────────────────────────────┐
-│ workspace · active CV · template · page count · comments · export │
-├──────┬──────────────────┬───────────────────────┬───────────────────┤
-│ rail │ CVs / Sources    │                       │ Properties        │
-│      │ Templates        │     physical CV       │ Comments          │
-│      │ History          │       pages           │ Diagnostics       │
-│      │ Agent runs       │                       │                   │
-├──────┴──────────────────┴───────────────────────┴───────────────────┤
-│ path · schema · render status · watcher · diagnostics              │
+│ workspace · active CV · save · template · settings · export        │
+├──────────────────┬───┬───────────────────────┬─────────────────────┤
+│ Agent chat       │ R │                       │ Document editor     │
+│ messages/reason  │ e │     physical CV       │ Sections / fields   │
+│ plans/tools      │ s │       pages           │ Comments / tools    │
+│ approvals/status │ z │                       │                     │
+├──────────────────┴───┴───────────────────────┴─────────────────────┤
+│ path · schema · render status · watcher · agent state              │
 └─────────────────────────────────────────────────────────────────────┘
 ~~~
 
@@ -147,7 +147,7 @@ The dashboard implementation specification is maintained under [`.dev/specs/DASH
 8. The agent reads the comments JSON and applies focused changes.
 9. Re-render, verify, and export PDF.
 
-Seevee does not launch or require Claude Code, Codex, OMP, Cursor, or another specific runtime. The directory is the interface.
+The directory remains the durable interface, and the optional Studio runtime can also control locally installed Claude Code, Codex, and OMP sessions through their structured protocols.
 
 ## Schema-first core
 

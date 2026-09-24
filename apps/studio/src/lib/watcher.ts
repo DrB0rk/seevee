@@ -15,6 +15,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import type { AgentEvent } from '@seevee/agent-runtime';
 
 export type WorkspaceEvent =
   | { type: 'cv.updated'; cvId: string; revision: number; path: string }
@@ -27,6 +28,7 @@ export type WorkspaceEvent =
   | { type: 'template.build.completed'; templateId: string }
   | { type: 'template.activated'; templateId: string }
   | { type: 'diagnostics.updated'; presentationId: string }
+  | { type: 'agent.event'; event: AgentEvent }
   | { type: 'export.completed'; exportId: string };
 
 interface WatchKind {

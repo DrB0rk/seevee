@@ -1,6 +1,7 @@
 ---
 /** Fixed editor shell. CV data and edits come from the workspace APIs. */
 import '../styles/dashboard.css';
+import AgentSidebar from '../components/AgentSidebar.astro';
 
 interface Props {
   workspaceName: string;
@@ -46,6 +47,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     <div class="settings-popover-layout">
       <nav class="settings-nav" aria-label="Settings sections">
         <button type="button" data-settings-section="workspace" aria-current="page">Workspace</button>
+        <button type="button" data-settings-section="agents">Agents</button>
         <button type="button" data-settings-section="agent">Agent behavior</button>
         <button type="button" data-settings-section="dashboard">Dashboard</button>
         <button type="button" data-settings-section="document">Document</button>
@@ -59,6 +61,27 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
           <label class="settings-field"><span>Workspace name</span><input id="workspace-name-input" type="text" maxlength="120" value={workspaceName} disabled></label>
           <div class="settings-readonly"><span>Workspace ID</span><code id="settings-workspace-id">{workspaceId}</code></div>
         </section>
+        <section class="settings-view" data-settings-view="agents" hidden>
+          <h3>Agents</h3>
+          <p class="settings-description">Select a locally installed agent, start or resume its session, and configure the active model and permission mode.</p>
+          <div class="agent-settings-grid">
+            <label class="settings-field"><span>Agent</span><select id="agent-provider-select" disabled><option>Detecting agents…</option></select></label>
+            <div class="settings-readonly"><span>Installation</span><strong id="agent-provider-status">Detecting local agents…</strong></div>
+            <label class="settings-field"><span>Model</span><select id="agent-model-select" disabled><option value="">Loading models…</option></select></label>
+            <label class="settings-field"><span>Permission mode</span><select id="agent-permission-select" disabled><option value="">Loading permissions…</option></select></label>
+          </div>
+          <div class="agent-settings-actions">
+            <button class="button button-primary" id="agent-session-start" type="button" disabled>Start selected agent</button>
+            <button class="button button-subtle" id="agent-session-resume" type="button" disabled>Resume latest saved session</button>
+            <button class="button button-subtle" id="agent-session-apply" type="button" disabled>Apply to active session</button>
+          </div>
+          <div class="settings-readonly agent-active-session"><span>Active chat session</span><strong id="agent-active-session">None</strong></div>
+          <div class="agent-saved-session-settings">
+            <h4>Saved sessions</h4>
+            <div id="agent-saved-session-list"><p class="settings-description">No saved sessions.</p></div>
+          </div>
+          <p class="settings-status" id="agent-settings-status" role="status" aria-live="polite">Agent settings are ready.</p>
+        </section>
         <section class="settings-view" data-settings-view="agent" hidden>
           <h3>Agent behavior</h3><p class="settings-description">These policies are written to <code>seevee.json</code> for workspace agents to follow.</p>
           <label class="settings-toggle"><span><strong>Allow factual inference</strong><small>Let agents infer facts when source material is incomplete.</small></span><input type="checkbox" data-workspace-policy="allowAgentFactInference" disabled></label>
@@ -69,6 +92,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
         <section class="settings-view" data-settings-view="dashboard" hidden>
           <h3>Dashboard</h3><p class="settings-description">These display preferences are saved in this browser.</p>
           <label class="settings-field"><span>Document zoom <output id="settings-zoom-value">100%</output></span><input id="settings-zoom" type="range" min="55" max="115" step="1" value="100"></label>
+          <label class="settings-field"><span>Agent chat width <output id="settings-agent-width-value">460 px</output></span><input id="settings-agent-width" type="range" min="320" max="720" step="10" value="460"></label>
           <label class="settings-field"><span>Content sidebar width <output id="settings-editor-width-value">360 px</output></span><input id="settings-editor-width" type="range" min="280" max="720" step="10" value="360"></label>
           <button class="button button-subtle settings-reset" id="settings-reset-dashboard" type="button">Reset dashboard preferences</button>
         </section>
@@ -93,44 +117,10 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     <footer class="settings-popover-footer"><span class="settings-save-state" id="workspace-settings-status" role="status" aria-live="polite">Workspace settings are ready.</span><span id="workspace-settings-revision"></span></footer>
   </section>
 
-  <aside class="structure-panel" aria-label="CV structure">
-    <div class="panel-heading">
-      <div>
-        <span class="eyebrow">YOUR DOCUMENT</span>
-        <h1>CV structure</h1>
-      </div>
-      <button type="button" class="icon-button" id="add-experience" aria-label="Add experience" title="Add experience">+</button>
-    </div>
-    <nav class="section-list" id="section-list" aria-label="CV sections">
-      <p class="quiet-message">Loading sections…</p>
-    </nav>
-    <details class="asset-library" id="asset-library">
-      <summary>Reference files <span class="asset-count" id="asset-count">0</span></summary>
-      <div class="asset-body">
-        <p class="asset-intro">Add a profile photo, existing CV, or other material for your agent to use.</p>
-        <label class="settings-field"><span>File purpose</span><select id="asset-purpose"><option value="profile-photo">Profile photo</option><option value="reference-cv">Reference CV</option><option value="certificate">Certificate</option><option value="portfolio">Portfolio or work sample</option><option value="other">Other reference</option></select></label>
-        <button class="asset-dropzone" id="asset-dropzone" type="button" aria-label="Choose files or drop files to upload">
-          <span aria-hidden="true">↑</span><strong>Drop files here</strong><small>or click to browse · PDF, images, DOCX, and text · up to 20 MB each</small>
-        </button>
-        <input id="asset-input" class="visually-hidden" type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.docx,.txt,.md,.rtf,.odt,.json,.csv">
-        <ul class="asset-list" id="asset-list" aria-label="Uploaded reference files"></ul>
-        <p class="asset-status" id="asset-status" role="status" aria-live="polite">Files are saved in this workspace for the agent.</p>
-      </div>
-    </details>
-    <details class="document-settings" id="document-settings">
-      <summary>Document settings</summary>
-      <div class="settings-body">
-        <label class="settings-field"><span>Paper size</span><select id="setting-page-preset"><option value="A4">A4</option><option value="Letter">US Letter</option><option value="Legal">US Legal</option><option value="custom">Custom</option></select></label>
-        <label class="settings-field"><span>Orientation</span><select id="setting-orientation"><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></label>
-        <div class="settings-field" id="custom-page-dimensions" hidden><span>Custom page size (mm)</span><div class="settings-pair"><label>Width<input id="setting-page-width" type="number" min="80" max="500" step="1" value="210"></label><label>Height<input id="setting-page-height" type="number" min="100" max="600" step="1" value="297"></label></div></div>
-        <fieldset class="settings-field settings-margins"><legend>Margins (mm)</legend><div class="settings-grid"><label>Top<input data-page-margin="top" type="number" min="0" max="60" step="1" value="12"></label><label>Right<input data-page-margin="right" type="number" min="0" max="60" step="1" value="12"></label><label>Bottom<input data-page-margin="bottom" type="number" min="0" max="60" step="1" value="12"></label><label>Left<input data-page-margin="left" type="number" min="0" max="60" step="1" value="12"></label></div></fieldset>
-        <label class="settings-field"><span>Font</span><select id="setting-font-family"><option value="Inter, system-ui, sans-serif">Inter</option><option value="Arial, Helvetica, sans-serif">Arial</option><option value="Georgia, 'Times New Roman', serif">Georgia</option></select></label>
-        <div class="settings-pair settings-number-pair"><label>Font size (pt)<input id="setting-font-size" type="number" min="9" max="14" step="0.5" value="11"></label><label>Line height<input id="setting-line-height" type="number" min="1" max="2" step="0.05" value="1.4"></label></div>
-        <label class="settings-field settings-color"><span>Accent color</span><input id="setting-accent-color" type="color" value="#1f2937"></label>
-        <p class="settings-status" id="settings-status" role="status" aria-live="polite">Saved with this document</p>
-      </div>
-    </details>
+  <aside class="agent-panel" aria-label="Agent control">
+    <AgentSidebar workspaceId={workspaceId} />
   </aside>
+  <div class="agent-resize" id="agent-resize" role="separator" aria-orientation="vertical" aria-label="Resize agent chat" aria-valuemin="320" aria-valuemax="720" aria-valuenow="460" tabindex="0" title="Drag to resize the agent chat"></div>
 
   <main class="work-area" aria-label="CV editor">
     <div class="canvas-bar">
@@ -158,13 +148,18 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     </div>
   </main>
 
-  <div class="editor-resize" id="editor-resize" role="separator" aria-orientation="vertical" aria-label="Resize content sidebar" aria-valuemin="280" aria-valuemax="720" aria-valuenow="360" tabindex="0" title="Drag to resize the content sidebar"></div>
+  <div class="editor-resize" id="editor-resize" role="separator" aria-orientation="vertical" aria-label="Resize right sidebar" aria-valuemin="280" aria-valuemax="720" aria-valuenow="360" tabindex="0" title="Drag to resize the right sidebar"></div>
   <aside class="editor-panel" aria-label="Edit CV content">
     <div class="editor-heading">
       <span class="eyebrow">CONTENT</span>
       <h2>Edit your CV</h2>
       <p>Changes save to this workspace as you type.</p>
     </div>
+    <div class="editor-section-jump-heading">
+      <span>Sections</span>
+      <button type="button" class="icon-button" id="add-experience" aria-label="Add experience" title="Add experience">+</button>
+    </div>
+    <nav class="section-list editor-section-list" id="section-list" aria-label="CV sections"></nav>
     <div class="editor-content" id="editor-content">
       <p class="quiet-message">Your fields will appear here.</p>
     </div>
@@ -172,6 +167,41 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
       <h3>Comments <span id="comment-count">0</span></h3>
       <div id="comment-list"><p class="quiet-message">No comments yet. Choose “Place comment” to pin one to the page.</p></div>
     </section>
+    <details class="editor-tools" id="editor-tools">
+      <summary>References &amp; document settings</summary>
+      <div class="editor-tools-body">
+        <details class="asset-library" id="asset-library">
+          <summary>Reference files <span class="asset-count" id="asset-count">0</span></summary>
+          <div class="asset-body">
+            <p class="asset-intro">Add a profile photo, existing CV, or other material for your agent to use.</p>
+            <label class="settings-field"><span>File purpose</span><select id="asset-purpose"><option value="profile-photo">Profile photo</option><option value="reference-cv">Reference CV</option><option value="certificate">Certificate</option><option value="portfolio">Portfolio or work sample</option><option value="other">Other reference</option></select></label>
+            <button class="asset-dropzone" id="asset-dropzone" type="button" aria-label="Choose files or drop files to upload">
+              <span aria-hidden="true">↑</span><strong>Drop files here</strong><small>or click to browse · PDF, images, DOCX, and text · up to 20 MB each</small>
+            </button>
+            <input id="asset-input" class="visually-hidden" type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.docx,.txt,.md,.rtf,.odt,.json,.csv">
+            <ul class="asset-list" id="asset-list" aria-label="Uploaded reference files"></ul>
+            <p class="asset-status" id="asset-status" role="status" aria-live="polite">Files are saved in this workspace for the agent.</p>
+          </div>
+        </details>
+        <details class="document-settings" id="document-settings">
+          <summary>Document settings</summary>
+          <div class="settings-body">
+            <label class="settings-field"><span>Paper size</span><select id="setting-page-preset"><option value="A4">A4</option><option value="Letter">US Letter</option><option value="Legal">US Legal</option><option value="custom">Custom</option></select></label>
+            <label class="settings-field"><span>Orientation</span><select id="setting-orientation"><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></label>
+            <div class="settings-field" id="custom-page-dimensions" hidden><span>Custom page size (mm)</span><div class="settings-pair"><label>Width<input id="setting-page-width" type="number" min="80" max="500" step="1" value="210"></label><label>Height<input id="setting-page-height" type="number" min="100" max="600" step="1" value="297"></label></div></div>
+            <fieldset class="settings-field settings-margins"><legend>Margins (mm)</legend><div class="settings-grid"><label>Top<input data-page-margin="top" type="number" min="0" max="60" step="1" value="12"></label><label>Right<input data-page-margin="right" type="number" min="0" max="60" step="1" value="12"></label><label>Bottom<input data-page-margin="bottom" type="number" min="0" max="60" step="1" value="12"></label><label>Left<input data-page-margin="left" type="number" min="0" max="60" step="1" value="12"></label></div></fieldset>
+            <label class="settings-field"><span>Font</span><select id="setting-font-family"><option value="Inter, system-ui, sans-serif">Inter</option><option value="Arial, Helvetica, sans-serif">Arial</option><option value="Georgia, 'Times New Roman', serif">Georgia</option></select></label>
+            <div class="settings-pair settings-number-pair"><label>Font size (pt)<input id="setting-font-size" type="number" min="9" max="14" step="0.5" value="11"></label><label>Line height<input id="setting-line-height" type="number" min="1" max="2" step="0.05" value="1.45"></label></div>
+            <label class="settings-field settings-color"><span>Accent color</span><input id="setting-accent-color" type="color" value="#1f2937"></label>
+            <p class="settings-status" id="settings-status" role="status" aria-live="polite">Saved with this document</p>
+          </div>
+        </details>
+      </div>
+    </details>
+    <div class="editor-footer">
+      <span class="revision-label" id="revision-label">Revision —</span>
+      <span>Local workspace</span>
+    </div>
   </aside>
 
   <dialog class="comment-dialog" id="comment-dialog" aria-labelledby="comment-title">
@@ -224,22 +254,48 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
   type Placement = { page: number; x: number; y: number; element: string; contextText?: string; fieldPath?: string; nodeId?: string; nodeType?: string; pointer?: string; sectionId?: string };
   type StoredThread = { id: string; category?: string; priority?: string; status?: string; target: { selectors: Array<Record<string, unknown>>; extensions?: Record<string, unknown> }; messageOrder: string[]; messages: Record<string, { body: string; createdAt: string; author?: { display?: string } }> };
   type CommentsDoc = { revision: number; data: { threadOrder: string[]; threads: Record<string, StoredThread> } };
+  type AgentProviderId = 'claude-code' | 'codex' | 'omp';
+  type AgentProviderSetting = { id: AgentProviderId; label: string; version: string | null; status: string; ready: boolean; message: string | null; capabilities: Record<string, boolean> };
+  type AgentSelectOption = { id: string; label: string; description: string | null };
+  type AgentSessionConfiguration = { model: string | null; permissionMode: string; models: AgentSelectOption[]; permissions: AgentSelectOption[] };
+  type AgentSessionSetting = { id: string; provider: AgentProviderId; externalSessionId: string | null; title: string; state: string; model: string | null; capabilities: Record<string, boolean> };
+  type SavedAgentSetting = { id: string; provider: AgentProviderId; externalSessionId: string; title: string; state: string; model: string | null; createdAt: string; lastActivityAt: string };
+  type AgentSettingsSnapshot = { providers: AgentProviderSetting[]; sessions: AgentSessionSetting[]; events: unknown[] };
+  type AgentSettingsResponse = { ok: boolean; snapshot: AgentSettingsSnapshot; savedSessions: SavedAgentSetting[] };
 
   const studio = document.querySelector<HTMLElement>('#studio')!;
+  const agentResize = document.querySelector<HTMLElement>('#agent-resize')!;
   const editorResize = document.querySelector<HTMLElement>('#editor-resize')!;
+  const agentWidthStorageKey = 'seevee.dashboard.agent-width';
   const editorWidthStorageKey = 'seevee.dashboard.editor-width';
   const narrowLayout = window.matchMedia('(max-width: 880px)');
+  const minAgentWidth = 320;
   const minEditorWidth = 280;
+  let agentWidth = 460;
   let editorWidth = 360;
   try {
-    const savedWidth = Number(localStorage.getItem(editorWidthStorageKey));
-    if (Number.isFinite(savedWidth) && savedWidth >= minEditorWidth) editorWidth = savedWidth;
-  } catch { /* Keep the default width when browser storage is unavailable. */ }
+    const savedAgentWidth = Number(localStorage.getItem(agentWidthStorageKey));
+    const savedEditorWidth = Number(localStorage.getItem(editorWidthStorageKey));
+    if (Number.isFinite(savedAgentWidth) && savedAgentWidth >= minAgentWidth) agentWidth = savedAgentWidth;
+    if (Number.isFinite(savedEditorWidth) && savedEditorWidth >= minEditorWidth) editorWidth = savedEditorWidth;
+  } catch { /* Keep default widths when browser storage is unavailable. */ }
 
-  function setEditorWidth(width: number, persist = true) {
-    const leftWidth = window.matchMedia('(max-width: 1120px)').matches ? 210 : 250;
+  function setAgentWidth(width: number, persist = true): void {
     const workMinWidth = window.matchMedia('(max-width: 1120px)').matches ? 330 : 380;
-    const maxWidth = Math.max(minEditorWidth, Math.min(720, studio.clientWidth - leftWidth - workMinWidth - 10));
+    const maxWidth = Math.max(minAgentWidth, Math.min(720, studio.clientWidth - minEditorWidth - workMinWidth - 8));
+    agentWidth = Math.max(minAgentWidth, Math.min(maxWidth, width));
+    studio.style.setProperty('--agent-width', `${agentWidth}px`);
+    agentResize.setAttribute('aria-valuenow', String(Math.round(agentWidth)));
+    agentResize.setAttribute('aria-valuemax', String(Math.round(maxWidth)));
+    agentResize.setAttribute('aria-valuetext', `${Math.round(agentWidth)} pixels`);
+    if (persist) {
+      try { localStorage.setItem(agentWidthStorageKey, String(Math.round(agentWidth))); } catch { /* Resizing still works for this session. */ }
+    }
+  }
+
+  function setEditorWidth(width: number, persist = true): void {
+    const workMinWidth = window.matchMedia('(max-width: 1120px)').matches ? 330 : 380;
+    const maxWidth = Math.max(minEditorWidth, Math.min(720, studio.clientWidth - agentWidth - workMinWidth - 8));
     editorWidth = Math.max(minEditorWidth, Math.min(maxWidth, width));
     studio.style.setProperty('--editor-width', `${editorWidth}px`);
     editorResize.setAttribute('aria-valuenow', String(Math.round(editorWidth)));
@@ -250,7 +306,35 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     }
   }
 
+  setAgentWidth(agentWidth, false);
   setEditorWidth(editorWidth, false);
+  let resizingAgent = false;
+  agentResize.addEventListener('pointerdown', (event) => {
+    if (narrowLayout.matches || event.button !== 0) return;
+    resizingAgent = true;
+    agentResize.dataset.dragging = 'true';
+    agentResize.setPointerCapture(event.pointerId);
+    event.preventDefault();
+  });
+  agentResize.addEventListener('pointermove', (event) => {
+    if (resizingAgent) setAgentWidth(event.clientX - studio.getBoundingClientRect().left);
+  });
+  const stopAgentResize = () => {
+    resizingAgent = false;
+    delete agentResize.dataset.dragging;
+  };
+  agentResize.addEventListener('pointerup', stopAgentResize);
+  agentResize.addEventListener('pointercancel', stopAgentResize);
+  agentResize.addEventListener('keydown', (event) => {
+    if (narrowLayout.matches) return;
+    const currentMax = Number(agentResize.getAttribute('aria-valuemax')) || 720;
+    if (event.key === 'ArrowLeft') setAgentWidth(agentWidth - 16);
+    else if (event.key === 'ArrowRight') setAgentWidth(agentWidth + 16);
+    else if (event.key === 'Home') setAgentWidth(minAgentWidth);
+    else if (event.key === 'End') setAgentWidth(currentMax);
+    else return;
+    event.preventDefault();
+  });
   let resizingEditor = false;
   editorResize.addEventListener('pointerdown', (event) => {
     if (narrowLayout.matches || event.button !== 0) return;
@@ -278,7 +362,10 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     else return;
     event.preventDefault();
   });
-  window.addEventListener('resize', () => setEditorWidth(editorWidth, false));
+  window.addEventListener('resize', () => {
+    setAgentWidth(agentWidth, false);
+    setEditorWidth(editorWidth, false);
+  });
   const picker = document.querySelector<HTMLSelectElement>('#cv-picker')!;
   const paper = document.querySelector<HTMLElement>('#cv-paper')!;
   const templatePreviewStyle = document.createElement('style');
@@ -300,8 +387,25 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
   const workspaceNameLabel = document.querySelector<HTMLElement>('#workspace-name')!;
   const zoomPreference = document.querySelector<HTMLInputElement>('#settings-zoom')!;
   const zoomPreferenceValue = document.querySelector<HTMLOutputElement>('#settings-zoom-value')!;
+  const agentWidthPreference = document.querySelector<HTMLInputElement>('#settings-agent-width')!;
+  const agentWidthPreferenceValue = document.querySelector<HTMLOutputElement>('#settings-agent-width-value')!;
   const editorWidthPreference = document.querySelector<HTMLInputElement>('#settings-editor-width')!;
   const editorWidthPreferenceValue = document.querySelector<HTMLOutputElement>('#settings-editor-width-value')!;
+  const agentProviderSelect = document.querySelector<HTMLSelectElement>('#agent-provider-select')!;
+  const agentProviderStatus = document.querySelector<HTMLElement>('#agent-provider-status')!;
+  const agentModelSelect = document.querySelector<HTMLSelectElement>('#agent-model-select')!;
+  const agentPermissionSelect = document.querySelector<HTMLSelectElement>('#agent-permission-select')!;
+  const agentSessionStart = document.querySelector<HTMLButtonElement>('#agent-session-start')!;
+  const agentSessionResume = document.querySelector<HTMLButtonElement>('#agent-session-resume')!;
+  const agentSessionApply = document.querySelector<HTMLButtonElement>('#agent-session-apply')!;
+  const agentActiveSessionLabel = document.querySelector<HTMLElement>('#agent-active-session')!;
+  const agentSavedSessionList = document.querySelector<HTMLElement>('#agent-saved-session-list')!;
+  const agentSettingsStatus = document.querySelector<HTMLElement>('#agent-settings-status')!;
+  const activeAgentSessionKey = 'seevee.active-agent-session';
+  let agentSettingsSnapshot: AgentSettingsSnapshot = { providers: [], sessions: [], events: [] };
+  let savedAgentSettings: SavedAgentSetting[] = [];
+  let selectedAgentSessionId: string | null = null;
+  let loadedAgentOptionsSessionId: string | null = null;
   let workspaceSettingsRevision: number | null = null;
   let workspaceSettingsLoaded = false;
   let workspaceSettingsQueue: Promise<void> = Promise.resolve();
@@ -364,10 +468,222 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
   function syncSettingsPreferences() {
     zoomPreference.value = String(Math.round(zoom * 100));
     zoomPreferenceValue.textContent = `${Math.round(zoom * 100)}%`;
+    agentWidthPreference.value = String(Math.round(agentWidth / 10) * 10);
+    agentWidthPreferenceValue.textContent = `${Math.round(agentWidth)} px`;
     editorWidthPreference.value = String(Math.round(editorWidth / 10) * 10);
     editorWidthPreferenceValue.textContent = `${Math.round(editorWidth)} px`;
   }
 
+
+  function agentRequestHeaders(): HeadersInit {
+    return { 'content-type': 'application/json', 'x-seevee-agent': '1' };
+  }
+
+  async function readAgentResponse<T>(response: Response): Promise<T> {
+    const payload = await response.json() as T & { ok?: boolean; reason?: string };
+    if (!response.ok || payload.ok === false) throw new Error(payload.reason ?? `Agent request failed with status ${response.status}.`);
+    return payload;
+  }
+  async function loadAgentSessionOptions(sessionId: string): Promise<void> {
+    loadedAgentOptionsSessionId = null;
+    agentModelSelect.disabled = true;
+    agentPermissionSelect.disabled = true;
+    try {
+      const response = await fetch(`/api/agents/session/${encodeURIComponent(sessionId)}/options`, { headers: { accept: 'application/json' } });
+      const payload = await readAgentResponse<{ configuration: AgentSessionConfiguration }>(response);
+      if (selectedAgentSessionId !== sessionId) return;
+      const modelOptions = document.createDocumentFragment();
+      const defaultModel = document.createElement('option');
+      defaultModel.value = '';
+      defaultModel.textContent = 'Provider default';
+      modelOptions.append(defaultModel);
+      for (const option of payload.configuration.models) {
+        const item = document.createElement('option');
+        item.value = option.id;
+        item.textContent = option.label;
+        item.title = option.description ?? option.label;
+        modelOptions.append(item);
+      }
+      agentModelSelect.replaceChildren(modelOptions);
+      agentModelSelect.value = payload.configuration.model ?? '';
+      const permissionOptions = document.createDocumentFragment();
+      const defaultPermission = document.createElement('option');
+      defaultPermission.value = '';
+      defaultPermission.textContent = 'Provider default';
+      permissionOptions.append(defaultPermission);
+      for (const option of payload.configuration.permissions) {
+        const item = document.createElement('option');
+        item.value = option.id;
+        item.textContent = option.label;
+        item.title = option.description ?? option.label;
+        permissionOptions.append(item);
+      }
+      agentPermissionSelect.replaceChildren(permissionOptions);
+      agentPermissionSelect.value = payload.configuration.permissionMode;
+      loadedAgentOptionsSessionId = sessionId;
+      agentModelSelect.disabled = false;
+      agentPermissionSelect.disabled = false;
+    } catch (reason) {
+      agentModelSelect.replaceChildren(new Option('Options unavailable', ''));
+      agentPermissionSelect.replaceChildren(new Option('Options unavailable', ''));
+      agentSettingsStatus.textContent = reason instanceof Error ? reason.message : String(reason);
+    }
+  }
+
+
+  function renderAgentSettings(preferredProvider?: AgentProviderId): void {
+    const currentProvider = preferredProvider ?? (agentProviderSelect.value as AgentProviderId | '');
+    agentProviderSelect.replaceChildren(...agentSettingsSnapshot.providers.map((provider) => {
+      const option = document.createElement('option');
+      option.value = provider.id;
+      option.textContent = `${provider.label} · ${provider.version ?? 'not installed'}`;
+      option.disabled = !provider.ready;
+      return option;
+    }));
+    agentProviderSelect.disabled = agentSettingsSnapshot.providers.length === 0;
+    let storedSessionId: string | null = null;
+    try { storedSessionId = localStorage.getItem(activeAgentSessionKey); } catch { storedSessionId = null; }
+    const activeSession = agentSettingsSnapshot.sessions.find((session) => session.id === selectedAgentSessionId)
+      ?? agentSettingsSnapshot.sessions.find((session) => session.id === storedSessionId)
+      ?? agentSettingsSnapshot.sessions.at(-1)
+      ?? null;
+    selectedAgentSessionId = activeSession?.id ?? null;
+    const providerId = agentSettingsSnapshot.providers.some((provider) => provider.id === currentProvider)
+      ? currentProvider
+      : activeSession?.provider ?? agentSettingsSnapshot.providers.find((provider) => provider.ready)?.id;
+    if (providerId !== undefined) agentProviderSelect.value = providerId;
+    const provider = agentSettingsSnapshot.providers.find((item) => item.id === providerId);
+    agentProviderStatus.textContent = provider === undefined
+      ? 'No local agents detected.'
+      : `${provider.status} · ${provider.message ?? provider.label}`;
+    agentSessionStart.disabled = provider?.ready !== true;
+    agentSessionResume.disabled = savedAgentSettings.find((session) => session.provider === providerId) === undefined;
+    agentSessionApply.disabled = activeSession === null;
+    if (activeSession === null) {
+      loadedAgentOptionsSessionId = null;
+      agentModelSelect.replaceChildren(new Option('No active session', ''));
+      agentPermissionSelect.replaceChildren(new Option('No active session', ''));
+      agentModelSelect.disabled = true;
+      agentPermissionSelect.disabled = true;
+    } else if (loadedAgentOptionsSessionId !== activeSession.id) {
+      agentModelSelect.replaceChildren(new Option('Loading models…', ''));
+      agentPermissionSelect.replaceChildren(new Option('Loading permissions…', ''));
+      agentModelSelect.disabled = true;
+      agentPermissionSelect.disabled = true;
+      void loadAgentSessionOptions(activeSession.id);
+    }
+    agentActiveSessionLabel.textContent = activeSession === null
+      ? 'None'
+      : `${activeSession.title} · ${activeSession.provider} · ${activeSession.state}`;
+    if (activeSession !== null) {
+      try { localStorage.setItem(activeAgentSessionKey, activeSession.id); } catch { /* The current page still keeps the active session. */ }
+    }
+    if (savedAgentSettings.length === 0) {
+      const empty = document.createElement('p');
+      empty.className = 'settings-description';
+      empty.textContent = 'No saved sessions.';
+      agentSavedSessionList.replaceChildren(empty);
+    } else {
+      agentSavedSessionList.replaceChildren(...savedAgentSettings.map((saved) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.dataset['agentResume'] = saved.externalSessionId;
+        const name = document.createElement('span');
+        name.textContent = `${saved.provider} · ${saved.title}`;
+        const date = document.createElement('small');
+        date.textContent = new Date(saved.lastActivityAt).toLocaleString();
+        button.append(name, date);
+        return button;
+      }));
+    }
+  }
+
+  async function loadAgentSettings(refreshProviders = false): Promise<void> {
+    agentSettingsStatus.textContent = 'Detecting local agents…';
+    const response = await fetch(`/api/agents${refreshProviders ? '?refresh=1' : ''}`, { cache: 'no-store' });
+    const payload = await readAgentResponse<AgentSettingsResponse>(response);
+    agentSettingsSnapshot = payload.snapshot;
+    savedAgentSettings = payload.savedSessions;
+    renderAgentSettings();
+    agentSettingsStatus.textContent = `${payload.snapshot.providers.filter((provider) => provider.ready).length} agents ready.`;
+  }
+
+  function activateAgentSession(session: AgentSessionSetting): void {
+    selectedAgentSessionId = session.id;
+    agentSettingsSnapshot = {
+      ...agentSettingsSnapshot,
+      sessions: [...agentSettingsSnapshot.sessions.filter((item) => item.id !== session.id), session],
+    };
+    try { localStorage.setItem(activeAgentSessionKey, session.id); } catch { /* The active page still receives the session. */ }
+    window.dispatchEvent(new CustomEvent('seevee:agent-session-selected', { detail: session }));
+    renderAgentSettings(session.provider);
+  }
+
+  async function startSelectedAgent(): Promise<void> {
+    const provider = agentProviderSelect.value as AgentProviderId;
+    agentSettingsStatus.textContent = 'Starting agent session…';
+    try {
+      const response = await fetch('/api/agents/session', {
+        method: 'POST',
+        headers: agentRequestHeaders(),
+        body: JSON.stringify({ provider }),
+      });
+      const payload = await readAgentResponse<{ session: AgentSessionSetting }>(response);
+      activateAgentSession(payload.session);
+      agentSettingsStatus.textContent = `${payload.session.provider} session started.`;
+    } catch (error) {
+      agentSettingsStatus.textContent = error instanceof Error ? error.message : String(error);
+    }
+  }
+
+  async function resumeAgentSession(externalSessionId: string): Promise<void> {
+    const saved = savedAgentSettings.find((session) => session.externalSessionId === externalSessionId);
+    if (saved === undefined) return;
+    agentSettingsStatus.textContent = 'Resuming agent session…';
+    try {
+      const response = await fetch('/api/agents/session', {
+        method: 'POST',
+        headers: agentRequestHeaders(),
+        body: JSON.stringify({ provider: saved.provider, resumeSessionId: saved.externalSessionId }),
+      });
+      const payload = await readAgentResponse<{ session: AgentSessionSetting }>(response);
+      activateAgentSession(payload.session);
+      agentSettingsStatus.textContent = `${payload.session.provider} session resumed.`;
+    } catch (error) {
+      agentSettingsStatus.textContent = error instanceof Error ? error.message : String(error);
+    }
+  }
+
+  async function applyAgentConfiguration(): Promise<void> {
+    if (selectedAgentSessionId === null) return;
+    agentSettingsStatus.textContent = 'Applying agent configuration…';
+    try {
+      const model = agentModelSelect.value.trim();
+      const permission = agentPermissionSelect.value.trim();
+      const response = await fetch(`/api/agents/session/${encodeURIComponent(selectedAgentSessionId)}`, {
+        method: 'PATCH',
+        headers: agentRequestHeaders(),
+        body: JSON.stringify({
+          ...(model.length === 0 ? {} : { model }),
+          ...(permission.length === 0 ? {} : { permissionMode: permission }),
+        }),
+      });
+      const payload = await readAgentResponse<{ session: AgentSessionSetting }>(response);
+      loadedAgentOptionsSessionId = null;
+      activateAgentSession(payload.session);
+      agentSettingsStatus.textContent = 'Agent configuration applied.';
+    } catch (error) {
+      agentSettingsStatus.textContent = error instanceof Error ? error.message : String(error);
+    }
+  }
+
+  function openAgentSettings(): void {
+    settingsPopover.hidden = false;
+    loadedAgentOptionsSessionId = null;
+    settingsToggle.setAttribute('aria-expanded', 'true');
+    setSettingsView('agents');
+    void loadAgentSettings(true);
+  }
   async function loadWorkspaceSettings() {
     settingsStatusLabel.dataset.state = 'saving';
     settingsStatusLabel.textContent = 'Loading workspace settings…';
@@ -451,15 +767,56 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     const section = target.closest<HTMLButtonElement>('[data-settings-section]')?.dataset.settingsSection;
     if (section) {
       setSettingsView(section);
+      if (section === 'agents') void loadAgentSettings();
       return;
     }
     const destination = target.closest<HTMLElement>('[data-open-settings-target]')?.dataset.openSettingsTarget;
     if (!destination) return;
     closeSettingsPopover(false);
+    const editorTools = document.querySelector<HTMLDetailsElement>('#editor-tools');
+    if (editorTools !== null && (destination === 'asset-library' || destination === 'document-settings' || destination === 'dashboard-comments')) {
+      editorTools.open = true;
+    }
     const targetElement = document.querySelector<HTMLElement>(`#${CSS.escape(destination)}`);
     if (targetElement instanceof HTMLDetailsElement) targetElement.open = true;
     targetElement?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   });
+  agentProviderSelect.addEventListener('change', () => renderAgentSettings(agentProviderSelect.value as AgentProviderId));
+  agentSessionStart.addEventListener('click', () => void startSelectedAgent());
+  agentSessionResume.addEventListener('click', () => {
+    const provider = agentProviderSelect.value as AgentProviderId;
+    const saved = savedAgentSettings.find((session) => session.provider === provider);
+    if (saved !== undefined) void resumeAgentSession(saved.externalSessionId);
+  });
+  agentSessionApply.addEventListener('click', () => void applyAgentConfiguration());
+  agentSavedSessionList.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const externalSessionId = target.closest<HTMLButtonElement>('[data-agent-resume]')?.dataset['agentResume'];
+    if (externalSessionId !== undefined) void resumeAgentSession(externalSessionId);
+  });
+  window.addEventListener('seevee:open-settings', (event) => {
+    const section = (event as CustomEvent<string>).detail;
+    if (section === 'agents') openAgentSettings();
+  });
+  window.addEventListener('seevee:agent-configuration-updated', (event) => {
+    const sessionId = (event as CustomEvent<{ sessionId: string }>).detail.sessionId;
+    if (sessionId !== selectedAgentSessionId || settingsPopover.hidden) return;
+    loadedAgentOptionsSessionId = null;
+    void loadAgentSettings();
+  });
+  window.addEventListener('seevee:focus-editor', () => {
+    editor.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    editor.querySelector<HTMLElement>('input, textarea, button')?.focus();
+  });
+  window.addEventListener('seevee:focus-sources', () => {
+    const tools = document.querySelector<HTMLDetailsElement>('#editor-tools');
+    const sources = document.querySelector<HTMLDetailsElement>('#asset-library');
+    if (tools !== null) tools.open = true;
+    if (sources !== null) sources.open = true;
+    sources?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+  void loadAgentSettings();
   workspaceNameInput.addEventListener('change', () => {
     const name = workspaceNameInput.value.trim();
     if (name) void saveWorkspaceSettings({ name });
@@ -472,12 +829,17 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     });
   });
   zoomPreference.addEventListener('input', () => setZoom(Number(zoomPreference.value) / 100));
+  agentWidthPreference.addEventListener('input', () => {
+    setAgentWidth(Number(agentWidthPreference.value));
+    agentWidthPreferenceValue.textContent = `${Math.round(agentWidth)} px`;
+  });
   editorWidthPreference.addEventListener('input', () => {
     setEditorWidth(Number(editorWidthPreference.value));
     editorWidthPreferenceValue.textContent = `${Math.round(editorWidth)} px`;
   });
   document.querySelector<HTMLButtonElement>('#settings-reset-dashboard')!.addEventListener('click', () => {
     setZoom(1);
+    setAgentWidth(460);
     setEditorWidth(360);
     syncSettingsPreferences();
   });
