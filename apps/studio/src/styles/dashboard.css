@@ -217,7 +217,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .editor-context-menu [role="menuitem"].danger-text { color: var(--danger); }
 .editor-context-menu [role="menuitem"].danger-text:hover, .editor-context-menu [role="menuitem"].danger-text:focus-visible { background: #39282a; }
 
-.editor-panel { grid-area: editor; display: flex; flex-direction: column; border-left: 1px solid var(--separator); }
+.editor-panel { grid-area: editor; display: flex; flex-direction: column; }
 .editor-heading { padding: 20px 17px 15px; border-bottom: 1px solid var(--separator); }
 .editor-heading p { margin: 7px 0 0; color: var(--text-muted); font-size: 11px; }
 .editor-content { flex: 1; min-height: 0; overflow: auto; padding: 13px 16px 20px; scrollbar-gutter: stable; }
@@ -432,12 +432,13 @@ button:active { background-color: var(--control-hover); }
   .cv-select-wrap { margin-right: 4px; }
   .save-state { max-width: 145px; overflow: hidden; text-overflow: ellipsis; }
   .structure-panel { border-top: 1px solid var(--separator); }
-  .editor-panel { border-top: 1px solid var(--separator); }
+  .editor-panel { border-top: 1px solid var(--separator); border-left: 1px solid var(--separator); }
   .paper-stack { align-items: flex-start; }
 }
 @media (max-width: 560px) {
   html, body { height: auto; min-height: 100%; overflow: auto; }
   .studio { height: auto; min-height: 100dvh; overflow: visible; grid-template-columns: minmax(0, 1fr); grid-template-rows: 60px minmax(58vh, auto) minmax(150px, 24vh) minmax(320px, 50vh) 32px; grid-template-areas: "top" "work" "structure" "editor" "status"; }
+  .editor-panel { border-left: 0; }
   .brand-name, .topbar-divider, .cv-select-wrap .eyebrow, .status-path { display: none; }
   .topbar { gap: 8px; padding: 0 8px; }
   .top-actions { margin-left: auto; }
