@@ -229,7 +229,13 @@ function entityFields(entity: CvEntity): readonly FieldRender[] {
       return [{ path: '/label', value: 'bullets' }];
     }
     case 'customEntity': {
-      return [{ path: '/label', value: entity.label }];
+      return [
+        { path: '/label', value: entity.label },
+        ...Object.entries(entity.data).map(([key, value]) => ({
+          path: `/data/${key.replace(/~/g, '~0').replace(/\//g, '~1')}`,
+          value: typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' ? String(value) : JSON.stringify(value),
+        })),
+      ];
     }
     default: {
       return [{ path: '/id', value: '' }];

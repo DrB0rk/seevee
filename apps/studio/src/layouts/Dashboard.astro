@@ -162,6 +162,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
       sectionOrder: string[];
       sections: Record<string, { id: string; type: string; title: string; visible: boolean; nodeOrder?: string[] }>;
       entities: {
+        custom?: Record<string, { id: string; type: 'customEntity'; label: string; data: Record<string, unknown> }>;
         experience?: Record<string, {
           id: string; type: 'experience';
           organization: { name: string };
@@ -319,6 +320,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
 
   const escapeHtml = (value: unknown) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!);
   const sectionIdFor = (type: string) => cv?.data.sectionOrder.find((id) => cv?.data.sections[id]?.type === type) ?? '';
+  const isEditableCustomFieldKey = (key: string) => /^[a-zA-Z0-9_-]+$/.test(key) && !['__proto__', 'prototype', 'constructor'].includes(key);
 
   function applyDocumentStyle(tokens?: Record<string, { type: string; value: unknown }>) {
     const token = (name: string) => tokens?.[name]?.value;
@@ -697,6 +699,29 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
       ${field(`skills.${item.id}.category`, item.category ?? '', 'e.g. Languages', 'Category')}
       </div>
     </details>`).join('');
+    const customSections = cv.data.sectionOrder.flatMap((sectionId) => {
+      const section = cv!.data.sections[sectionId];
+      if (!section || section.type !== 'custom') return [];
+      const entries = (section.nodeOrder ?? []).flatMap((entryId) => {
+        const item = cv!.data.entities.custom?.[entryId];
+        if (!item) return [];
+        const dataFields = Object.entries(item.data).map(([key, value]) => {
+          const pathKey = isEditableCustomFieldKey(key) ? key : '';
+          if (!pathKey || (value !== null && typeof value === 'object')) return `<div class="custom-value"><span>${escapeHtml(key)}</span><pre>${escapeHtml(JSON.stringify(value, null, 2))}</pre><small>Structured values are edited by the agent.</small></div>`;
+          const label = key.replaceAll('_', ' ').replaceAll('-', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+          return `<div class="custom-field-row"><label class="field custom-key-field"><span>Field key</span><input type="text" value="${escapeHtml(key)}" data-custom-field-key="${escapeHtml(item.id)}.${escapeHtml(key)}" aria-label="Field key"></label>${field(`custom.${item.id}.data.${key}`, value ?? '', label, label)}<button type="button" class="text-button danger-text" data-remove-custom-field="${escapeHtml(item.id)}.${escapeHtml(key)}" aria-label="Remove ${escapeHtml(label)}">Remove field</button></div>`;
+        }).join('');
+        return [`<details class="editor-group" id="edit-custom-entry-${escapeHtml(item.id)}">
+          <summary class="group-heading"><span class="group-heading-title">${escapeHtml(item.label || 'Custom entry')}</span><span class="group-heading-meta">Custom entry</span></summary>
+          <div class="group-body"><button class="text-button danger-text group-remove" type="button" data-remove-custom-entry="${escapeHtml(item.id)}">Remove entry</button>
+          ${field(`custom.${item.id}.label`, item.label, 'Entry label', 'Label')}
+          ${dataFields}<button type="button" class="text-button" data-add-custom-field="${escapeHtml(item.id)}">+ Add field</button>
+          </div>
+        </details>`];
+      }).join('');
+      const heading = `<header class="editor-section-heading custom-section-heading"><label><span class="sr-only">Section title</span><input type="text" data-field="sections.${escapeHtml(section.id)}.title" value="${escapeHtml(section.title)}" aria-label="Section title"></label><button type="button" class="text-button danger-text" data-remove-custom-section="${escapeHtml(section.id)}">Remove section</button></header>`;
+      return [`<section class="editor-section" id="edit-custom-section-${escapeHtml(section.id)}">${heading}<div class="editor-section-body"><div>${entries || '<p class="custom-empty">This section has no entries yet.</p>'}</div><button type="button" class="add-entry" data-add-custom-entry="${escapeHtml(section.id)}">+ Add entry</button></div></section>`];
+    }).join('');
     const email = identity.contact.find((item) => item.kind === 'email')?.value ?? '';
     const editorSection = (title: string, meta: string, body: string, id = '') => `<section class="editor-section"${id ? ` id="${id}"` : ''}><header class="editor-section-heading"><h3>${escapeHtml(title)}</h3><span>${escapeHtml(meta)}</span></header><div class="editor-section-body">${body}</div></section>`;
     editor.innerHTML = `${editorSection('Profile', '4 fields', `
@@ -708,7 +733,9 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
       ${editorSection('Experience', `${experienceIds().length} entries`, `<div id="edit-experience">${experiences}</div><button type="button" class="add-entry" id="add-experience-inline">+ Add experience</button>`)}
       ${editorSection('Education', `${Object.keys(cv.data.entities.education ?? {}).length} entries`, `${education}<button type="button" class="add-entry" data-add-entry="education">+ Add education</button>`)}
       ${editorSection('Projects', `${Object.keys(cv.data.entities.projects ?? {}).length} entries`, `${projects}<button type="button" class="add-entry" data-add-entry="projects">+ Add project</button>`)}
-      ${editorSection('Skills', `${Object.keys(cv.data.entities.skills ?? {}).length} entries`, `${skills}<button type="button" class="add-entry" data-add-entry="skills">+ Add skill</button>`)}`;
+      ${editorSection('Skills', `${Object.keys(cv.data.entities.skills ?? {}).length} entries`, `${skills}<button type="button" class="add-entry" data-add-entry="skills">+ Add skill</button>`)}
+      ${customSections}
+      <button type="button" class="add-entry add-custom-section" id="add-custom-section">+ Add custom section</button>`;
     editor.dataset.groupsReady = 'true';
     editor.dataset.cvId = cv.id;
     editor.querySelectorAll<HTMLDetailsElement>('details.editor-group').forEach((group) => {
@@ -761,6 +788,23 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     const summary = identity.summary?.trim();
     const skillRows = Object.values(cv.data.entities.skills ?? {});
     const skills = `<section class="cv-section" data-cv-section="${escapeHtml(sectionIdFor('skills'))}"><h2>Skills</h2><p>${skillRows.map((skill) => `<span class="cv-skill" data-node-id="${escapeHtml(skill.id)}" data-node-type="skill">${inlineField(`skills.${skill.id}.name`, skill.name, 'Skill', 'cv-skill-input')}<span class="cv-skill-separator">·</span>${inlineField(`skills.${skill.id}.category`, skill.category ?? '', 'Category', 'cv-skill-category')}</span>`).join(' ')}</p><button type="button" class="cv-add-entry" data-add-entry="skills">+ Add skill</button></section>`;
+    const customSections = cv.data.sectionOrder.flatMap((sectionId) => {
+      const section = cv!.data.sections[sectionId];
+      if (!section || section.type !== 'custom' || !section.visible) return [];
+      const entries = (section.nodeOrder ?? []).flatMap((entryId) => {
+        const item = cv!.data.entities.custom?.[entryId];
+        if (!item) return [];
+        const dataFields = Object.entries(item.data).map(([key, value]) => {
+          const pathKey = isEditableCustomFieldKey(key) ? key : '';
+          const text = value === null || value === undefined ? '' : typeof value === 'object' ? JSON.stringify(value) : String(value);
+          const label = key.replaceAll('_', ' ').replaceAll('-', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+          const editable = pathKey && (value === null || typeof value !== 'object');
+          return editable ? `<p class="cv-custom-value"><span class="cv-custom-label">${escapeHtml(label)}:</span> ${inlineText(`custom.${item.id}.data.${key}`, text, label, 'cv-inline-text cv-inline-description')}</p>` : `<p class="cv-custom-value"><span class="cv-custom-label">${escapeHtml(label)}:</span> ${escapeHtml(text)}</p>`;
+        }).join('');
+        return [`<article class="cv-entry cv-custom-entry" data-node-id="${escapeHtml(item.id)}" data-node-type="customEntity"><h3>${inlineField(`custom.${item.id}.label`, item.label, 'Entry label', 'cv-inline-title')}</h3>${dataFields}<div class="cv-inline-actions"><button type="button" class="danger-text" data-remove-custom-entry="${escapeHtml(item.id)}">Remove entry</button></div></article>`];
+      }).join('');
+      return [`<section class="cv-section" data-cv-section="${escapeHtml(section.id)}"><h2>${inlineField(`sections.${section.id}.title`, section.title, 'Section title', 'cv-custom-section-title')}</h2>${entries || '<p class="cv-empty-note">Add an entry to this section.</p>'}<button type="button" class="cv-add-entry" data-add-custom-entry="${escapeHtml(section.id)}">+ Add entry</button></section>`];
+    }).join('');
     const content = `<header class="cv-header">
       <input class="cv-name" aria-label="Name" data-field="identity.name.display" value="${escapeHtml(identity.name.display)}" placeholder="Your name">
       <input class="cv-headline" aria-label="Headline" data-field="identity.headline" value="${escapeHtml(identity.headline ?? '')}" placeholder="Professional headline">
@@ -768,7 +812,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     </header>
       <section class="cv-section cv-summary" data-cv-section="${escapeHtml(sectionIdFor('summary'))}"><h2>Profile</h2>${inlineText('identity.summary', summary ?? '', 'Profile summary', 'cv-inline-text cv-summary-text')}</section>
       ${experiences}
-      ${education}${projects}${skills}`;
+      ${education}${projects}${skills}${customSections}`;
     paginatePreviewContent(content);
     document.querySelector('#preview-name')!.textContent = identity.name.display || 'Untitled CV';
     renderCommentMarkers();
@@ -782,7 +826,8 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
       const firstEducation = Object.keys(cv!.data.entities.education ?? {})[0];
       const firstProject = Object.keys(cv!.data.entities.projects ?? {})[0];
       const firstSkill = Object.keys(cv!.data.entities.skills ?? {})[0];
-      const editorTarget = firstExperience ? `edit-${firstExperience}` : section.type === 'education' && firstEducation ? `edit-education-${firstEducation}` : section.type === 'projects' && firstProject ? `edit-project-${firstProject}` : section.type === 'skills' && firstSkill ? `edit-skill-${firstSkill}` : section.type === 'summary' ? 'edit-identity' : '';
+      const firstCustom = section.type === 'custom' ? section.nodeOrder?.[0] : undefined;
+      const editorTarget = firstExperience ? `edit-${firstExperience}` : section.type === 'education' && firstEducation ? `edit-education-${firstEducation}` : section.type === 'projects' && firstProject ? `edit-project-${firstProject}` : section.type === 'skills' && firstSkill ? `edit-skill-${firstSkill}` : section.type === 'custom' ? (firstCustom ? `edit-custom-entry-${firstCustom}` : `edit-custom-section-${section.id}`) : section.type === 'summary' ? 'edit-identity' : '';
       return `<button type="button" class="section-link" data-section="${escapeHtml(section.id)}"${editorTarget ? ` data-editor-target="${editorTarget}"` : ''}><span class="section-number">${String(index + 1).padStart(2, '0')}</span><span>${escapeHtml(section.title)}</span></button>`;
     }).join('');
   }
@@ -1420,6 +1465,98 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     openEditorGroup(kind === 'education' ? `edit-education-${id}` : kind === 'projects' ? `edit-project-${id}` : `edit-skill-${id}`);
   }
 
+  function addCustomSection() {
+    if (!cv) return;
+    const stamp = Date.now().toString(36);
+    const id = `sec_custom_${stamp}`;
+    cv.data.sections[id] = { id, type: 'custom', title: 'New section', visible: true, nodeOrder: [] };
+    cv.data.sectionOrder.push(id);
+    markChanged();
+    render();
+    editor.querySelector<HTMLInputElement>(`[data-field="sections.${CSS.escape(id)}.title"]`)?.focus();
+  }
+
+  function addCustomEntry(sectionId: string) {
+    const section = cv?.data.sections[sectionId];
+    if (!cv || !section || section.type !== 'custom') return;
+    const id = `custom_${Date.now().toString(36)}`;
+    cv.data.entities.custom ??= {};
+    cv.data.entities.custom[id] = { id, type: 'customEntity', label: 'New entry', data: { description: '' } };
+    section.nodeOrder = [...(section.nodeOrder ?? []), id];
+    markChanged();
+    render();
+    openEditorGroup(`edit-custom-entry-${id}`);
+    editor.querySelector<HTMLInputElement>(`[data-field="custom.${CSS.escape(id)}.label"]`)?.focus();
+  }
+
+  function addCustomField(entryId: string) {
+    const item = cv?.data.entities.custom?.[entryId];
+    if (!item) return;
+    let key = 'new_field';
+    let suffix = 2;
+    while (key in item.data) key = `new_field_${suffix++}`;
+    item.data[key] = '';
+    markChanged();
+    render();
+    openEditorGroup(`edit-custom-entry-${entryId}`);
+    editor.querySelector<HTMLInputElement>(`[data-custom-field-key="${CSS.escape(entryId)}.${CSS.escape(key)}"]`)?.focus();
+  }
+
+  function renameCustomField(ownerAndKey: string, rawKey: string) {
+    const dot = ownerAndKey.indexOf('.');
+    if (!cv || dot < 0) return;
+    const entryId = ownerAndKey.slice(0, dot);
+    const oldKey = ownerAndKey.slice(dot + 1);
+    const item = cv.data.entities.custom?.[entryId];
+    const nextKey = rawKey.trim().toLowerCase().replace(/[^a-z0-9_-]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 50);
+    if (!item || !oldKey || !nextKey || !isEditableCustomFieldKey(nextKey) || (nextKey !== oldKey && nextKey in item.data)) {
+      renderEditor();
+      return;
+    }
+    if (nextKey !== oldKey) {
+      item.data[nextKey] = item.data[oldKey];
+      delete item.data[oldKey];
+      markChanged();
+      render();
+      openEditorGroup(`edit-custom-entry-${entryId}`);
+    }
+  }
+
+  function removeCustomEntry(entryId: string) {
+    if (!cv) return;
+    delete cv.data.entities.custom?.[entryId];
+    for (const section of Object.values(cv.data.sections)) {
+      if (section.nodeOrder) section.nodeOrder = section.nodeOrder.filter((id) => id !== entryId);
+    }
+    markChanged();
+    render();
+  }
+
+  function removeCustomSection(sectionId: string) {
+    if (!cv) return;
+    const section = cv.data.sections[sectionId];
+    if (!section || section.type !== 'custom') return;
+    const entryIds = section.nodeOrder ?? [];
+    delete cv.data.sections[sectionId];
+    cv.data.sectionOrder = cv.data.sectionOrder.filter((id) => id !== sectionId);
+    for (const entryId of entryIds) {
+      const stillUsed = Object.values(cv.data.sections).some((other) => other.type === 'custom' && other.nodeOrder?.includes(entryId));
+      if (!stillUsed) delete cv.data.entities.custom?.[entryId];
+    }
+    markChanged();
+    render();
+  }
+
+  function removeCustomField(ownerAndKey: string) {
+    const dot = ownerAndKey.indexOf('.');
+    if (!cv || dot < 0) return;
+    const item = cv.data.entities.custom?.[ownerAndKey.slice(0, dot)];
+    if (!item) return;
+    delete item.data[ownerAndKey.slice(dot + 1)];
+    markChanged();
+    render();
+  }
+
   function addBullet(experienceId: string) {
     const experience = cv?.data.entities.experience?.[experienceId];
     if (!experience) return;
@@ -1459,6 +1596,11 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     if (!path || !cv) return;
     setPath(path, target.value);
     const editingPaper = paper.contains(target);
+    if (path.startsWith('sections.')) renderSections();
+    if (path.startsWith('custom.') && path.endsWith('.label')) {
+      const heading = target.closest('details.editor-group')?.querySelector<HTMLElement>('.group-heading-title');
+      if (heading) heading.textContent = target.value || 'Custom entry';
+    }
     if (editingPaper && target instanceof HTMLTextAreaElement) {
       target.style.height = 'auto';
       target.style.height = `${target.scrollHeight}px`;
@@ -1468,6 +1610,12 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
   });
 
   studio.addEventListener('change', (event) => {
+    const input = event.target instanceof HTMLInputElement ? event.target : null;
+    const fieldKey = input?.dataset.customFieldKey;
+    if (fieldKey) {
+      renameCustomField(fieldKey, input?.value ?? '');
+      return;
+    }
     const target = event.target;
     if (!(target instanceof HTMLInputElement) || !cv) return;
     if (target.type === 'number' && target.value === '' && target.dataset.field) {
@@ -1507,6 +1655,17 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
   studio.addEventListener('click', (event) => {
     const target = event.target;
     if (!(target instanceof Element)) return;
+    if (target.closest('#add-custom-section')) return addCustomSection();
+    const addCustom = target.closest<HTMLElement>('[data-add-custom-entry]')?.dataset.addCustomEntry;
+    if (addCustom) return addCustomEntry(addCustom);
+    const addField = target.closest<HTMLElement>('[data-add-custom-field]')?.dataset.addCustomField;
+    if (addField) return addCustomField(addField);
+    const removeField = target.closest<HTMLElement>('[data-remove-custom-field]')?.dataset.removeCustomField;
+    if (removeField) return removeCustomField(removeField);
+    const removeCustom = target.closest<HTMLElement>('[data-remove-custom-entry]')?.dataset.removeCustomEntry;
+    if (removeCustom) return removeCustomEntry(removeCustom);
+    const removeCustomSectionId = target.closest<HTMLElement>('[data-remove-custom-section]')?.dataset.removeCustomSection;
+    if (removeCustomSectionId) return removeCustomSection(removeCustomSectionId);
     const add = target.closest('[data-add-experience], #add-experience-inline, #add-experience');
     if (add) return addExperience();
     const addKind = target.closest<HTMLElement>('[data-add-entry]')?.dataset.addEntry;

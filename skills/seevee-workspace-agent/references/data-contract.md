@@ -49,6 +49,37 @@ A section instance declares `sectionType`, title/label, visibility, ordered `ite
 
 This gives templates one ordered section stream while allowing new entity/section types to be added without rewriting every existing top-level structure.
 
+### Custom sections and entries
+
+Use the canonical CV schema's `type: "custom"` sections for content that does not fit profile, experience, education, projects, or skills. Add section IDs to `sectionOrder`; each custom section's `nodeOrder` lists IDs from `entities.custom` in display order. A custom entity has a stable ID, a short `label`, and a `data` object whose keys describe its fields:
+
+```json
+{
+  "sectionOrder": ["sec_custom_languages"],
+  "sections": {
+    "sec_custom_languages": {
+      "id": "sec_custom_languages",
+      "type": "custom",
+      "title": "Languages",
+      "visible": true,
+      "nodeOrder": ["custom_language_dutch"]
+    }
+  },
+  "entities": {
+    "custom": {
+      "custom_language_dutch": {
+        "id": "custom_language_dutch",
+        "type": "customEntity",
+        "label": "Dutch",
+        "data": { "proficiency": "Native" }
+      }
+    }
+  }
+}
+```
+
+Create sections and entries in the dashboard when the user wants to author content directly. Agents can create the same structures in CV JSON and should use meaningful field names and readable values. Dashboard editing supports scalar fields; preserve any nested objects or arrays an agent adds. Render custom sections with the selected CV's layout and styling, and bind fields to stable item IDs and JSON Pointer paths such as `/data/proficiency` so comments and edits stay attached to the right content. Keep section and entry IDs stable when changing wording or order.
+
 Do not put template source or a mandatory template selection inside CV JSON. A presentation binds a CV to a template/version. Many presentations may reference the same CV and many CVs may use the same template.
 
 ## References

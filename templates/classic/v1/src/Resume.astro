@@ -71,6 +71,10 @@ const sections = SECTION_IDS
       entry.section !== null,
   );
 
+const customSections = props.cv.data.sectionOrder
+  .map((id) => props.cv.data.sections[id])
+  .filter((section) => section?.type === 'custom' && section.visible);
+
 const identity = props.cv.data.identity;
 const contact = identity.contact;
 
@@ -271,6 +275,33 @@ function safeItem(itemId: ItemId, sectionId: SectionId): CvItem | null {
       )}
     </Section>
   ))}
+
+  {customSections.map((section) => (
+    <Section cv={cv} sectionId={section.id as SectionId}>
+      <h2 class="classic-section-title">{section.title}</h2>
+      <div class="classic-custom-entries">
+        {(section.nodeOrder ?? []).map((entityId) => {
+          const item = safeItem(entityId as ItemId, section.id as SectionId);
+          if (!item || item.type !== 'customEntity') return null;
+          return (
+            <Item cv={cv} itemId={entityId as ItemId} sectionId={section.id as SectionId}>
+              <article class="classic-custom-entry">
+                <h3><Field cv={cv} itemId={entityId as ItemId} sectionId={section.id as SectionId} fieldPath="/label" fallback={item.label} /></h3>
+                <dl>
+                  {Object.entries(item.data).map(([key, value]) => (
+                    <div class="classic-custom-field">
+                      <dt>{key.replaceAll('_', ' ').replaceAll('-', ' ')}</dt>
+                      <dd><Field cv={cv} itemId={entityId as ItemId} sectionId={section.id as SectionId} fieldPath={`/data/${key.replaceAll('~', '~0').replaceAll('/', '~1')}`} fallback={typeof value === 'string' ? value : JSON.stringify(value) ?? ''} /></dd>
+                    </div>
+                  ))}
+                </dl>
+              </article>
+            </Item>
+          );
+        })}
+      </div>
+    </Section>
+  ))}
 </Page>
 
 <style
@@ -328,6 +359,12 @@ function safeItem(itemId: ItemId, sectionId: SectionId): CvItem | null {
   .classic-projects > [data-seevee-item] {
     margin-bottom: 3mm;
   }
+  .classic-custom-entry { margin-bottom: 3mm; }
+  .classic-custom-entry h3 { margin: 0 0 1mm; font-size: 1em; }
+  .classic-custom-entry dl { margin: 0; }
+  .classic-custom-field { display: flex; gap: 2mm; margin: 0.5mm 0; }
+  .classic-custom-field dt { font-weight: 600; }
+  .classic-custom-field dd { margin: 0; }
   .classic-role-head,
   .classic-edu-head {
     display: flex;

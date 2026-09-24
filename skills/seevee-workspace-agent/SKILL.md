@@ -98,6 +98,8 @@ For visual/template changes:
 - create/fork source templates whenever source-level design control is the appropriate surface;
 - run template validation, render diagnostics, and export checks before completion.
 
+For content that does not fit the built-in CV sections, follow `references/data-contract.md`'s “Custom sections and entries” contract. Agents may add `type: "custom"` sections and `customEntity` records directly to CV JSON; preserve stable IDs, meaningful field keys, section order, and dashboard compatibility while applying the selected presentation's styling.
+
 Read `references/templates-and-rendering.md` before generating or patching template source.
 
 ## Completion
