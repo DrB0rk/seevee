@@ -138,7 +138,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .cv-headline { color: #535b65; font-family: inherit; font-size: var(--cv-font-size, 11pt); line-height: var(--cv-line-height, 1.4); }
 .cv-contact { margin-top: 1mm; color: #68727b; font-family: inherit; font-size: var(--cv-small-size, 10pt); line-height: var(--cv-line-height, 1.4); }
 .paper [data-field]:focus { outline: 1px solid #4c8dff; outline-offset: 3px; }
-.paper[data-mode="preview"] [data-field] { cursor: default; }
+.paper[data-mode="preview"] [data-field] { cursor: default; caret-color: transparent !important; }
 .paper[data-mode="preview"] [data-field]:focus { outline: 0; }
 .paper[data-mode="preview"] input[data-field], .paper[data-mode="preview"] textarea[data-field] { border: 1px solid transparent; border-radius: 0; background: transparent !important; box-shadow: none; color-scheme: light; appearance: none; }
 .paper[data-mode="preview"] input[type="number"][data-field] { appearance: textfield; -moz-appearance: textfield; }
