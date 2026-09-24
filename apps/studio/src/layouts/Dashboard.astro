@@ -51,6 +51,19 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     <nav class="section-list" id="section-list" aria-label="CV sections">
       <p class="quiet-message">Loading sections…</p>
     </nav>
+    <details class="asset-library" id="asset-library">
+      <summary>Reference files <span class="asset-count" id="asset-count">0</span></summary>
+      <div class="asset-body">
+        <p class="asset-intro">Add a profile photo, existing CV, or other material for your agent to use.</p>
+        <label class="settings-field"><span>File purpose</span><select id="asset-purpose"><option value="profile-photo">Profile photo</option><option value="reference-cv">Reference CV</option><option value="certificate">Certificate</option><option value="portfolio">Portfolio or work sample</option><option value="other">Other reference</option></select></label>
+        <button class="asset-dropzone" id="asset-dropzone" type="button" aria-label="Choose files or drop files to upload">
+          <span aria-hidden="true">↑</span><strong>Drop files here</strong><small>or click to browse · PDF, images, DOCX, and text · up to 20 MB each</small>
+        </button>
+        <input id="asset-input" class="visually-hidden" type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.docx,.txt,.md,.rtf,.odt,.json,.csv">
+        <ul class="asset-list" id="asset-list" aria-label="Uploaded reference files"></ul>
+        <p class="asset-status" id="asset-status" role="status" aria-live="polite">Files are saved in this workspace for the agent.</p>
+      </div>
+    </details>
     <details class="document-settings" id="document-settings">
       <summary>Document settings</summary>
       <div class="settings-body">
@@ -165,6 +178,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
   };
 
   type CvListItem = { ok: true; cv: { id: string; name: string; headline: string | null; revision: number } } | { ok: false; path: string; reason: string };
+  type WorkspaceAsset = { id: string; name: string; relativePath: string; purpose: string; contentType: string; size: number; uploadedAt: string };
   type Placement = { page: number; x: number; y: number; element: string; contextText?: string; fieldPath?: string; nodeId?: string; nodeType?: string; pointer?: string; sectionId?: string };
   type StoredThread = { id: string; category?: string; priority?: string; status?: string; target: { selectors: Array<Record<string, unknown>>; extensions?: Record<string, unknown> }; messageOrder: string[]; messages: Record<string, { body: string; createdAt: string; author?: { display?: string } }> };
   type CommentsDoc = { revision: number; data: { threadOrder: string[]; threads: Record<string, StoredThread> } };
@@ -182,6 +196,12 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
   printPageStyle.id = 'active-paper-profile';
   document.head.append(printPageStyle);
   const settingsStatus = document.querySelector<HTMLElement>('#settings-status')!;
+  const assetInput = document.querySelector<HTMLInputElement>('#asset-input')!;
+  const assetDropzone = document.querySelector<HTMLButtonElement>('#asset-dropzone')!;
+  const assetPurpose = document.querySelector<HTMLSelectElement>('#asset-purpose')!;
+  const assetList = document.querySelector<HTMLUListElement>('#asset-list')!;
+  const assetCount = document.querySelector<HTMLElement>('#asset-count')!;
+  const assetStatus = document.querySelector<HTMLElement>('#asset-status')!;
   const commentButton = document.querySelector<HTMLButtonElement>('#place-comment')!;
   const commentDialog = document.querySelector<HTMLDialogElement>('#comment-dialog')!;
   const commentForm = document.querySelector<HTMLFormElement>('#comment-form')!;
@@ -334,6 +354,65 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     saveState.dataset.state = state;
     saveLabel.textContent = message;
   }
+
+  const assetPurposes: Record<string, string> = {
+    'profile-photo': 'Profile photo', 'reference-cv': 'Reference CV', certificate: 'Certificate',
+    portfolio: 'Portfolio or work sample', other: 'Other reference',
+  };
+
+  function renderAssets(assets: WorkspaceAsset[]) {
+    assetCount.textContent = String(assets.length);
+    assetList.innerHTML = assets.map((asset) => `<li class="asset-item"><span class="asset-file-icon" aria-hidden="true">${asset.contentType.startsWith('image/') ? 'IMG' : asset.name.toLowerCase().endsWith('.pdf') ? 'PDF' : 'DOC'}</span><span class="asset-file-info"><strong title="${escapeHtml(asset.name)}">${escapeHtml(asset.name)}</strong><small>${escapeHtml(assetPurposes[asset.purpose] ?? 'Other reference')} · ${formatBytes(asset.size)}</small></span></li>`).join('');
+  }
+
+  function formatBytes(size: number) {
+    return size < 1024 * 1024 ? `${Math.max(1, Math.round(size / 1024))} KB` : `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  async function loadAssets() {
+    const response = await fetch('/api/assets');
+    if (!response.ok) throw new Error('Could not load workspace files.');
+    renderAssets(await response.json() as WorkspaceAsset[]);
+  }
+
+  async function uploadAssets(files: FileList | File[]) {
+    if (files.length === 0) return;
+    const form = new FormData();
+    form.set('purpose', assetPurpose.value);
+    for (const file of Array.from(files)) form.append('files', file);
+    assetStatus.dataset.state = 'busy';
+    assetStatus.textContent = `Uploading ${files.length} ${files.length === 1 ? 'file' : 'files'}…`;
+    assetDropzone.disabled = true;
+    try {
+      const response = await fetch('/api/assets', { method: 'POST', body: form });
+      const result = await response.json() as { assets?: WorkspaceAsset[]; error?: string };
+      if (!response.ok || !result.assets) throw new Error(result.error ?? 'Upload failed.');
+      renderAssets(result.assets);
+      const names = result.assets.slice(-files.length).map((asset) => asset.name);
+      assetStatus.dataset.state = 'saved';
+      assetStatus.textContent = `Saved ${names.length} ${names.length === 1 ? 'file' : 'files'} for your agent.`;
+    } catch (error) {
+      assetStatus.dataset.state = 'error';
+      assetStatus.textContent = error instanceof Error ? error.message : 'Upload failed.';
+    } finally {
+      assetDropzone.disabled = false;
+      assetInput.value = '';
+    }
+  }
+
+  assetDropzone.addEventListener('click', () => assetInput.click());
+  assetInput.addEventListener('change', () => void uploadAssets(assetInput.files ?? []));
+  assetDropzone.addEventListener('dragover', (event) => { event.preventDefault(); assetDropzone.dataset.dragging = 'true'; });
+  assetDropzone.addEventListener('dragleave', () => { delete assetDropzone.dataset.dragging; });
+  assetDropzone.addEventListener('drop', (event) => {
+    event.preventDefault();
+    delete assetDropzone.dataset.dragging;
+    if (event.dataTransfer?.files) void uploadAssets(event.dataTransfer.files);
+  });
+  void loadAssets().catch((error) => {
+    assetStatus.dataset.state = 'error';
+    assetStatus.textContent = error instanceof Error ? error.message : 'Could not load workspace files.';
+  });
 
   function experienceIds() {
     if (!cv) return [];

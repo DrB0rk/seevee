@@ -20,6 +20,7 @@ Use Seevee's structured documents as the source of truth. Do not treat rendered 
    - Workspace initialization, CLI/server lifecycle, or working alongside arbitrary external agents: `references/cli-and-workspace.md`.
    - Drafting, tailoring, reviewing, or restructuring CV content: `references/cv-guidance.md`.
    - Creating a new CV: `references/workflows.md` and `references/templates-and-rendering.md` are both required; create and activate its visual presentation as part of the task, not just its CV JSON.
+   - Uploaded source material: inspect `sources/uploads/index.json` when present, then read the listed files that match the user's request. Treat profile photos as visual assets, reference CVs as source material to verify, and certificates or work samples as evidence; do not copy unverified claims as facts.
 3. Read the workspace's current revisions before proposing a mutation.
 4. Use the narrowest mutation surface. Do not replace a whole canonical document for a small edit.
 5. Validate after every committed mutation category.
@@ -31,6 +32,7 @@ Use Seevee's structured documents as the source of truth. Do not treat rendered 
 - Never identify an entity only by array index. Use stable node IDs.
 - Never use a JSON Pointer as the sole long-lived identity for a list item. Pair field pointers with a stable node target.
 - Keep each CV as its own JSON resource. Keep CV content, presentation, template source, provenance, and comments separate.
+- User-uploaded files are workspace reference assets under `sources/uploads/`, catalogued by `sources/uploads/index.json` with their purpose and original filename. Read relevant assets before drafting, preserve originals, and never treat an old/reference CV as automatically authoritative.
 - Treat unresolved factual conflicts as conflicts. Do not silently choose one value.
 - Treat generated Astro template code as restricted visual code. Do not add filesystem, process, environment, arbitrary network, dynamic-evaluation, endpoint, or package-install capabilities.
 - The dashboard/editor is fixed product UI. Do not redesign it when asked to redesign a CV.
