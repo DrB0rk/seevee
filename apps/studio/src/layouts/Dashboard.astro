@@ -220,11 +220,14 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
 
   function renderEditor() {
     if (!cv) return;
+    const hadGroups = editor.dataset.groupsReady === 'true';
+    const openGroups = new Set(Array.from(editor.querySelectorAll<HTMLDetailsElement>('details.editor-group[open]'), (group) => group.id));
     const identity = cv.data.identity;
     const experiences = experienceIds().map((id) => {
       const item = cv!.data.entities.experience![id]!;
-      return `<section class="editor-group experience-editor" id="edit-${escapeHtml(id)}">
-        <div class="group-heading"><h3>Experience</h3><button class="text-button danger-text" type="button" data-remove-experience="${escapeHtml(id)}">Remove</button></div>
+      return `<details class="editor-group experience-editor" id="edit-${escapeHtml(id)}">
+        <summary class="group-heading"><span class="group-heading-title">${escapeHtml(item.role.title || 'Experience')}</span><span class="group-heading-meta">${escapeHtml(item.organization.name)}</span></summary>
+        <div class="group-body"><button class="text-button danger-text group-remove" type="button" data-remove-experience="${escapeHtml(id)}">Remove experience</button>
         ${field(`experience.${id}.role.title`, item.role.title, 'Role title', 'Role')}
         ${field(`experience.${id}.organization.name`, item.organization.name, 'Organization', 'Organization')}
         ${yearField(`experience.${id}.period.start.year`, item.period.start.year, 'Start year')}
@@ -232,43 +235,56 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
         ${field(`experience.${id}.summary`, item.summary ?? '', 'A short description of your work', 'Description', true)}
         ${item.bulletOrder.map((bulletId, index) => `${field(`experience.${id}.bullets.${bulletId}.text`, item.bullets[bulletId]?.text ?? '', 'What changed because of your work?', `Result ${index + 1}`, true)}<button type="button" class="text-button danger-text" data-remove-bullet="experience.${escapeHtml(id)}.${escapeHtml(bulletId)}">Remove result</button>`).join('')}
         <button class="text-button" type="button" data-add-bullet="${escapeHtml(id)}">+ Add result</button>
-      </section>`;
+        </div>
+      </details>`;
     }).join('');
-    const education = Object.values(cv.data.entities.education ?? {}).map((item) => `<section class="editor-group" id="edit-education-${escapeHtml(item.id)}">
-      <div class="group-heading"><h3>Education</h3><button class="text-button danger-text" type="button" data-remove-entry="education.${escapeHtml(item.id)}">Remove</button></div>
+    const education = Object.values(cv.data.entities.education ?? {}).map((item) => `<details class="editor-group" id="edit-education-${escapeHtml(item.id)}">
+      <summary class="group-heading"><span class="group-heading-title">${escapeHtml(item.program.name || 'Education')}</span><span class="group-heading-meta">${escapeHtml(item.institution.name)}</span></summary>
+      <div class="group-body"><button class="text-button danger-text group-remove" type="button" data-remove-entry="education.${escapeHtml(item.id)}">Remove education</button>
       ${field(`education.${item.id}.program.name`, item.program.name, 'Program or course', 'Program')}
       ${field(`education.${item.id}.program.degree`, item.program.degree ?? '', 'Degree or qualification', 'Degree')}
       ${field(`education.${item.id}.institution.name`, item.institution.name, 'School or institution', 'Institution')}
       ${yearField(`education.${item.id}.period.start.year`, item.period.start.year, 'Start year')}
       ${yearField(`education.${item.id}.period.end.year`, item.period.end?.year ?? '', 'End year')}
       ${(item.details.length ? item.details : ['']).map((detail, index) => field(`education.${item.id}.details.${index}`, detail, 'Additional detail', `Detail ${index + 1}`, true)).join('')}
-    </section>`).join('');
-    const projects = Object.values(cv.data.entities.projects ?? {}).map((item) => `<section class="editor-group" id="edit-project-${escapeHtml(item.id)}">
-      <div class="group-heading"><h3>Project</h3><button class="text-button danger-text" type="button" data-remove-entry="projects.${escapeHtml(item.id)}">Remove</button></div>
+      </div>
+    </details>`).join('');
+    const projects = Object.values(cv.data.entities.projects ?? {}).map((item) => `<details class="editor-group" id="edit-project-${escapeHtml(item.id)}">
+      <summary class="group-heading"><span class="group-heading-title">${escapeHtml(item.name || 'Project')}</span><span class="group-heading-meta">${escapeHtml(item.role?.title ?? 'Project')}</span></summary>
+      <div class="group-body"><button class="text-button danger-text group-remove" type="button" data-remove-entry="projects.${escapeHtml(item.id)}">Remove project</button>
       ${field(`projects.${item.id}.name`, item.name, 'Project name', 'Name')}
       ${item.role ? field(`projects.${item.id}.role.title`, item.role.title, 'Project role', 'Role') : `<button type="button" class="text-button" data-add-project-role="${escapeHtml(item.id)}">+ Add role</button>`}
       ${field(`projects.${item.id}.summary`, item.summary ?? '', 'What did you build?', 'Description', true)}
       ${(item.bulletOrder ?? []).map((bulletId, index) => `${field(`projects.${item.id}.bullets.${bulletId}.text`, item.bullets?.[bulletId]?.text ?? '', 'Project result', `Result ${index + 1}`, true)}<button type="button" class="text-button danger-text" data-remove-bullet="projects.${escapeHtml(item.id)}.${escapeHtml(bulletId)}">Remove result</button>`).join('')}
       <button type="button" class="text-button" data-add-project-bullet="${escapeHtml(item.id)}">+ Add result</button>
       ${item.period ? `${yearField(`projects.${item.id}.period.start.year`, item.period.start.year, 'Start year')}${item.period.ongoing ? '' : yearField(`projects.${item.id}.period.end.year`, item.period.end?.year ?? '', 'End year')}<label class="field field-checkbox"><span>Current project</span><input type="checkbox" data-ongoing-project-for="${escapeHtml(item.id)}"${item.period.ongoing ? ' checked' : ''}></label>` : `<button type="button" class="text-button" data-add-project-dates="${escapeHtml(item.id)}">+ Add dates</button>`}
-    </section>`).join('');
-    const skills = Object.values(cv.data.entities.skills ?? {}).map((item) => `<section class="editor-group" id="edit-skill-${escapeHtml(item.id)}">
-      <div class="group-heading"><h3>Skill</h3><button class="text-button danger-text" type="button" data-remove-entry="skills.${escapeHtml(item.id)}">Remove</button></div>
+      </div>
+    </details>`).join('');
+    const skills = Object.values(cv.data.entities.skills ?? {}).map((item) => `<details class="editor-group" id="edit-skill-${escapeHtml(item.id)}">
+      <summary class="group-heading"><span class="group-heading-title">${escapeHtml(item.name || 'Skill')}</span><span class="group-heading-meta">${escapeHtml(item.category ?? 'Skill')}</span></summary>
+      <div class="group-body"><button class="text-button danger-text group-remove" type="button" data-remove-entry="skills.${escapeHtml(item.id)}">Remove skill</button>
       ${field(`skills.${item.id}.name`, item.name, 'Skill', 'Name')}
       ${field(`skills.${item.id}.category`, item.category ?? '', 'e.g. Languages', 'Category')}
-    </section>`).join('');
+      </div>
+    </details>`).join('');
     const email = identity.contact.find((item) => item.kind === 'email')?.value ?? '';
-    editor.innerHTML = `<section class="editor-group" id="edit-identity">
-      <div class="group-heading"><h3>Identity</h3><span class="group-index">01</span></div>
+    editor.innerHTML = `<details class="editor-group" id="edit-identity">
+      <summary class="group-heading"><span class="group-heading-title">Identity</span><span class="group-heading-meta">Name and profile</span></summary>
+      <div class="group-body">
       ${field('identity.name.display', identity.name.display, 'Your name', 'Name')}
       ${field('identity.headline', identity.headline ?? '', 'Role or professional focus', 'Headline')}
       ${field('contact.email', email, 'name@example.com', 'Email')}
       ${field('identity.summary', identity.summary ?? '', 'A concise introduction to your work', 'Summary', true)}
-    </section><div id="edit-experience">${experiences}</div>
+      </div>
+    </details><div id="edit-experience">${experiences}</div>
       ${education}<button type="button" class="add-entry" data-add-entry="education">+ Add education</button>
       ${projects}<button type="button" class="add-entry" data-add-entry="projects">+ Add project</button>
       ${skills}<button type="button" class="add-entry" data-add-entry="skills">+ Add skill</button>
       <button type="button" class="add-entry" id="add-experience-inline">+ Add experience</button>`;
+    editor.dataset.groupsReady = 'true';
+    editor.querySelectorAll<HTMLDetailsElement>('details.editor-group').forEach((group) => {
+      group.open = hadGroups ? openGroups.has(group.id) : group.id === 'edit-identity';
+    });
     revisionLabel.textContent = `Revision ${cv.revision}`;
   }
 
@@ -534,11 +550,22 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     commentBody.focus();
   }
 
+  function openEditorGroup(id: string) {
+    const group = editor.querySelector<HTMLDetailsElement>(`details.editor-group#${CSS.escape(id)}`);
+    if (group) group.open = true;
+    return group;
+  }
+
   function focusEditorFor(target: Element, fieldPath?: string) {
     const node = target.closest<HTMLElement>('[data-node-id][data-node-type]');
-    const inferredPath = node?.dataset.nodeType === 'bullet'
-      ? `experience.${target.closest<HTMLElement>('[data-node-type="experience"]')?.dataset.nodeId}.bullets.${node.dataset.nodeId}.text`
-      : fieldPath;
+    const bulletOwner = node?.dataset.nodeType === 'bullet'
+      ? target.closest<HTMLElement>('[data-node-type="experience"], [data-node-type="project"]')
+      : null;
+    const inferredPath = bulletOwner?.dataset.nodeType === 'project'
+      ? `projects.${bulletOwner.dataset.nodeId}.bullets.${node?.dataset.nodeId}.text`
+      : bulletOwner
+        ? `experience.${bulletOwner.dataset.nodeId}.bullets.${node?.dataset.nodeId}.text`
+        : fieldPath;
     const control = inferredPath
       ? editor.querySelector<HTMLElement>(`[data-field="${CSS.escape(inferredPath)}"]`)
       : null;
@@ -552,6 +579,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
                 : node?.dataset.nodeType === 'skill' ? `edit-skill-${nodeId}`
                   : nodeId ? `edit-${nodeId}` : 'edit-identity';
     const group = editor.querySelector<HTMLElement>(`#${CSS.escape(groupId)}`);
+    if (group instanceof HTMLDetailsElement) group.open = true;
     (control ?? group)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     control?.focus({ preventScroll: true });
   }
@@ -899,7 +927,10 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     }
     markChanged();
     render();
-    window.setTimeout(() => document.querySelector<HTMLInputElement>(`[data-field="experience.${id}.role.title"]`)?.focus(), 0);
+    window.setTimeout(() => {
+      openEditorGroup(`edit-${id}`);
+      editor.querySelector<HTMLInputElement>(`[data-field="experience.${id}.role.title"]`)?.focus();
+    }, 0);
   }
 
   function addEntry(kind: 'education' | 'projects' | 'skills') {
@@ -930,6 +961,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     }
     markChanged();
     render();
+    openEditorGroup(kind === 'education' ? `edit-education-${id}` : kind === 'projects' ? `edit-project-${id}` : `edit-skill-${id}`);
   }
 
   function addBullet(experienceId: string) {
@@ -1056,8 +1088,9 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     if (remove?.dataset.removeExperience) return removeExperience(remove.dataset.removeExperience);
     const section = target.closest<HTMLElement>('[data-section]');
     if (section?.dataset.section) {
-      const title = section.dataset.section;
-      document.querySelector(`#edit-${CSS.escape(title)}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const group = editor.querySelector<HTMLElement>(`#${CSS.escape(section.dataset.section)}`);
+      if (group instanceof HTMLDetailsElement) group.open = true;
+      group?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
     }
     const zoomControl = target.closest<HTMLElement>('[data-zoom]');
