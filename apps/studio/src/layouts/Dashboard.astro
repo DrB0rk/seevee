@@ -469,12 +469,9 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
       const firstEducation = Object.keys(cv!.data.entities.education ?? {})[0];
       const firstProject = Object.keys(cv!.data.entities.projects ?? {})[0];
       const firstSkill = Object.keys(cv!.data.entities.skills ?? {})[0];
-      const target = firstExperience ? `edit-${firstExperience}` : section.type === 'education' && firstEducation ? `edit-education-${firstEducation}` : section.type === 'projects' && firstProject ? `edit-project-${firstProject}` : section.type === 'skills' && firstSkill ? `edit-skill-${firstSkill}` : 'edit-identity';
-      return `<button type="button" class="section-link" data-section="${target}"><span class="section-number">${String(index + 1).padStart(2, '0')}</span><span>${escapeHtml(section.title)}</span></button>`;
+      const editorTarget = firstExperience ? `edit-${firstExperience}` : section.type === 'education' && firstEducation ? `edit-education-${firstEducation}` : section.type === 'projects' && firstProject ? `edit-project-${firstProject}` : section.type === 'skills' && firstSkill ? `edit-skill-${firstSkill}` : section.type === 'summary' ? 'edit-identity' : '';
+      return `<button type="button" class="section-link" data-section="${escapeHtml(section.id)}"${editorTarget ? ` data-editor-target="${editorTarget}"` : ''}><span class="section-number">${String(index + 1).padStart(2, '0')}</span><span>${escapeHtml(section.title)}</span></button>`;
     }).join('');
-    if (experienceIds().length === 0 && !sections.some((section) => section.type === 'experience')) {
-      sectionList.insertAdjacentHTML('beforeend', '<button type="button" class="section-link" data-section="edit-identity"><span class="section-number">01</span><span>Identity</span></button>');
-    }
   }
 
   function render() {
@@ -1220,7 +1217,14 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     if (remove?.dataset.removeExperience) return removeExperience(remove.dataset.removeExperience);
     const section = target.closest<HTMLElement>('[data-section]');
     if (section?.dataset.section) {
-      const group = editor.querySelector<HTMLElement>(`#${CSS.escape(section.dataset.section)}`);
+      sectionList.querySelectorAll('[aria-current="location"]').forEach((item) => item.removeAttribute('aria-current'));
+      section.setAttribute('aria-current', 'location');
+      paper.querySelectorAll('.cv-section.is-section-selected').forEach((item) => item.classList.remove('is-section-selected'));
+      const previewSection = paper.querySelector<HTMLElement>(`.cv-section[data-cv-section="${CSS.escape(section.dataset.section)}"]`);
+      previewSection?.classList.add('is-section-selected');
+      previewSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const editorTarget = section.dataset.editorTarget;
+      const group = editorTarget ? editor.querySelector<HTMLElement>(`#${CSS.escape(editorTarget)}`) : null;
       if (group instanceof HTMLDetailsElement) group.open = true;
       group?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;

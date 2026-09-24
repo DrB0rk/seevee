@@ -62,6 +62,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .section-list { display: flex; flex-direction: column; gap: 2px; padding: 12px 8px; overflow: auto; }
 .section-link { display: flex; align-items: center; gap: 10px; min-height: 36px; padding: 0 9px; border: 1px solid transparent; background: transparent; color: var(--text-secondary); text-align: left; cursor: pointer; }
 .section-link:hover { background: var(--control-hover); color: var(--text-primary); }
+.section-link[aria-current="location"] { border-color: #46515d; background: #222930; color: var(--text-primary); }
 .section-number { width: 23px; color: var(--text-muted); font: 10px var(--font-mono); }
 .panel-footnote { display: flex; align-items: center; gap: 8px; margin-top: auto; padding: 13px 16px; border-top: 1px solid var(--separator); color: var(--text-muted); font-size: 10px; }
 .online-indicator { width: 6px; height: 6px; }
@@ -96,7 +97,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .paper[data-mode="preview"] .cv-inline-actions,
 .paper[data-mode="preview"] .cv-add-entry,
 .paper[data-mode="preview"] .cv-remove-result { display: none; }
-.cv-section { margin-top: 24px; }
+.cv-section { margin-top: 24px; scroll-margin-block: 28px; }
+.cv-section.is-section-selected { outline: 1px solid #aebdcb; outline-offset: 7px; }
 .cv-section h2 { margin: 0 0 11px; color: #57616c; font-size: 10px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; }
 .cv-section p { margin: 5px 0 0; white-space: pre-wrap; }
 .cv-summary textarea { min-height: 90px; resize: vertical; line-height: 1.6; }
