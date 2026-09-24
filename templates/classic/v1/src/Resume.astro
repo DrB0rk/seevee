@@ -75,10 +75,17 @@ const identity = props.cv.data.identity;
 const contact = identity.contact;
 
 // Token defaults (declared in template.json — keep these in sync).
-const accentColor = '#1f2937';
-const fontFamily = 'Inter, system-ui, sans-serif';
-const baseFontSize = 11;
-const lineHeight = 1.4;
+const tokens = presentation?.data.tokens;
+const accentToken = tokens?.['accent-color'];
+const fontToken = tokens?.['font-family'];
+const sizeToken = tokens?.['base-font-size'];
+const lineHeightToken = tokens?.['line-height'];
+const accentColor = accentToken?.type === 'color' ? accentToken.value : '#1f2937';
+const fontFamily = fontToken?.type === 'string'
+  ? fontToken.value
+  : 'Inter, system-ui, sans-serif';
+const baseFontSize = sizeToken?.type === 'number' ? sizeToken.value : 11;
+const lineHeight = lineHeightToken?.type === 'number' ? lineHeightToken.value : 1.4;
 
 function safeItem(itemId: ItemId, sectionId: SectionId): CvItem | null {
   return getItem(cv, itemId, sectionId);
