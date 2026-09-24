@@ -36,7 +36,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     </div>
     <div class="top-actions">
       <button class="button button-subtle settings-trigger" id="settings-toggle" type="button" aria-haspopup="dialog" aria-controls="settings-popover" aria-expanded="false">Settings</button>
-      <button class="button button-subtle" id="export-pdf" type="button" title="Print or save this CV as a PDF">Export PDF</button>
+      <button class="button button-accent" id="export-pdf" type="button" title="Print or save this CV as a PDF">Export PDF</button>
       <span class="version-label">v{serverVersion}</span>
     </div>
   </header>
@@ -176,15 +176,12 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
       <h3>Comments <span id="comment-count">0</span></h3>
       <div id="comment-list"><p class="quiet-message">No comments yet. Choose “Place comment” to pin one to the page.</p></div>
     </section>
-    <div class="editor-footer">
-      <span class="revision-label" id="revision-label">Revision —</span>
-      <span>Local workspace</span>
-    </div>
   </aside>
 
   <footer class="statusbar">
     <span><span class="status-led" aria-hidden="true"></span>Studio ready</span>
     <span class="status-path" title={workspaceId}>{workspaceId}</span>
+    <span class="revision-label" id="revision-label">Revision —</span>
     <span class="status-help">Edit the paper or use the fields on the right</span>
   </footer>
   <dialog class="comment-dialog" id="comment-dialog" aria-labelledby="comment-title">
