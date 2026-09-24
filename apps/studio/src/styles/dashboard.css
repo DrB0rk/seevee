@@ -169,13 +169,13 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .cv-inline-result { min-height: 0; }
 .cv-inline-description { margin-top: 5px; }
 .paper[data-mode="edit"] [data-field] { cursor: text; }
-.paper[data-mode="edit"] input[data-field], .paper[data-mode="edit"] textarea[data-field] { border: 1px solid transparent; border-radius: 0; background: transparent !important; box-shadow: none; color-scheme: light; }
+.paper[data-mode="edit"] input[data-field], .paper[data-mode="edit"] textarea[data-field] { border: 1px solid transparent; border-radius: 9px; background: transparent !important; box-shadow: none; color-scheme: light; }
 .paper[data-mode="edit"] input[type="number"][data-field] { appearance: textfield; -moz-appearance: textfield; }
 .paper[data-mode="edit"] input[type="number"][data-field]::-webkit-inner-spin-button,
 .paper[data-mode="edit"] input[type="number"][data-field]::-webkit-outer-spin-button { margin: 0; appearance: none; -webkit-appearance: none; }
-.paper[data-mode="edit"] [data-field] { border-radius: 6px; transition: outline-color 130ms ease, box-shadow 130ms ease; }
-.paper[data-mode="edit"] [data-field]:hover:not(:focus) { background: transparent !important; outline: 1px solid color-mix(in srgb, var(--cv-accent-color, #1f2937) 55%, #aeb6bd); outline-offset: 2px; box-shadow: 0 0 0 4px color-mix(in srgb, var(--cv-accent-color, #1f2937) 10%, transparent); }
-.paper[data-mode="edit"] [data-field]:focus { background: transparent !important; outline: 1px solid color-mix(in srgb, var(--cv-accent-color, #1f2937) 65%, #76818b); outline-offset: 2px; box-shadow: 0 0 0 4px color-mix(in srgb, var(--cv-accent-color, #1f2937) 15%, transparent); }
+.paper[data-mode="edit"] [data-field] { border-radius: 9px; transition: outline-color 130ms ease, box-shadow 130ms ease; }
+.paper[data-mode="edit"] [data-field]:hover:not(:focus) { background: transparent !important; outline: 2px solid color-mix(in srgb, var(--cv-accent-color, #1f2937) 55%, #aeb6bd); outline-offset: 2px; box-shadow: 0 0 0 4px color-mix(in srgb, var(--cv-accent-color, #1f2937) 10%, transparent); }
+.paper[data-mode="edit"] [data-field]:focus { background: transparent !important; outline: 2px solid color-mix(in srgb, var(--cv-accent-color, #1f2937) 65%, #76818b); outline-offset: 2px; box-shadow: 0 0 0 4px color-mix(in srgb, var(--cv-accent-color, #1f2937) 15%, transparent); }
 .cv-date-range { display: flex; align-items: center; justify-content: flex-end; gap: 4px; flex: 0 0 auto; color: #707982; font-size: 11px; }
 .cv-inline-year { width: 58px; text-align: center; font-size: var(--cv-small-size, 10pt); }
 .cv-present { color: #707982; font-size: 11px; }
