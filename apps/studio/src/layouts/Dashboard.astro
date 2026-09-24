@@ -130,10 +130,6 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
         <p class="settings-status" id="settings-status" role="status" aria-live="polite">Saved with this document</p>
       </div>
     </details>
-    <div class="panel-footnote">
-      <span class="online-indicator" aria-hidden="true"></span>
-      <span>Saved on this device</span>
-    </div>
   </aside>
 
   <main class="work-area" aria-label="CV editor">
@@ -178,12 +174,6 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     </section>
   </aside>
 
-  <footer class="statusbar">
-    <span><span class="status-led" aria-hidden="true"></span>Studio ready</span>
-    <span class="status-path" title={workspaceId}>{workspaceId}</span>
-    <span class="revision-label" id="revision-label">Revision —</span>
-    <span class="status-help">Edit the paper or use the fields on the right</span>
-  </footer>
   <dialog class="comment-dialog" id="comment-dialog" aria-labelledby="comment-title">
     <form id="comment-form">
       <h2 id="comment-title">Leave a comment</h2>
@@ -298,7 +288,6 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
   const sectionList = document.querySelector<HTMLElement>('#section-list')!;
   const saveState = document.querySelector<HTMLElement>('#save-state')!;
   const saveLabel = document.querySelector<HTMLElement>('#save-label')!;
-  const revisionLabel = document.querySelector<HTMLElement>('#revision-label')!;
   const pasteboard = document.querySelector<HTMLElement>('#pasteboard')!;
   const printPageStyle = document.createElement('style');
   printPageStyle.id = 'active-paper-profile';
@@ -988,7 +977,6 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
         try { localStorage.setItem(groupStateKey, JSON.stringify(visibleGroups)); } catch { /* Accordions still work for this session. */ }
       });
     });
-    revisionLabel.textContent = `Revision ${cv.revision}`;
   }
 
   function renderPreview() {
@@ -1618,7 +1606,6 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
         cv.revision = baseRevision;
         cv.updatedAt = payload.document.updatedAt;
         savedCount = snapshotCount;
-        revisionLabel.textContent = `Revision ${baseRevision}`;
       }
       if (editCount === savedCount) setStatus('saved', 'All changes saved');
     } catch (error) {

@@ -25,13 +25,13 @@
 }
 
 * { box-sizing: border-box; }
-html, body { width: 100%; height: 100%; margin: 0; min-width: 320px; background: var(--app-background); color: var(--text-primary); }
+html, body { width: 100%; height: 100%; margin: 0; min-width: 320px; overflow-x: clip; background: var(--app-background); color: var(--text-primary); }
 body { overflow: hidden; }
 button, input, textarea, select { font: inherit; }
 button { color: inherit; }
 button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .eyebrow { color: var(--text-muted); font-size: 10px; font-weight: 650; letter-spacing: .11em; line-height: 1.3; }
-.studio { --editor-width: 360px; height: 100dvh; min-height: 0; overflow: hidden; display: grid; grid-template-rows: 54px minmax(0, 1fr) 27px; grid-template-columns: 250px minmax(380px, 1fr) 4px var(--editor-width); grid-template-areas: "top top top top" "structure work resize editor" "status status status status"; background: var(--app-background); }
+.studio { --editor-width: 360px; height: 100dvh; min-height: 0; overflow: hidden; display: grid; grid-template-rows: 54px minmax(0, 1fr); grid-template-columns: 250px minmax(380px, 1fr) 4px var(--editor-width); grid-template-areas: "top top top top" "structure work resize editor"; background: var(--app-background); }
 
 .topbar { grid-area: top; display: flex; align-items: center; gap: 18px; min-width: 0; padding: 0 18px; background: var(--panel-background); border-bottom: 1px solid var(--separator); }
 .brand { display: inline-flex; align-items: center; gap: 8px; color: var(--text-primary); text-decoration: none; }
@@ -44,7 +44,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .cv-select-wrap select { max-width: 190px; padding: 0; border: 0; background: transparent; color: var(--text-primary); font-weight: 560; }
 .cv-select-wrap select:disabled { color: var(--text-muted); }
 .save-state { display: flex; align-items: center; gap: 7px; margin-left: auto; color: var(--text-secondary); font-size: 11px; white-space: nowrap; }
-.save-dot, .status-led, .online-indicator { width: 7px; height: 7px; border-radius: 50%; background: var(--success); flex: 0 0 auto; }
+.save-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); flex: 0 0 auto; }
 .save-state[data-state="saving"] .save-dot, .save-state[data-state="loading"] .save-dot { background: var(--warning); }
 .save-state[data-state="error"] .save-dot, .save-state[data-state="conflict"] .save-dot { background: var(--danger); }
 .top-actions { display: flex; align-items: center; gap: 12px; }
@@ -69,8 +69,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .section-link:hover { background: var(--control-hover); color: var(--text-primary); }
 .section-link[aria-current="location"] { border-color: #46515d; background: #222930; color: var(--text-primary); }
 .section-number { width: 23px; color: var(--text-muted); font: 10px var(--font-mono); }
-.panel-footnote { display: flex; align-items: center; gap: 8px; margin-top: auto; padding: 13px 16px; border-top: 1px solid var(--separator); color: var(--text-muted); font-size: 10px; }
-.online-indicator { width: 6px; height: 6px; }
 .document-settings { flex: 0 0 auto; max-height: 48%; overflow: auto; border-top: 1px solid var(--separator); }
 .asset-library { flex: 0 0 auto; max-height: 40%; overflow: auto; border-top: 1px solid var(--separator); }
 .asset-library > summary { min-height: 42px; display: flex; align-items: center; gap: 8px; padding: 0 16px; color: var(--text-primary); font-size: 12px; font-weight: 600; cursor: pointer; list-style: none; }
@@ -276,7 +274,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .danger-text:hover { color: var(--danger); }
 .add-entry { width: 100%; min-height: 34px; margin-top: 13px; border: 1px dashed #414950; background: transparent; color: var(--text-secondary); font-size: 11px; cursor: pointer; }
 .add-entry:hover { border-color: var(--accent); color: var(--text-primary); }
-.revision-label { color: var(--text-secondary); font-family: var(--font-mono); }
 .quiet-message { color: var(--text-muted); font-size: 11px; line-height: 1.55; }
 
 /* Surface finish: clearer control edges and a calmer hierarchy around the paper. */
@@ -404,9 +401,6 @@ button, select { transition: background-color 120ms ease, border-color 120ms eas
 .settings-save-state[data-state="error"] { color: #f09b92; }
 .settings-save-state[data-state="saving"] { color: #d9c180; }
 .settings-save-state[data-state="saved"] { color: #8fcca6; }
-.statusbar { font-size: 11px; }
-.status-path { font-size: 10px; }
-.revision-label { font-size: 10px; }
 button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline-color: var(--accent-hover); }
 button:active { background-color: var(--control-hover); }
 ::selection { background: #315b98; color: #fff; }
@@ -415,12 +409,6 @@ button:active { background-color: var(--control-hover); }
   .comment-card:hover { border-color: #535e69; background: #22282f; }
 }
 
-.statusbar { grid-area: status; display: flex; align-items: center; gap: 16px; min-width: 0; padding: 0 13px; border-top: 1px solid var(--separator); background: var(--panel-background); color: var(--text-muted); font-size: 10px; }
-.statusbar > span:first-child { display: flex; align-items: center; gap: 7px; color: var(--text-secondary); }
-.status-led { width: 6px; height: 6px; }
-.status-path { color: var(--text-muted); font: 9px var(--font-mono); }
-.status-help { margin-left: auto; }
-
 /* Keep the editor edge flush and align both toolbars to the same control rhythm. */
 .topbar { gap: 16px; padding-inline: 16px; }
 .canvas-bar { padding-inline: 16px; }
@@ -428,7 +416,6 @@ button:active { background-color: var(--control-hover); }
 .topbar .button, .canvas-controls .button, .canvas-controls .icon-button { min-height: 32px; height: 32px; }
 .canvas-controls .icon-button { width: 32px; }
 .editor-panel { border-left: 0; }
-.statusbar .revision-label { color: #8f9aa6; font-size: 9px; }
 
 @media (max-width: 1120px) {
   .studio { --editor-width: 290px; grid-template-columns: 210px minmax(330px, 1fr) 4px var(--editor-width); }
@@ -436,7 +423,7 @@ button:active { background-color: var(--control-hover); }
   .version-label { display: none; }
 }
 @media (max-width: 880px) {
-  .studio { grid-template-columns: 190px minmax(0, 1fr); grid-template-rows: 54px minmax(0, 1fr) minmax(220px, 32vh) 27px; grid-template-areas: "top top" "work work" "structure editor" "status status"; }
+  .studio { grid-template-columns: 190px minmax(0, 1fr); grid-template-rows: 54px minmax(0, 1fr) minmax(220px, 32vh); grid-template-areas: "top top" "work work" "structure editor"; }
   .editor-resize { display: none; }
   .topbar { gap: 11px; padding: 0 10px; }
   .workspace-label { display: none; }
@@ -447,10 +434,10 @@ button:active { background-color: var(--control-hover); }
   .paper-stack { align-items: flex-start; }
 }
 @media (max-width: 560px) {
-  html, body { height: auto; min-height: 100%; overflow: auto; }
-  .studio { height: auto; min-height: 100dvh; overflow: visible; grid-template-columns: minmax(0, 1fr); grid-template-rows: 60px minmax(58vh, auto) minmax(150px, 24vh) minmax(320px, 50vh) 32px; grid-template-areas: "top" "work" "structure" "editor" "status"; }
+  html, body { height: auto; min-height: 100%; overflow-x: clip; overflow-y: auto; }
+  .studio { height: auto; min-height: 100dvh; overflow: visible; grid-template-columns: minmax(0, 1fr); grid-template-rows: 60px minmax(58vh, auto) minmax(150px, 24vh) minmax(320px, 50vh); grid-template-areas: "top" "work" "structure" "editor"; }
   .editor-panel { border-left: 0; }
-  .brand-name, .topbar-divider, .cv-select-wrap .eyebrow, .status-path { display: none; }
+  .brand-name, .topbar-divider, .cv-select-wrap .eyebrow { display: none; }
   .topbar { gap: 8px; padding: 0 8px; }
   .top-actions { margin-left: auto; }
   .top-actions .button { padding: 0 8px; font-size: 10px; }
@@ -465,9 +452,6 @@ button:active { background-color: var(--control-hover); }
   .editor-panel { min-height: 320px; }
   .section-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .panel-heading { padding: 13px 14px 10px; }
-  .panel-footnote { display: none; }
-  .statusbar { min-height: 32px; gap: 9px; padding: 0 8px; font-size: 10px; }
-  .status-help { display: none; }
   .canvas-controls { justify-content: space-between; gap: 4px; }
   .canvas-controls .icon-button { width: 44px; height: 44px; }
   .canvas-controls .button { min-height: 44px; padding-inline: 8px; font-size: 11px; }
@@ -496,7 +480,7 @@ button:active { background-color: var(--control-hover); }
   :root { color-scheme: light; }
   html, body { width: auto; height: auto; min-width: 0; min-height: 0; overflow: visible; background: #fff; color: #202329; }
   .studio { display: block; height: auto; min-height: 0; overflow: visible; background: #fff; }
-  .topbar, .structure-panel, .canvas-bar, .editor-panel, .statusbar { display: none !important; }
+  .topbar, .structure-panel, .canvas-bar, .editor-panel { display: none !important; }
   .work-area, .pasteboard { display: block; min-height: 0; overflow: visible; padding: 0; background: #fff; }
   .paper-stack { display: block; }
   .paper { width: var(--page-width-mm); height: var(--page-height-mm); margin: 0; transform: none; box-shadow: none; break-after: page; page-break-after: always; }
