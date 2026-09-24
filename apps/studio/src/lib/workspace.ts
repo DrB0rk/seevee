@@ -98,6 +98,7 @@ export interface PresentationSummary {
   widthMm: number;
   heightMm: number;
   edges: { top: number; right: number; bottom: number; left: number };
+  tokens: PresentationData['tokens'];
 }
 
 export interface CommentSummary {

@@ -35,6 +35,7 @@ export const GET: APIRoute = async () => {
         widthMm: geometry.widthMm,
         heightMm: geometry.heightMm,
         edges: data.page.edges ?? { top: 12, right: 12, bottom: 12, left: 12 },
+        tokens: data.tokens,
       };
       items.push({ ok: true, presentation: summary });
       continue;

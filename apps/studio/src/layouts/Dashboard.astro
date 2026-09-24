@@ -190,6 +190,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
   let commentRevision = 0;
   let presentationContext = { revision: 0, versionId: 'tplclassic0000000000000000001' };
   let pageProfile = { width: 210, height: 297, edges: { top: 18, right: 18, bottom: 18, left: 18 } };
+  const classicStyle = { fontFamily: 'Inter, system-ui, sans-serif', baseFontSize: 11, lineHeight: 1.4, accentColor: '#1f2937' };
   let editingThreadId: string | null = null;
   let movingCommentId: string | null = null;
   let draggingComment: { id: string; pointerId: number; moved: boolean } | null = null;
@@ -197,6 +198,27 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
 
   const escapeHtml = (value: unknown) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!);
   const sectionIdFor = (type: string) => cv?.data.sectionOrder.find((id) => cv?.data.sections[id]?.type === type) ?? '';
+
+  function applyDocumentStyle(tokens?: Record<string, { type: string; value: unknown }>) {
+    const token = (name: string) => tokens?.[name]?.value;
+    const rawFamily = token('font-family');
+    const fontFamily = typeof rawFamily === 'string'
+      ? rawFamily.replace(/[;{}<>]/g, '').slice(0, 120) || classicStyle.fontFamily
+      : classicStyle.fontFamily;
+    const rawSize = token('base-font-size');
+    const baseFontSize = typeof rawSize === 'number' && rawSize >= 9 && rawSize <= 14 ? rawSize : classicStyle.baseFontSize;
+    const rawLineHeight = token('line-height');
+    const lineHeight = typeof rawLineHeight === 'number' && rawLineHeight >= 1 && rawLineHeight <= 2 ? rawLineHeight : classicStyle.lineHeight;
+    const rawAccent = token('accent-color');
+    const accentColor = typeof rawAccent === 'string' && /^#[\da-f]{6}(?:[\da-f]{2})?$/i.test(rawAccent) ? rawAccent : classicStyle.accentColor;
+    paper.style.setProperty('--cv-font-family', fontFamily);
+    paper.style.setProperty('--cv-font-size', `${baseFontSize}pt`);
+    paper.style.setProperty('--cv-name-size', `${baseFontSize * 2}pt`);
+    paper.style.setProperty('--cv-section-size', `${baseFontSize * 1.2}pt`);
+    paper.style.setProperty('--cv-small-size', `${baseFontSize - 1}pt`);
+    paper.style.setProperty('--cv-line-height', String(lineHeight));
+    paper.style.setProperty('--cv-accent-color', accentColor);
+  }
 
   function setStatus(state: 'loading' | 'saving' | 'saved' | 'error' | 'conflict', message: string) {
     saveState.dataset.state = state;
@@ -948,9 +970,10 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     savedCount = 0;
     presentationContext = { revision: 0, versionId: 'tplclassic0000000000000000001' };
     pageProfile = { width: 210, height: 297, edges: { top: 18, right: 18, bottom: 18, left: 18 } };
+    applyDocumentStyle();
     try {
       const response = await fetch('/api/presentation');
-    const items = await response.json() as Array<{ ok: true; presentation: { cvId: string; revision: number; versionId: string; orientation: 'portrait' | 'landscape'; widthMm: number; heightMm: number; edges: { top: number; right: number; bottom: number; left: number } } } | { ok: false }>;
+      const items = await response.json() as Array<{ ok: true; presentation: { cvId: string; revision: number; versionId: string; orientation: 'portrait' | 'landscape'; widthMm: number; heightMm: number; edges: { top: number; right: number; bottom: number; left: number }; tokens: Record<string, { type: string; value: unknown }> } } | { ok: false }>;
       const match = items.find((item) => item.ok && item.presentation.cvId === cv!.id);
       if (match?.ok) {
         const { presentation } = match;
@@ -960,6 +983,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
           height: presentation.orientation === 'landscape' ? presentation.widthMm : presentation.heightMm,
           edges: presentation.edges,
         };
+        applyDocumentStyle(presentation.tokens);
       }
     } catch { /* Keep the default render context if presentation discovery is unavailable. */ }
     commentsDocument = null;
