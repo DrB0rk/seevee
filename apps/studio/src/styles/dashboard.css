@@ -35,7 +35,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 
 .topbar { grid-area: top; display: flex; align-items: center; gap: 18px; min-width: 0; padding: 0 18px; background: var(--panel-background); border-bottom: 1px solid var(--separator); }
 .brand { display: inline-flex; align-items: center; gap: 8px; color: var(--text-primary); text-decoration: none; }
-.brand-mark { display: grid; place-items: center; width: 28px; height: 28px; background: var(--accent); color: #0f1113; font-family: Georgia, serif; font-size: 20px; font-weight: 700; }
+.brand-mark { display: block; width: 28px; height: 28px; flex: 0 0 auto; border-radius: 5px; object-fit: contain; }
 .brand-name { font-size: 14px; font-weight: 680; letter-spacing: -.035em; }
 .topbar-divider, .control-divider { width: 1px; height: 25px; background: var(--separator); flex: 0 0 auto; }
 .workspace-label, .cv-select-wrap { min-width: 110px; display: flex; flex-direction: column; gap: 2px; }
@@ -281,7 +281,6 @@ button, select, input, textarea { accent-color: var(--accent); }
 button, select { transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease; }
 .topbar { box-shadow: 0 1px 0 #ffffff05; }
 .brand { gap: 9px; }
-.brand-mark { border-radius: 4px; }
 .brand-name { letter-spacing: -.025em; }
 .topbar-divider { height: 28px; }
 .workspace-label strong, .cv-select-wrap select { font-size: 13px; }
