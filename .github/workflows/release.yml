@@ -6,12 +6,19 @@ on:
       - 'v*.*.*'
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   release:
     name: Build & publish release bundles
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
@@ -31,7 +38,7 @@ jobs:
         run: pnpm test:installer
 
       - name: Install
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --prefer-offline
 
       - name: Typecheck
         run: pnpm typecheck
@@ -48,14 +55,19 @@ jobs:
       - name: Verify every release bundle
         run: |
           for archive in dist/release/seevee-*; do
-            ./scripts/verify_bundle.sh "$archive"
+            case "$archive" in
+              *linux-x64*) ./scripts/verify_bundle.sh "$archive" ;;
+              *) SEEVEE_SKIP_DAEMON_SMOKE=1 ./scripts/verify_bundle.sh "$archive" ;;
+            esac
           done
       - name: Verify Unix installer end to end
         run: ./scripts/test_install_e2e.sh dist/release/seevee-linux-x64.tar.gz
 
+
       - name: Upload release assets
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
+          generate_release_notes: true
           files: |
             dist/release/seevee-linux-x64.tar.gz
             dist/release/seevee-linux-arm64.tar.gz

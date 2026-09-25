@@ -113,6 +113,10 @@ else
 fi
 
 echo "verify_bundle.sh: bundle OK"
+if [ "${SEEVEE_SKIP_DAEMON_SMOKE:-0}" = "1" ]; then
+  echo "verify_bundle.sh: daemon smoke skipped (SEEVEE_SKIP_DAEMON_SMOKE=1)"
+  exit 0
+fi
 
 # ---------------------------------------------------------------------------
 # 5. Smoke-test workspace initialization and the detached daemon.

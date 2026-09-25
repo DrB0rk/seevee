@@ -15,13 +15,19 @@ mkdir -p "$OUTPUT_DIR"
 
 PLATFORMS="linux-x64 linux-arm64 darwin-x64 darwin-arm64 windows-x64"
 
+first=1
 for P in $PLATFORMS; do
   case "$P" in
     windows-x64) OUT="$OUTPUT_DIR/seevee-${P}.zip" ;;
     *)           OUT="$OUTPUT_DIR/seevee-${P}.tar.gz" ;;
   esac
   echo "==> $P -> $OUT" >&2
-  ./scripts/bundle.sh "$P" "$OUT"
+  if [ "$first" -eq 1 ]; then
+    ./scripts/bundle.sh "$P" "$OUT"
+    first=0
+  else
+    SEEVEE_SKIP_BUILD=1 ./scripts/bundle.sh "$P" "$OUT"
+  fi
 done
 
 # ---------------------------------------------------------------------------

@@ -85,35 +85,40 @@ fi
 # Use a full install first so devDependencies (typescript) are available
 # for the build step. Production-only resolution is done later when staging
 # the runtime's node_modules.
-echo "bundle.sh: installing deps (with devDeps for build)..." >&2
-pnpm install --frozen-lockfile --silent
+if [ "${SEEVEE_SKIP_BUILD:-0}" = "1" ]; then
+  echo "bundle.sh: reusing existing workspace build (SEEVEE_SKIP_BUILD=1)..." >&2
+else
+  # Use a full install first so devDependencies (typescript) are available
+  # for the build step. Production-only resolution is done later when staging
+  # the runtime's node_modules.
+  echo "bundle.sh: installing deps (with devDeps for build)..." >&2
+  pnpm install --frozen-lockfile --prefer-offline --silent
 
-# Build only the runtime packages we ship so we don't trip on sibling
-# packages that are mid-implementation.
-echo "bundle.sh: building @seevee packages..." >&2
-filter_args=""
-for pkg in $RUNTIME_PKGS; do
-  filter_args="$filter_args --filter=@seevee/$pkg"
-done
-# shellcheck disable=SC2086
-pnpm -r $filter_args run build
-pnpm --filter @seevee/studio run build
+  # Build only the runtime packages we ship so we don't trip on sibling
+  # packages that are mid-implementation.
+  echo "bundle.sh: building @seevee packages..." >&2
+  filter_args=""
+  for pkg in $RUNTIME_PKGS; do
+    filter_args="$filter_args --filter=@seevee/$pkg"
+  done
+  # shellcheck disable=SC2086
+  pnpm -r $filter_args run build
+  pnpm --filter @seevee/studio run build
 
-# Packages that ship with `noEmit: true` (template-sdk, renderer, and
-# optionally @seevee/export when SEEVEE_INCLUDE_EXPORT=1) need an explicit
-# compile pass that emits JS, so dist/ exists in the bundle. Agent-runtime
-# builds through its dedicated tsconfig.build.json.
-EMIT_PKGS="template-sdk renderer"
-if [ "${SEEVEE_INCLUDE_EXPORT:-0}" = "1" ]; then
-  EMIT_PKGS="$EMIT_PKGS export"
-fi
-for pkg in $EMIT_PKGS; do
-  pkg_dir="$ROOT_DIR/packages/$pkg"
-  if [ -d "$pkg_dir" ] && [ ! -f "$pkg_dir/dist/index.js" ]; then
-    echo "bundle.sh: emitting $pkg/dist (tsc --noEmit false)..." >&2
-    (cd "$pkg_dir" && node_modules/.bin/tsc -p tsconfig.json --noEmit false)
+  # Packages that ship with `noEmit: true` need an explicit compile pass that
+  # emits JS. Agent-runtime builds through tsconfig.build.json.
+  EMIT_PKGS="template-sdk renderer"
+  if [ "${SEEVEE_INCLUDE_EXPORT:-0}" = "1" ]; then
+    EMIT_PKGS="$EMIT_PKGS export"
   fi
-done
+  for pkg in $EMIT_PKGS; do
+    pkg_dir="$ROOT_DIR/packages/$pkg"
+    if [ -d "$pkg_dir" ] && [ ! -f "$pkg_dir/dist/index.js" ]; then
+      echo "bundle.sh: emitting $pkg/dist (tsc --noEmit false)..." >&2
+      (cd "$pkg_dir" && node_modules/.bin/tsc -p tsconfig.json --noEmit false)
+    fi
+  done
+fi
 
 # ---------------------------------------------------------------------------
 # 4. Stage platform launchers
@@ -276,7 +281,7 @@ cp -R "$ROOT_DIR/apps/studio/dist" "$WORK/apps/studio/"
 # Optional platform binaries (Claude SDK, Sharp, esbuild, Rollup, Lightning CSS)
 # are build-time or user-agent-provided; Seevee launches the user's installed
 # agent executables and does not need those native packages in the runtime.
-(cd "$WORK" && pnpm install --prod --frozen-lockfile --no-optional --silent)
+(cd "$WORK" && pnpm install --prod --frozen-lockfile --no-optional --prefer-offline --silent)
 if [ -d "$WORK/node_modules" ]; then
   cp -R "$WORK/node_modules/." "$RUNTIME/node_modules/"
 fi

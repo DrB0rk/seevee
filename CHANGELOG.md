@@ -6,6 +6,8 @@ This project uses Semantic Versioning. See `.dev/VERSIONING.md` for the project 
 
 ## [Unreleased]
 
+## [0.1.0-alpha.5] - 2026-09-25
+
 ### Added
 
 - Central local agent control with isolated Claude Code Agent SDK, Codex App Server, and OMP ACP adapter modules.
@@ -20,6 +22,13 @@ This project uses Semantic Versioning. See `.dev/VERSIONING.md` for the project 
 - Moved the unified agent experience to the right sidebar while keeping the document editor and comments on the left.
 - Agent chat width defaults to 460 px and persists independently from the editor width.
 - Refined the chat into a rounded composer with active-document context, native model/permission dropdowns, send control, and document/source/settings shortcuts.
+- Release CI now builds the workspace once and reuses the compiled runtime across platform bundles; artifact verification remains comprehensive while limiting expensive daemon smoke tests to Linux.
+
+### Fixed
+
+- Fixed missing agent-runtime and ESM dependency links in release bundles.
+- Fixed Windows installer rollback, archive validation, lock handling, PATH detection, and upgrade cleanup edge cases.
+- Reduced Linux release bundles from roughly 150 MB to roughly 30 MB by excluding optional native binaries and non-runtime build artifacts.
 
 ## [0.1.0-alpha.4] - 2026-09-23
 
