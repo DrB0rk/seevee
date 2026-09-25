@@ -37,7 +37,7 @@ jobs:
         run: test "${GITHUB_REF_NAME#v}" = "$(cat VERSION)"
 
       - name: Install
-        run: pnpm install --frozen-lockfile --prefer-offline
+        run: pnpm install --frozen-lockfile --prefer-offline --config.ignore-scripts=false
 
       - name: Run installer contract tests
         run: pnpm test:installer

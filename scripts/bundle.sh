@@ -92,7 +92,7 @@ else
   # for the build step. Production-only resolution is done later when staging
   # the runtime's node_modules.
   echo "bundle.sh: installing deps (with devDeps for build)..." >&2
-  pnpm install --frozen-lockfile --prefer-offline --silent
+  pnpm install --frozen-lockfile --prefer-offline --config.ignore-scripts=false --silent
 
   # Build only the runtime packages we ship so we don't trip on sibling
   # packages that are mid-implementation.
@@ -281,7 +281,7 @@ cp -R "$ROOT_DIR/apps/studio/dist" "$WORK/apps/studio/"
 # Optional platform binaries (Claude SDK, Sharp, esbuild, Rollup, Lightning CSS)
 # are build-time or user-agent-provided; Seevee launches the user's installed
 # agent executables and does not need those native packages in the runtime.
-(cd "$WORK" && pnpm install --prod --frozen-lockfile --no-optional --prefer-offline --silent)
+(cd "$WORK" && pnpm install --prod --frozen-lockfile --no-optional --prefer-offline --config.ignore-scripts=false --silent)
 if [ -d "$WORK/node_modules" ]; then
   cp -R "$WORK/node_modules/." "$RUNTIME/node_modules/"
 fi

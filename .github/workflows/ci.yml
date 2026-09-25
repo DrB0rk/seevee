@@ -28,7 +28,7 @@ jobs:
       - name: Approve native build scripts
         run: pnpm approve-builds --all
       - name: Install
-        run: pnpm install --frozen-lockfile --prefer-offline
+        run: pnpm install --frozen-lockfile --prefer-offline --config.ignore-scripts=false
       - name: Typecheck
         run: pnpm typecheck
       - name: Generate JSON Schemas
