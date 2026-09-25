@@ -2,3 +2,7 @@ packages:
   - 'apps/*'
   - 'packages/*'
   - '!templates'
+
+onlyBuiltDependencies:
+  - esbuild
+  - sharp

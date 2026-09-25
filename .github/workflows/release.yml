@@ -34,11 +34,11 @@ jobs:
       - name: Verify tag matches VERSION
         run: test "${GITHUB_REF_NAME#v}" = "$(cat VERSION)"
 
-      - name: Run installer contract tests
-        run: pnpm test:installer
-
       - name: Install
         run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: Run installer contract tests
+        run: pnpm test:installer
 
       - name: Typecheck
         run: pnpm typecheck

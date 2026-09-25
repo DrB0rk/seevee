@@ -15,7 +15,7 @@ import { loadWorkspaceContext, NoWorkspaceError } from '../../lib/workspace.js';
 
 export const prerender = false;
 
-const APP_VERSION = process.env.SEEVEE_VERSION ?? '0.1.0-alpha.6';
+const APP_VERSION = process.env.SEEVEE_VERSION ?? '0.1.0-alpha.7';
 
 interface HealthPayload {
   ok: true;

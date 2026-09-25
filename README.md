@@ -17,7 +17,7 @@ Seevee is a local, agent-driven CV studio.
 
 Give an agent source material, let it normalize your information into structured JSON, and render that information through interchangeable Astro templates. The fixed Seevee dashboard gives you physical-page preview, comments, provenance, history, diagnostics, and PDF export without dictating what your CV has to look like.
 
-> **Project status:** Seevee `v0.1.0-alpha.6` is available as a GitHub prerelease. The local dashboard now includes a resizable provider-neutral agent chat for installed Claude Code, Codex, and OMP processes, Settings-driven agent selection/configuration, the direct document editor, live tool/approval status, workspace validation, and browser print-to-PDF export. Template-driven rendering, server-side PDF export, and image recognition remain incomplete.
+> **Project status:** Seevee `v0.1.0-alpha.7` is available as a GitHub prerelease. The local dashboard now includes a resizable provider-neutral agent chat for installed Claude Code, Codex, and OMP processes, Settings-driven agent selection/configuration, the direct document editor, live tool/approval status, workspace validation, and browser print-to-PDF export. Template-driven rendering, server-side PDF export, and image recognition remain incomplete.
 
 ## The idea
 
@@ -75,7 +75,7 @@ seevee init
 
 <code>seevee init</code> is non-interactive. It will scaffold the directory, start the local dashboard server in the background, health-check it, open the browser, and return terminal control. The dashboard can then start a detected Claude Code, Codex, or OMP session from the agent chat.
 
-See the [v0.1.0-alpha.6 prerelease](https://github.com/DrB0rk/seevee/releases/tag/v0.1.0-alpha.6) for platform bundles and checksums.
+See the [v0.1.0-alpha.7 prerelease](https://github.com/DrB0rk/seevee/releases/tag/v0.1.0-alpha.7) for platform bundles and checksums.
 
 ## Workspace model
 
@@ -250,4 +250,4 @@ See [docs/workspace-agent/CV_GUIDANCE.md](docs/workspace-agent/CV_GUIDANCE.md).
 
 ---
 
-Seevee is currently at **0.1.0-alpha.6**. See [`.dev/IMPLEMENTATION_STATUS.md`](.dev/IMPLEMENTATION_STATUS.md) for the exact implemented-versus-specified status.
+Seevee is currently at **0.1.0-alpha.7**. See [`.dev/IMPLEMENTATION_STATUS.md`](.dev/IMPLEMENTATION_STATUS.md) for the exact implemented-versus-specified status.
