@@ -100,13 +100,14 @@ if ([string]::IsNullOrWhiteSpace($Version) -or $Version -eq 'latest') {
   $ApiBase = "https://api.github.com/repos/$Repository"
   $Headers = @{ Accept = 'application/vnd.github+json'; 'User-Agent' = 'seevee-installer' }
   try {
-    $Release = Invoke-RestMethod -Uri "$ApiBase/releases/latest" -Headers $Headers -TimeoutSec 15 -ErrorAction Stop
-    $Version = [string]$Release.tag_name
-  } catch {
     $Releases = @(Invoke-RestMethod -Uri "$ApiBase/releases?per_page=20" -Headers $Headers -TimeoutSec 15 -ErrorAction Stop)
-    $Release = $Releases | Where-Object { -not $_.draft } | Select-Object -First 1
+    $PublicReleases = @($Releases | Where-Object { -not $_.draft })
+    $Release = $PublicReleases | Where-Object { -not $_.prerelease } | Select-Object -First 1
+    if ($null -eq $Release) { $Release = $PublicReleases | Select-Object -First 1 }
     if ($null -eq $Release) { throw 'Could not resolve a public Seevee release. Specify -Version to choose one.' }
     $Version = [string]$Release.tag_name
+  } catch {
+    throw 'Could not look up a public Seevee release.'
   }
 }
 $Version = $Version -replace '^v', ''

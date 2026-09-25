@@ -103,4 +103,5 @@ assert "creates launcher temp files with CreateNew" sh -c "grep -q 'Guid.*NewGui
 assert "matches PATH entries exactly" grep -q 'PathEntries -notcontains' "$SCRIPT"
 assert "prunes superseded versions" grep -q "Get-ChildItem.*-Filter 'v\*'" "$SCRIPT"
 assert "checks the bundled agent runtime" grep -q 'agent-runtime\\dist\\index.js' "$SCRIPT"
+assert "uses release list without expected 404" sh -c "grep -q 'releases?per_page=20' '$SCRIPT' && ! grep -q 'releases/latest' '$SCRIPT'"
 echo "All install.ps1 static tests passed"

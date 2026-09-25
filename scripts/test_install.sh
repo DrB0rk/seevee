@@ -46,6 +46,7 @@ assert "requires absolute install paths" sh -c "grep -q 'must be an absolute pat
 assert "creates launcher temp file with mktemp" sh -c "grep -q 'mktemp.*seevee' '$SCRIPT'"
 assert "prunes superseded versions after activation" sh -c "grep -q 'old_bundle' '$SCRIPT'"
 assert "checks the bundled agent runtime" sh -c "grep -q 'runtime/agent-runtime/dist/index.js' '$SCRIPT'"
+assert "uses release list without expected 404" sh -c "grep -q 'releases?per_page=20' '$SCRIPT' && ! grep -q 'releases/latest' '$SCRIPT'"
 
 if [ $fails -gt 0 ]; then
   echo "$fails test(s) failed"

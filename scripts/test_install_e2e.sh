@@ -18,7 +18,7 @@ PLATFORM='linux-x64'
 VERSION_ENTRY="$(tar -tzf "$ARCHIVE" | sed -n '/\/VERSION$/ { p; q; }')"
 VERSION="$(tar -xOf "$ARCHIVE" "$VERSION_ENTRY" | tr -d '\r\n')"
 [ -n "$VERSION" ] || { echo 'could not read bundle VERSION' >&2; exit 1; }
-export VERSION
+export FAKE_RELEASE_VERSION="$VERSION"
 
 FAKE_BIN="$WORK/fake-bin"
 mkdir -p "$FAKE_BIN"
@@ -37,9 +37,6 @@ for arg in "$@"; do
   esac
 done
 case "$url" in
-  *'/releases/latest'*)
-    printf '%s\n' '{"tag_name":"v'"$VERSION"'","draft":false,"prerelease":true}' > "$output"
-    ;;
   *'/SHA256SUMS'*)
     cp "$FAKE_SUMS_FILE" "$output"
     ;;
@@ -48,6 +45,9 @@ case "$url" in
       if [ "$arg" = '--dump-header' ]; then exit 1; fi
     done
     cp "$FAKE_ARCHIVE_FILE" "$output"
+    ;;
+  *'/releases'*)
+    printf '%s\n' '[{"tag_name":"v'"$FAKE_RELEASE_VERSION"'","draft":false,"prerelease":true}]' > "$output"
     ;;
   *) exit 1 ;;
 esac
@@ -70,8 +70,9 @@ BIN_ROOT="$WORK/bin"
 export SEEVE_INSTALL_DIR="$INSTALL_ROOT"
 export SEEVE_BIN_DIR="$BIN_ROOT"
 
-sh "$ROOT_DIR/$INSTALLER" --version "$VERSION" > "$WORK/install.log" 2>&1
+sh "$ROOT_DIR/$INSTALLER" > "$WORK/install.log" 2>&1
 "$BIN_ROOT/seevee" --version | grep -q "\"cli\": \"$VERSION\""
+! grep -q '404' "$WORK/install.log"
 [ ! -e "$INSTALL_ROOT/.install.lock" ]
 printf 'normal install OK\n'
 

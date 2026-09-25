@@ -125,22 +125,16 @@ step 'Finding a release'
 if [ -z "$VERSION" ] || [ "$VERSION" = 'latest' ]; then
   RELEASE_JSON="$TMP_DIR/release.json"
   RELEASE_API="https://api.github.com/repos/${REPOSITORY}"
-  if ! curl_secure --silent --show-error \
+  curl_secure --silent \
     --header 'Accept: application/vnd.github+json' \
     --header 'User-Agent: seevee-installer' \
-    "$RELEASE_API/releases/latest" -o "$RELEASE_JSON"; then
-    curl_secure --silent --show-error \
-      --header 'Accept: application/vnd.github+json' \
-      --header 'User-Agent: seevee-installer' \
-      "$RELEASE_API/releases?per_page=20" -o "$RELEASE_JSON" \
-      || fail 'Could not look up a public Seevee release.'
-  fi
+    "$RELEASE_API/releases?per_page=20" -o "$RELEASE_JSON" \
+    || fail 'Could not look up a public Seevee release.'
   VERSION="$(node -e '
     const fs = require("node:fs");
     const data = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
-    const release = Array.isArray(data)
-      ? (data.find((item) => !item.draft && !item.prerelease) ?? data.find((item) => !item.draft))
-      : data;
+    const releases = Array.isArray(data) ? data.filter((item) => !item.draft) : [];
+    const release = releases.find((item) => !item.prerelease) ?? releases[0];
     if (typeof release?.tag_name !== "string") process.exit(1);
     process.stdout.write(release.tag_name.replace(/^v/, ""));
   ' "$RELEASE_JSON")" || fail 'GitHub returned no usable Seevee release.'
