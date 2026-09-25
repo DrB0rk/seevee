@@ -59,7 +59,7 @@ case "$ARCHIVE" in
     ;;
   *.zip)
     if command -v unzip >/dev/null 2>&1; then
-      (cd "$WORK" && unzip -q "$ARCHIVE")
+      unzip -q "$ARCHIVE" -d "$WORK"
     elif command -v python3 >/dev/null 2>&1; then
       python3 - "$ARCHIVE" "$WORK" <<'PY'
 import sys

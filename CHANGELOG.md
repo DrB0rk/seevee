@@ -6,7 +6,7 @@ This project uses Semantic Versioning. See `.dev/VERSIONING.md` for the project 
 
 ## [Unreleased]
 
-## [0.1.0-alpha.11] - 2026-09-25
+## [0.1.0-alpha.12] - 2026-09-25
 
 ### Added
 
@@ -32,6 +32,7 @@ This project uses Semantic Versioning. See `.dev/VERSIONING.md` for the project 
 - Aligned CI and release installs with pnpm 11.18.0 so the committed lockfile can be consumed with `--frozen-lockfile`.
 - Configured pnpm 11 `allowBuilds` for the required native tools and moved dependency installation ahead of package scripts in release CI.
 - Applied the same pnpm build policy to the synthetic runtime resolver used for release bundles.
+- Fixed Windows bundle verification to extract archives using an absolute destination path.
 
 ## [0.1.0-alpha.4] - 2026-09-23
 
