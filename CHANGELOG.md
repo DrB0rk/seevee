@@ -6,7 +6,7 @@ This project uses Semantic Versioning. See `.dev/VERSIONING.md` for the project 
 
 ## [Unreleased]
 
-## [0.1.0-alpha.5] - 2026-09-25
+## [0.1.0-alpha.6] - 2026-09-25
 
 ### Added
 
@@ -29,6 +29,7 @@ This project uses Semantic Versioning. See `.dev/VERSIONING.md` for the project 
 - Fixed missing agent-runtime and ESM dependency links in release bundles.
 - Fixed Windows installer rollback, archive validation, lock handling, PATH detection, and upgrade cleanup edge cases.
 - Reduced Linux release bundles from roughly 150 MB to roughly 30 MB by excluding optional native binaries and non-runtime build artifacts.
+- Aligned CI and release installs with pnpm 11.18.0 so the committed lockfile can be consumed with `--frozen-lockfile`.
 
 ## [0.1.0-alpha.4] - 2026-09-23
 
