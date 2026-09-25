@@ -39,6 +39,13 @@ assert "writes launcher script"  sh -c "grep -q 'LAUNCHER_TMP' '$SCRIPT'"
 assert "verifies run"            sh -c "grep -q -- '--version' '$SCRIPT'"
 assert "no npm install"          sh -c "! grep -q 'npm install.*seevee' '$SCRIPT'"
 assert "checks PATH before hint" sh -c "grep -q 'PATH' '$SCRIPT'"
+assert "enforces HTTPS-only transport" sh -c "grep -q -- '--proto' '$SCRIPT' && grep -q -- '--proto-redir' '$SCRIPT'"
+assert "validates archive members and symlinks" sh -c "grep -q 'validate_archive' '$SCRIPT' && grep -q 'archive-members' '$SCRIPT'"
+assert "locks concurrent installations" sh -c "grep -q 'install.lock' '$SCRIPT' && grep -q 'Another Seevee installation' '$SCRIPT'"
+assert "requires absolute install paths" sh -c "grep -q 'must be an absolute path' '$SCRIPT'"
+assert "creates launcher temp file with mktemp" sh -c "grep -q 'mktemp.*seevee' '$SCRIPT'"
+assert "prunes superseded versions after activation" sh -c "grep -q 'old_bundle' '$SCRIPT'"
+assert "checks the bundled agent runtime" sh -c "grep -q 'runtime/agent-runtime/dist/index.js' '$SCRIPT'"
 
 if [ $fails -gt 0 ]; then
   echo "$fails test(s) failed"

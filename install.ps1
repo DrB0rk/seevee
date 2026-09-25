@@ -8,6 +8,23 @@ $ErrorActionPreference = 'Stop'
 $Repository = 'DrB0rk/seevee'
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 Add-Type -AssemblyName System.Net.Http
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+function Assert-ArchiveEntries([string]$Path, [string]$Root) {
+  $archive = [System.IO.Compression.ZipFile]::OpenRead($Path)
+  try {
+    foreach ($entry in $archive.Entries) {
+      $name = $entry.FullName.Replace('\', '/')
+      if ([string]::IsNullOrWhiteSpace($name) -or $name.StartsWith('/') -or $name -match '(^|/)\.\.(/|$)' -or ($name -ne $Root -and -not $name.StartsWith($Root + '/'))) {
+        throw "Unsafe archive entry: $($entry.FullName)"
+      }
+      $mode = (([uint32]$entry.ExternalAttributes) -shr 16) -band 0xF000
+      if ($mode -eq 0xA000) { throw "Archive symlink entries are not allowed: $($entry.FullName)" }
+    }
+  } finally {
+    $archive.Dispose()
+  }
+}
 
 function Write-Step([string]$Message) {
   Write-Host "◆ " -NoNewline -ForegroundColor Cyan
@@ -22,6 +39,7 @@ function Write-Success([string]$Message) {
 function Download-File([string]$Uri, [string]$Path, [string]$Activity) {
   $Client = [System.Net.Http.HttpClient]::new()
   $Client.Timeout = [TimeSpan]::FromMinutes(5)
+  $Client.DefaultRequestHeaders.UserAgent.ParseAdd('seevee-installer')
   $Response = $null
   $InputStream = $null
   $OutputStream = $null
@@ -31,6 +49,8 @@ function Download-File([string]$Uri, [string]$Path, [string]$Activity) {
       [System.Net.Http.HttpCompletionOption]::ResponseHeadersRead
     ).GetAwaiter().GetResult()
     $Response.EnsureSuccessStatusCode() | Out-Null
+    $FinalUri = $Response.RequestMessage.RequestUri
+    if ($null -ne $FinalUri -and $FinalUri.Scheme -ne 'https') { throw "Refusing insecure redirect to $($FinalUri.Scheme)://." }
     $Total = $Response.Content.Headers.ContentLength
     $InputStream = $Response.Content.ReadAsStreamAsync().GetAwaiter().GetResult()
     $OutputStream = [System.IO.File]::Create($Path)
@@ -77,18 +97,39 @@ Write-Success "$Platform · $(& node --version)"
 
 Write-Step 'Finding a release'
 if ([string]::IsNullOrWhiteSpace($Version) -or $Version -eq 'latest') {
-  $Releases = @(Invoke-RestMethod -Uri "https://api.github.com/repos/$Repository/releases?per_page=1" -TimeoutSec 15)
-  if ($Releases.Count -gt 0) { $Version = [string]$Releases[0].tag_name }
+  $ApiBase = "https://api.github.com/repos/$Repository"
+  $Headers = @{ Accept = 'application/vnd.github+json'; 'User-Agent' = 'seevee-installer' }
+  try {
+    $Release = Invoke-RestMethod -Uri "$ApiBase/releases/latest" -Headers $Headers -TimeoutSec 15 -ErrorAction Stop
+    $Version = [string]$Release.tag_name
+  } catch {
+    $Releases = @(Invoke-RestMethod -Uri "$ApiBase/releases?per_page=20" -Headers $Headers -TimeoutSec 15 -ErrorAction Stop)
+    $Release = $Releases | Where-Object { -not $_.draft } | Select-Object -First 1
+    if ($null -eq $Release) { throw 'Could not resolve a public Seevee release. Specify -Version to choose one.' }
+    $Version = [string]$Release.tag_name
+  }
 }
 $Version = $Version -replace '^v', ''
 if ([string]::IsNullOrWhiteSpace($Version)) { throw 'Could not resolve a GitHub Release. Specify -Version to choose one.' }
-if ($Version -notmatch '^[A-Za-z0-9._-]+$') { throw "Invalid release version: $Version" }
+if ($Version -notmatch '^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$') { throw "Invalid release version: $Version" }
 Write-Success "Seevee v$Version"
 $ReleaseUrl = "https://github.com/$Repository/releases/download/v$Version"
 
 $TempRoot = [System.IO.Path]::GetTempPath()
-$TempDir = Join-Path $TempRoot ([System.IO.Path]::GetRandomFileName())
-New-Item -ItemType Directory -Path $TempDir | Out-Null
+$TempDir = $null
+for ($Attempt = 0; $Attempt -lt 5 -and $null -eq $TempDir; $Attempt++) {
+  $Candidate = Join-Path $TempRoot ([System.IO.Path]::GetRandomFileName())
+  try {
+    New-Item -ItemType Directory -Path $Candidate -ErrorAction Stop | Out-Null
+    $TempDir = $Candidate
+  } catch {
+    $TempDir = $null
+  }
+}
+if ($null -eq $TempDir) { throw 'Could not create a private temporary directory.' }
+$LockDir = $null
+$LauncherTemp = $null
+$LockAcquired = $false
 $TempArchive = Join-Path $TempDir $ArchiveName
 $TempSums = Join-Path $TempDir 'SHA256SUMS'
 
@@ -109,8 +150,13 @@ try {
   $InstallBase = $env:LOCALAPPDATA
   if ([string]::IsNullOrWhiteSpace($InstallBase)) { $InstallBase = Join-Path $env:USERPROFILE 'AppData\Local' }
   $LauncherDir = Join-Path $InstallBase 'seevee'
+  New-Item -ItemType Directory -Path $LauncherDir -Force -ErrorAction Stop | Out-Null
+  $LockDir = Join-Path $LauncherDir '.install.lock'
+  New-Item -ItemType Directory -Path $LockDir -ErrorAction Stop | Out-Null
+  $LockAcquired = $true
   $InstallDir = Join-Path $LauncherDir "v$Version"
   $BundleDirName = "seevee-$Platform"
+  Assert-ArchiveEntries $TempArchive $BundleDirName
   $BundleDir = Join-Path $InstallDir $BundleDirName
   $StageDir = Join-Path $TempDir 'unpacked'
 
@@ -123,6 +169,7 @@ try {
   if (-not (Test-Path (Join-Path $StagedBundle 'bin\seevee.cmd'))) { throw 'The Windows launcher is missing from the release bundle.' }
   if (-not (Test-Path (Join-Path $StagedBundle 'runtime\cli\dist\cli.js'))) { throw 'The Seevee CLI is missing from the release bundle.' }
   if (-not (Test-Path (Join-Path $StagedBundle 'runtime\studio\dist\server\entry.mjs'))) { throw 'The dashboard server is missing from the release bundle.' }
+  if (-not (Test-Path (Join-Path $StagedBundle 'runtime\agent-runtime\dist\index.js'))) { throw 'The agent runtime is missing from the release bundle.' }
   if (-not (Test-Path (Join-Path $StagedBundle 'runtime\agent\seevee-workspace-agent\SKILL.md'))) { throw 'The workspace-agent guide is missing from the release bundle.' }
   if (-not (Test-Path (Join-Path $StagedBundle 'runtime\agent\seevee-workspace-agent\references\workflows.md'))) { throw 'The agent workflow instructions are missing from the release bundle.' }
   if (-not (Test-Path (Join-Path $StagedBundle 'runtime\templates\classic\v1\template.json'))) { throw 'The default Classic CV template is missing from the release bundle.' }
@@ -148,7 +195,7 @@ try {
   New-Item -ItemType Directory -Path $LauncherDir -Force | Out-Null
   $BackupDir = "$InstallDir.backup-$PID"
   $Launcher = Join-Path $LauncherDir 'seevee.cmd'
-  $LauncherTemp = "$Launcher.tmp-$PID"
+  $LauncherTemp = Join-Path $LauncherDir ('.seevee-' + [Guid]::NewGuid().ToString('N') + '.tmp')
   $LauncherBackup = "$Launcher.backup-$PID"
   $LauncherBody = @"
 @echo off
@@ -158,10 +205,13 @@ set "SEEVEE_VERSION=$Version"
 set "NODE_PATH=%SEEVEE_ROOT%\runtime\node_modules"
 node "%SEEVEE_ROOT%\runtime\cli\dist\cli.js" %*
 "@
-  [System.IO.File]::WriteAllText($LauncherTemp, $LauncherBody, [System.Text.Encoding]::ASCII)
+  $LauncherBytes = [System.Text.Encoding]::ASCII.GetBytes($LauncherBody)
+  $LauncherStream = [System.IO.File]::Open($LauncherTemp, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
+  try { $LauncherStream.Write($LauncherBytes, 0, $LauncherBytes.Length) } finally { $LauncherStream.Dispose() }
   if (Test-Path $BackupDir) { Remove-Item $BackupDir -Recurse -Force }
   if (Test-Path $LauncherBackup) { Remove-Item $LauncherBackup -Force }
   $InstallDirTouched = $false
+  $LauncherTouched = $false
   try {
     if (Test-Path $InstallDir) {
       Move-Item -Path $InstallDir -Destination $BackupDir
@@ -171,6 +221,7 @@ node "%SEEVEE_ROOT%\runtime\cli\dist\cli.js" %*
     $InstallDirTouched = $true
     Move-Item -Path $StagedBundle -Destination $BundleDir
     if (Test-Path $Launcher) { Move-Item -Path $Launcher -Destination $LauncherBackup }
+    $LauncherTouched = $true
     Move-Item -Path $LauncherTemp -Destination $Launcher
 
     Write-Step 'Checking the installed command'
@@ -180,17 +231,22 @@ node "%SEEVEE_ROOT%\runtime\cli\dist\cli.js" %*
       throw "The installed command did not pass its version check: $VersionText"
     }
   } catch {
-    if (Test-Path $Launcher) { Remove-Item $Launcher -Force }
+    if ($LauncherTouched -and (Test-Path $Launcher)) { Remove-Item $Launcher -Force }
     if (Test-Path $LauncherBackup) { Move-Item -Path $LauncherBackup -Destination $Launcher }
     if ($InstallDirTouched -and (Test-Path $InstallDir)) { Remove-Item $InstallDir -Recurse -Force }
     if (Test-Path $BackupDir) { Move-Item -Path $BackupDir -Destination $InstallDir }
+    if (Test-Path $LauncherTemp) { Remove-Item $LauncherTemp -Force }
     throw
   }
   if (Test-Path $BackupDir) { Remove-Item $BackupDir -Recurse -Force }
   if (Test-Path $LauncherBackup) { Remove-Item $LauncherBackup -Force }
+  Get-ChildItem -LiteralPath $LauncherDir -Directory -Filter 'v*' -ErrorAction SilentlyContinue |
+    Where-Object { $_.FullName -ne $InstallDir } |
+    Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
 
   $UserPath = [System.Environment]::GetEnvironmentVariable('Path', 'User')
-  if ($UserPath -notlike "*$LauncherDir*") {
+  $PathEntries = @($UserPath -split ';' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+  if ($PathEntries -notcontains $LauncherDir) {
     $NewPath = if ([string]::IsNullOrWhiteSpace($UserPath)) { $LauncherDir } else { "$LauncherDir;$UserPath" }
     [System.Environment]::SetEnvironmentVariable('Path', $NewPath, 'User')
     Write-Host "Added $LauncherDir to your user PATH. Open a new terminal to use it."
@@ -201,7 +257,9 @@ node "%SEEVEE_ROOT%\runtime\cli\dist\cli.js" %*
   Write-Host 'Next step' -ForegroundColor Cyan -NoNewline
   Write-Host '  Run seevee init in a workspace directory.'
 } catch {
+  if ($null -ne $LauncherTemp -and (Test-Path $LauncherTemp)) { Remove-Item $LauncherTemp -Force -ErrorAction SilentlyContinue }
   throw "Seevee install failed: $($_.Exception.Message) Check the public release page and your network connection."
 } finally {
+  if ($LockAcquired -and $null -ne $LockDir) { Remove-Item $LockDir -Recurse -Force -ErrorAction SilentlyContinue }
   Remove-Item $TempDir -Recurse -Force -ErrorAction SilentlyContinue
 }

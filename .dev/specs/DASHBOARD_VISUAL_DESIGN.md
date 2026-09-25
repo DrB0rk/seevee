@@ -70,12 +70,12 @@ Primary target: 1440 x 900 and larger.
 Default dimensions:
 
 - top bar: 54 px;
-- left agent chat: 460 px, minimum 320 px;
-- right document editor: 360 px, minimum 280 px;
+- left document editor: 360 px, minimum 280 px;
+- right agent chat: 460 px, minimum 320 px;
 - bottom status bar: 28 px;
 - useful canvas minimum width: 380 px before responsive reflow.
 
-Both sidebars are independently resizable and persist their widths in browser-local settings. Agent configuration is edited in Settings, not in the chat timeline.
+Both sidebars are independently resizable and persist their widths in browser-local settings. Agent configuration is edited in Settings and the chat composer, not in the chat timeline.
 
 Panel geometry, open disclosures and zoom are local UI preferences. They are not written to CV or presentation JSON.
 
@@ -279,13 +279,13 @@ The CV render must be isolated from application CSS, preferably using an iframe 
 
 ## 11. Agent chat and document sidebar
 
-### Left agent chat
+### Right agent chat
 
-The left sidebar uses one provider-neutral conversation and activity surface. It displays the active Settings-selected provider, model/state summary, streamed messages, provider-visible reasoning, plans, tool lifecycle, usage, workspace changes, validation, and inline approval requests. It does not duplicate provider selection or saved-session management.
+The right sidebar uses one provider-neutral conversation and activity surface. It displays the active Settings-selected provider, provider-native model/permission controls, streamed messages, provider-visible reasoning, plans, tool lifecycle, usage, workspace changes, validation, and inline approval requests. It does not duplicate saved-session management.
 
-### Right document editor
+### Left document editor
 
-The right sidebar keeps direct document editing:
+The left sidebar keeps direct document editing:
 
 - compact section navigation;
 - profile, experience, education, project, skill, and custom-section fields;

@@ -12,7 +12,7 @@ Last audited: 2026-09-23
 
 ## Current repository reality
 
-Seevee has usable schema, CLI, ingestion, agent tools, local dashboard, and central multi-agent control implementations. Template-driven rendering and server-side PDF export remain incomplete. The dashboard supports browser print-to-PDF, a resizable left agent chat, and the restored right document editor.
+Seevee has usable schema, CLI, ingestion, agent tools, local dashboard, and central multi-agent control implementations. Template-driven rendering and server-side PDF export remain incomplete. The dashboard supports browser print-to-PDF, a resizable right agent chat, and the restored left document editor.
 
 All packages typecheck (`pnpm typecheck` exit 0). All tests pass (`pnpm test` exit 0). End-to-end smoke verified: `seevee init --no-open → seevee status → seevee stop`.
 
@@ -23,17 +23,17 @@ All packages typecheck (`pnpm typecheck` exit 0). All tests pass (`pnpm test` ex
 | Canonical data contracts (P0) | Implemented | 37 tests pass; drift-check clean; `pnpm typecheck` exit 0 |
 | `packages/schema` | Implemented | 12 Zod resource schemas + migrations + semantic validator + JSON Schema generator |
 | `packages/cli` | Implemented | All commands (init/start/stop/restart/status/open/validate/doctor/export); workspace daemon lock prevents duplicate concurrent starts; 20 tests |
-| `packages/agent-runtime` | Implemented | Typed workspace tools plus central process/session manager and Claude Code, Codex App Server, and OMP ACP adapters; 37 tests |
+| `packages/agent-runtime` | Implemented | Typed workspace tools plus central process/session manager and Claude Code, Codex App Server, and OMP ACP adapters; 39 tests |
 | `packages/ingest` | Implemented | 9 adapters (text/markdown/json/html/yaml/pdf/docx/image/url); SSRF protection; 57 tests |
-| `apps/studio` | Implemented | Astro/React dashboard, revision-aware CV APIs, SSE agent timeline, Settings-driven provider/session configuration, resizable agent sidebar, restored document editor, and 13 tests |
-| `install.sh` / `install.ps1` | Implemented | SHA256SUMS; 12+5 tests |
+| `apps/studio` | Implemented | Astro/React dashboard, revision-aware CV APIs, SSE agent timeline, Settings-driven provider/session configuration, resizable right agent sidebar, restored left document editor, and 14 tests |
+| `install.sh` / `install.ps1` | Implemented | HTTPS-only downloads, SHA256SUMS, archive-path validation, atomic rollback, install locking, stale-version cleanup, and CI contract tests |
 | `packages/template-sdk` | Implemented | 36 tests |
 | `packages/renderer` | Implemented | 44 tests |
 | `packages/export` | Partial | Export pipeline package and 12 tests; Playwright integration has not been verified against a real browser/runtime |
 | `packages/template-compiler` | Partial | Policy scanning and compilation checks; fixture renderer uses a deterministic stub |
 | `templates/classic/v1` | Implemented | Astro template + fixtures |
 | `templates/two-column/v1` | Implemented | Astro template + fixtures |
-| Release bundle scripts | Implemented | Five platform archives, checksums, GitHub release workflow, and Linux init/health/stop smoke check |
+| Release bundle scripts | Implemented | Five platform archives, lockfile-pinned production dependencies without optional native binaries, checksums, GitHub release workflow, and extracted-archive lifecycle smoke checks |
 
 ## Incomplete end-to-end paths
 
@@ -42,7 +42,7 @@ All packages typecheck (`pnpm typecheck` exit 0). All tests pass (`pnpm test` ex
 - Provider adapters have fixture/unit coverage and live no-model process handshakes, but automated model-backed tool/approval turns are intentionally not run in CI because they require provider credentials and usage.
 - Image ingestion records a placeholder block; it does not perform vision extraction.
 - CLI export integration and Playwright-backed PDF export have not been validated end to end.
-- Only the Linux release bundle has an automated extracted-archive init/health/stop smoke test; other platform bundles are structurally checked but have not been exercised on native operating systems.
+- Every release archive is now structurally verified in CI; the Linux bundle is exercised through init/health/concurrent-start/stop, while Windows/macOS native process behavior still requires platform-specific runners.
 
 ## Key decisions (do not undo)
 

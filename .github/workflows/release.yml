@@ -13,16 +13,22 @@ jobs:
     name: Build & publish release bundles
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
         with:
           version: 9
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22'
           cache: 'pnpm'
+
+      - name: Verify tag matches VERSION
+        run: test "${GITHUB_REF_NAME#v}" = "$(cat VERSION)"
+
+      - name: Run installer contract tests
+        run: pnpm test:installer
 
       - name: Install
         run: pnpm install --frozen-lockfile
@@ -39,11 +45,16 @@ jobs:
       - name: Build all bundles
         run: ./scripts/bundle-all.sh dist/release
 
-      - name: Verify Linux bundle installation and daemon lifecycle
-        run: ./scripts/verify_bundle.sh dist/release/seevee-linux-x64.tar.gz
+      - name: Verify every release bundle
+        run: |
+          for archive in dist/release/seevee-*; do
+            ./scripts/verify_bundle.sh "$archive"
+          done
+      - name: Verify Unix installer end to end
+        run: ./scripts/test_install_e2e.sh dist/release/seevee-linux-x64.tar.gz
 
       - name: Upload release assets
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           files: |
             dist/release/seevee-linux-x64.tar.gz
@@ -53,4 +64,4 @@ jobs:
             dist/release/seevee-windows-x64.zip
             dist/release/SHA256SUMS
           fail_on_unmatched_files: true
-          prerelease: true
+          prerelease: ${{ contains(github.ref_name, '-') }}

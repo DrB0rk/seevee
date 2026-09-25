@@ -13,6 +13,7 @@
     "lint": "pnpm -r run lint",
     "test": "pnpm -r run test",
     "test:unit": "pnpm -r run test:unit",
+    "test:installer": "./scripts/test_install.sh && ./scripts/test_install_ps1.sh",
     "schema:generate": "pnpm --filter @seevee/schema run generate",
     "schema:drift": "pnpm --filter @seevee/schema run drift-check",
     "dev": "pnpm -r --parallel run dev",

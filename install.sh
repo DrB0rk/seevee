@@ -62,6 +62,11 @@ step() { printf '%b◆%b %s\n' "$CYAN" "$RESET" "$1" >&2; }
 success() { printf '%b✓%b %s\n' "$GREEN" "$RESET" "$1" >&2; }
 fail() { printf '%berror:%b %s\n' "$RED" "$RESET" "$1" >&2; exit "${2:-1}"; }
 
+curl_secure() {
+  curl --fail --location --retry 3 --retry-delay 1 --connect-timeout 15 --max-time 600 \
+    --proto '=https' --proto-redir '=https' "$@"
+}
+
 printf '\n%b  SEE VEE%b  %bLocal CV studio installer%b\n\n' "$CYAN" "$RESET" "$DIM" "$RESET" >&2
 
 step 'Checking system requirements'
@@ -90,10 +95,27 @@ TMP_DIR="$(mktemp -d 2>/dev/null || mktemp -d -t seevee)"
 STAGE_DIR=''
 DOWNLOAD_PIDS=''
 DOWNLOAD_PROGRESS_PID=''
+LOCK_DIR=''
+OLD_DIR=''
+LAUNCHER_OLD=''
+INSTALL_DIR=''
+LAUNCHER=''
+LAUNCHER_TMP=''
+INSTALL_COMMITTED=0
 cleanup() {
   for pid in $DOWNLOAD_PIDS ${DOWNLOAD_PROGRESS_PID:-}; do
     kill "$pid" 2>/dev/null || true
   done
+  if [ "$INSTALL_COMMITTED" -eq 0 ] && [ -n "$OLD_DIR" ] && [ -e "$OLD_DIR" ]; then
+    [ -z "$INSTALL_DIR" ] || rm -rf "$INSTALL_DIR"
+    mv "$OLD_DIR" "$INSTALL_DIR" 2>/dev/null || true
+  fi
+  if [ "$INSTALL_COMMITTED" -eq 0 ] && [ -n "$LAUNCHER_OLD" ] && { [ -e "$LAUNCHER_OLD" ] || [ -L "$LAUNCHER_OLD" ]; }; then
+    [ -z "$LAUNCHER" ] || rm -f "$LAUNCHER"
+    mv "$LAUNCHER_OLD" "$LAUNCHER" 2>/dev/null || true
+  fi
+  [ -z "$LOCK_DIR" ] || rmdir "$LOCK_DIR" 2>/dev/null || true
+  [ -z "$LAUNCHER_TMP" ] || rm -f "$LAUNCHER_TMP"
   rm -rf "$TMP_DIR"
   [ -z "$STAGE_DIR" ] || rm -rf "$STAGE_DIR"
 }
@@ -101,9 +123,27 @@ trap cleanup EXIT HUP INT TERM
 
 step 'Finding a release'
 if [ -z "$VERSION" ] || [ "$VERSION" = 'latest' ]; then
-  RELEASES_URL="https://api.github.com/repos/${REPOSITORY}/releases?per_page=1"
-  VERSION="$(curl -fsSL "$RELEASES_URL" | sed -n 's/.*"tag_name": "v\{0,1\}\([^"]*\)".*/\1/p' | head -1)" \
-    || fail 'Could not look up the latest public release.'
+  RELEASE_JSON="$TMP_DIR/release.json"
+  RELEASE_API="https://api.github.com/repos/${REPOSITORY}"
+  if ! curl_secure --silent --show-error \
+    --header 'Accept: application/vnd.github+json' \
+    --header 'User-Agent: seevee-installer' \
+    "$RELEASE_API/releases/latest" -o "$RELEASE_JSON"; then
+    curl_secure --silent --show-error \
+      --header 'Accept: application/vnd.github+json' \
+      --header 'User-Agent: seevee-installer' \
+      "$RELEASE_API/releases?per_page=20" -o "$RELEASE_JSON" \
+      || fail 'Could not look up a public Seevee release.'
+  fi
+  VERSION="$(node -e '
+    const fs = require("node:fs");
+    const data = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+    const release = Array.isArray(data)
+      ? (data.find((item) => !item.draft && !item.prerelease) ?? data.find((item) => !item.draft))
+      : data;
+    if (typeof release?.tag_name !== "string") process.exit(1);
+    process.stdout.write(release.tag_name.replace(/^v/, ""));
+  ' "$RELEASE_JSON")" || fail 'GitHub returned no usable Seevee release.'
 fi
 VERSION="${VERSION#v}"
 case "$VERSION" in
@@ -115,9 +155,9 @@ success "Seevee v${VERSION}"
 
 curl_download() {
   if [ -t 2 ]; then
-    curl --fail --location --retry 3 --retry-delay 1 --progress-bar "$@"
+    curl_secure --progress-bar "$@"
   else
-    curl --fail --location --retry 3 --retry-delay 1 --silent --show-error "$@"
+    curl_secure --silent --show-error "$@"
   fi
 }
 
@@ -136,7 +176,7 @@ download_bundle() {
 
   # GitHub release assets support byte ranges. Parallel requests avoid a slow
   # single connection on networks that throttle each connection separately.
-  if ! curl --fail --location --retry 3 --retry-delay 1 --silent --show-error \
+  if ! curl_secure --silent --show-error \
     --range 0-0 --dump-header "$headers" "$asset_url" -o "$probe" 2>/dev/null; then
     curl_download "$asset_url" -o "$output_path"
     return
@@ -156,7 +196,7 @@ download_bundle() {
     [ "$range_end" -lt "$file_size" ] || range_end=$((file_size - 1))
     part_file="$TMP_DIR/$ARCHIVE.part.$part"
     part_error="$TMP_DIR/$ARCHIVE.part.$part.err"
-    curl --fail --location --retry 3 --retry-delay 1 --silent --show-error \
+    curl_secure --silent --show-error \
       --range "$range_start-$range_end" "$asset_url" -o "$part_file" 2>"$part_error" &
     DOWNLOAD_PIDS="$DOWNLOAD_PIDS $!"
     part=$((part + 1))
@@ -224,6 +264,39 @@ download_bundle \
   || fail "Could not download $ARCHIVE. Check that the public release v${VERSION} includes this platform bundle."
 success 'Bundle downloaded'
 
+validate_archive() {
+  archive_path="$1"
+  members_path="$TMP_DIR/archive-members"
+  details_path="$TMP_DIR/archive-details"
+  tar -tzf "$archive_path" > "$members_path" 2>/dev/null || fail 'Could not inspect the release archive.'
+  tar -tvzf "$archive_path" > "$details_path" 2>/dev/null || fail 'Could not inspect the release archive.'
+  node - "$members_path" "$details_path" "seevee-${PLATFORM}" <<'NODE' \
+    || fail 'The release archive contains an unsafe path or link.'
+const fs = require('node:fs');
+const path = require('node:path');
+const [membersPath, detailsPath, root] = process.argv.slice(2);
+const members = fs.readFileSync(membersPath, 'utf8').split(/\r?\n/).filter(Boolean);
+if (members.length === 0) process.exit(1);
+for (const member of members) {
+  const normalized = path.posix.normalize(member);
+  if (path.posix.isAbsolute(normalized) || normalized === '..' || normalized.startsWith('../')) process.exit(1);
+  if (normalized !== root && !normalized.startsWith(`${root}/`)) process.exit(1);
+}
+for (const line of fs.readFileSync(detailsPath, 'utf8').split(/\r?\n/).filter(Boolean)) {
+  if (/^h/.test(line)) process.exit(1);
+  if (!/^l/.test(line)) continue;
+  const match = line.match(/^(.*)\s->\s(.*)$/);
+  if (!match) process.exit(1);
+  const entry = match[1].trim().split(/\s+/).pop();
+  const target = match[2];
+  if (path.posix.isAbsolute(target)) process.exit(1);
+  const resolved = path.posix.normalize(path.posix.join(path.posix.dirname(entry), target));
+  if (resolved === root || !resolved.startsWith(`${root}/`)) process.exit(1);
+}
+NODE
+}
+
+
 step 'Checking SHA-256 checksum'
 download_asset 'SHA256SUMS' "$TMP_DIR/SHA256SUMS" \
   || fail "Could not download SHA256SUMS from release v${VERSION}."
@@ -238,24 +311,40 @@ else
 fi
 [ "$EXPECTED_SHA" = "$ACTUAL_SHA" ] || fail 'Checksum verification failed; the archive may be incomplete or altered.'
 success 'Checksum verified'
+validate_archive "$TMP_DIR/$ARCHIVE"
 
+[ -n "${HOME:-}" ] || [ -n "${XDG_DATA_HOME:-}" ] || fail 'HOME or XDG_DATA_HOME must be set for installation.'
 DATA_ROOT="${SEEVE_INSTALL_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/seevee}"
 BIN_DIR="${SEEVE_BIN_DIR:-$HOME/.local/bin}"
+case "$DATA_ROOT" in /*) ;; *) fail 'SEEVE_INSTALL_DIR must be an absolute path.' 2 ;; esac
+case "$BIN_DIR" in /*) ;; *) fail 'SEEVE_BIN_DIR must be an absolute path.' 2 ;; esac
 INSTALL_DIR="$DATA_ROOT/v${VERSION}"
 STAGE_DIR="$DATA_ROOT/.install-v${VERSION}-$$"
 LAUNCHER="$BIN_DIR/seevee"
 
 step 'Installing Seevee'
 mkdir -p "$DATA_ROOT" "$BIN_DIR"
+
+LOCK_DIR="$DATA_ROOT/.install.lock"
+if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+  LOCK_DIR=''
+  fail 'Another Seevee installation is already in progress.'
+fi
 rm -rf "$STAGE_DIR"
 mkdir -p "$STAGE_DIR"
-tar -xzf "$TMP_DIR/$ARCHIVE" -C "$STAGE_DIR" || fail 'Could not unpack the release archive.'
+TAR_EXTRACT_FLAGS=''
+if tar --help 2>&1 | grep -q -- '--no-same-owner'; then
+  TAR_EXTRACT_FLAGS='--no-same-owner --no-same-permissions'
+fi
+# shellcheck disable=SC2086
+tar $TAR_EXTRACT_FLAGS -xzf "$TMP_DIR/$ARCHIVE" -C "$STAGE_DIR" || fail 'Could not unpack the release archive.'
 BUNDLE_DIR="$STAGE_DIR/seevee-${PLATFORM}"
 [ -f "$BUNDLE_DIR/VERSION" ] || fail 'The bundle is missing its VERSION file.'
 [ "$(cat "$BUNDLE_DIR/VERSION")" = "$VERSION" ] || fail 'Bundle version does not match the requested release.'
 [ -x "$BUNDLE_DIR/bin/seevee" ] || fail 'The bundle launcher is missing or not executable.'
 [ -f "$BUNDLE_DIR/runtime/cli/dist/cli.js" ] || fail 'The bundle is missing the Seevee CLI.'
 [ -f "$BUNDLE_DIR/runtime/studio/dist/server/entry.mjs" ] || fail 'The bundle is missing the dashboard server.'
+[ -f "$BUNDLE_DIR/runtime/agent-runtime/dist/index.js" ] || fail 'The bundle is missing the agent runtime.'
 [ -f "$BUNDLE_DIR/runtime/agent/seevee-workspace-agent/SKILL.md" ] || fail 'The bundle is missing the workspace-agent guide.'
 [ -f "$BUNDLE_DIR/runtime/agent/seevee-workspace-agent/references/workflows.md" ] || fail 'The bundle is missing the agent workflow instructions.'
 [ -f "$BUNDLE_DIR/runtime/templates/classic/v1/template.json" ] || fail 'The bundle is missing the default Classic CV template.'
@@ -277,7 +366,7 @@ shell_quote() {
   printf "'"
 }
 TARGET="$(shell_quote "$INSTALL_DIR/bin/seevee")"
-LAUNCHER_TMP="$BIN_DIR/.seevee-$$"
+LAUNCHER_TMP="$(mktemp "$BIN_DIR/.seevee.XXXXXX")" || fail 'Could not create a temporary launcher.'
 printf '#!/usr/bin/env sh\nexec %s "$@"\n' "$TARGET" > "$LAUNCHER_TMP"
 chmod +x "$LAUNCHER_TMP"
 
@@ -324,7 +413,13 @@ case "$VERSION_OUTPUT" in
     fail 'The installed command reported an unexpected version.'
     ;;
 esac
-rm -rf "$OLD_DIR" "$LAUNCHER_OLD" "$STAGE_DIR"
+INSTALL_COMMITTED=1
+rm -rf "$OLD_DIR" "$LAUNCHER_OLD" "$STAGE_DIR" "$LAUNCHER_TMP"
+for old_bundle in "$DATA_ROOT"/v*; do
+  [ -d "$old_bundle" ] || continue
+  [ "$old_bundle" = "$INSTALL_DIR" ] && continue
+  rm -rf "$old_bundle"
+done
 
 if ! printf '%s' ":${PATH}:" | grep -Fq ":${BIN_DIR}:"; then
   printf '\n%bNext step%b Add Seevee to PATH, then run %bseevee init%b in a workspace:\n  export PATH="%s:$PATH"\n' \

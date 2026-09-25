@@ -77,7 +77,7 @@ printf '%s\n' "$VERSION" > "$STAGE/$ARCHIVE_BASE/VERSION"
 # The list of @seevee/* packages we ship in the runtime. We auto-detect
 # @seevee/export only when SEEVEE_INCLUDE_EXPORT=1 is set; mid-implementation
 # breakage in that package must not break the bundle.
-RUNTIME_PKGS="cli schema template-sdk renderer"
+RUNTIME_PKGS="cli schema template-sdk renderer agent-runtime"
 if [ "${SEEVEE_INCLUDE_EXPORT:-0}" = "1" ] && [ -f "$ROOT_DIR/packages/export/package.json" ] && [ -d "$ROOT_DIR/packages/export/src" ]; then
   RUNTIME_PKGS="$RUNTIME_PKGS export"
 fi
@@ -101,7 +101,8 @@ pnpm --filter @seevee/studio run build
 
 # Packages that ship with `noEmit: true` (template-sdk, renderer, and
 # optionally @seevee/export when SEEVEE_INCLUDE_EXPORT=1) need an explicit
-# compile pass that emits JS, so dist/ exists in the bundle.
+# compile pass that emits JS, so dist/ exists in the bundle. Agent-runtime
+# builds through its dedicated tsconfig.build.json.
 EMIT_PKGS="template-sdk renderer"
 if [ "${SEEVEE_INCLUDE_EXPORT:-0}" = "1" ]; then
   EMIT_PKGS="$EMIT_PKGS export"
@@ -219,6 +220,7 @@ NODE
   if [ "$has_js" = "1" ]; then
     mkdir -p "$dest/dist"
     cp -R "$src/dist/." "$dest/dist/"
+    find "$dest/dist" -type f \( -name '*.map' -o -name '*.d.ts' -o -name '*.d.ts.map' -o -name '*.tsbuildinfo' \) -delete
   else
     # Source-only fallback — ship the TS source. The launcher runs through
     # Node's --experimental-strip-types when available (Node 22.6+), with
@@ -232,37 +234,33 @@ done
 # pnpm project rooted at the bundle's runtime/. This keeps node_modules
 # minimal (no devDeps) and contains only what the runtime actually needs.
 WORK="$(mktemp -d -t seevee-pnpm.XXXXXX)"
-# Build a workspace YAML and matching dirs from RUNTIME_PKGS so we only
-# resolve what the runtime actually ships.
+# Mirror the repository's importer paths so the committed root lockfile can be
+# consumed with --frozen-lockfile. This keeps published dependency versions
+# identical to the reviewed repository lockfile.
 for pkg in $RUNTIME_PKGS; do
-  mkdir -p "$WORK/$pkg"
+  mkdir -p "$WORK/packages/$pkg"
 done
-mkdir -p "$WORK/studio"
-# Hoist @seevee/* packages (and their deps) to the top of node_modules so
-# Node's resolution algorithm can find @seevee/schema from anywhere under
-# runtime/cli/. Without this, pnpm nests workspace pkgs under .pnpm/ via
-# symlinks that Node's CommonJS-style walk does not follow.
-cat > "$WORK/.npmrc" <<NPMRC
+if [ "$IS_WINDOWS" = "1" ]; then
+  cat > "$WORK/.npmrc" <<'NPMRC'
+node-linker=hoisted
+NPMRC
+else
+  cat > "$WORK/.npmrc" <<'NPMRC'
 public-hoist-pattern[]=*
 shamefully-hoist=true
 NPMRC
-cat > "$WORK/package.json" <<JSON
-{
-  "name": "seevee-bundle-resolver",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module"
-}
-JSON
-printf 'packages:\n' > "$WORK/pnpm-workspace.yaml"
-for pkg in $RUNTIME_PKGS; do
-  printf "  - './%s'\n" "$pkg" >> "$WORK/pnpm-workspace.yaml"
-done
-printf "  - './studio'\n" >> "$WORK/pnpm-workspace.yaml"
+fi
+mkdir -p "$WORK/apps/studio"
+cp "$ROOT_DIR/package.json" "$WORK/package.json"
+cat > "$WORK/pnpm-workspace.yaml" <<'YAML'
+packages:
+  - 'packages/*'
+  - 'apps/studio'
+YAML
 cp "$ROOT_DIR/pnpm-lock.yaml" "$WORK/pnpm-lock.yaml"
 for pkg in $RUNTIME_PKGS; do
   src="$ROOT_DIR/packages/$pkg"
-  dest="$WORK/$pkg"
+  dest="$WORK/packages/$pkg"
   cp "$src/package.json" "$dest/package.json"
   if [ -d "$src/dist" ]; then
     mkdir -p "$dest/dist"
@@ -273,18 +271,92 @@ for pkg in $RUNTIME_PKGS; do
     cp -R "$src/src/." "$dest/src/"
   fi
 done
-cp "$ROOT_DIR/apps/studio/package.json" "$WORK/studio/package.json"
-cp -R "$ROOT_DIR/apps/studio/dist" "$WORK/studio/"
-# --no-frozen-lockfile because the synthetic resolver project diverges from
-# the root lockfile (we only ship the runtime subset of packages).
-(cd "$WORK" && pnpm install --prod --no-frozen-lockfile --silent)
+cp "$ROOT_DIR/apps/studio/package.json" "$WORK/apps/studio/package.json"
+cp -R "$ROOT_DIR/apps/studio/dist" "$WORK/apps/studio/"
+# Optional platform binaries (Claude SDK, Sharp, esbuild, Rollup, Lightning CSS)
+# are build-time or user-agent-provided; Seevee launches the user's installed
+# agent executables and does not need those native packages in the runtime.
+(cd "$WORK" && pnpm install --prod --frozen-lockfile --no-optional --silent)
 if [ -d "$WORK/node_modules" ]; then
   cp -R "$WORK/node_modules/." "$RUNTIME/node_modules/"
 fi
-# The compiled Astro server chunks live under runtime/studio/dist rather than
-# under a package symlink, so ESM resolves their external imports from this
-# package-local node_modules directory. Mirror pnpm's hoisted dependency links
-# there while keeping their targets in the one shared runtime node_modules.
+if [ "$IS_WINDOWS" = "1" ]; then
+  node - "$RUNTIME/node_modules" <<'NODE'
+const fs = require('node:fs');
+const path = require('node:path');
+const root = process.argv[2];
+function copyEntry(source, target) {
+  if (!fs.existsSync(source)) return;
+  if (fs.existsSync(target) || fs.lstatSync(target, { throwIfNoEntry: false })) return;
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  fs.cpSync(fs.realpathSync(source), target, { recursive: true, dereference: true });
+}
+function copyHoisted(sourceRoot, destinationRoot) {
+  if (!fs.existsSync(sourceRoot)) return;
+  for (const name of fs.readdirSync(sourceRoot)) {
+    if (name === '.bin' || name === '@seevee') continue;
+    const source = path.join(sourceRoot, name);
+    const target = path.join(destinationRoot, name);
+    if (name.startsWith('@')) {
+      fs.mkdirSync(target, { recursive: true });
+      for (const child of fs.readdirSync(source)) copyEntry(path.join(source, child), path.join(target, child));
+    } else {
+      copyEntry(source, target);
+    }
+  }
+}
+function materialize(directory) {
+  for (const name of fs.readdirSync(directory)) {
+    if (name === '.pnpm' || name === '.bin') continue;
+    const entry = path.join(directory, name);
+    const stat = fs.lstatSync(entry);
+    if (stat.isSymbolicLink()) {
+      if (entry.includes(`${path.sep}@seevee${path.sep}`)) continue;
+      const target = fs.realpathSync(entry);
+      const temporary = `${entry}.materialize`;
+      fs.rmSync(temporary, { recursive: true, force: true });
+      fs.cpSync(target, temporary, { recursive: true, dereference: true });
+      fs.rmSync(entry, { force: true });
+      fs.renameSync(temporary, entry);
+    } else if (stat.isDirectory()) {
+      materialize(entry);
+    }
+  }
+}
+copyHoisted(path.join(root, '.pnpm', 'node_modules'), root);
+materialize(root);
+fs.rmSync(path.join(root, '.pnpm'), { recursive: true, force: true });
+NODE
+  rm -rf "$RUNTIME/studio/node_modules"
+fi
+# pnpm keeps hoisted links under .pnpm/node_modules; mirror them at the
+# runtime root as well so Node's ESM resolver can load package dependencies.
+node - "$RUNTIME/node_modules/.pnpm/node_modules" "$RUNTIME/node_modules" <<'NODE'
+const fs = require('node:fs');
+const path = require('node:path');
+const [hoisted, destination] = process.argv.slice(2);
+if (!fs.existsSync(hoisted)) process.exit(0);
+for (const name of fs.readdirSync(hoisted)) {
+  if (name === '.bin' || name === '@seevee') continue;
+  const source = path.join(hoisted, name);
+  if (name.startsWith('@')) {
+    const scope = path.join(destination, name);
+    fs.mkdirSync(scope, { recursive: true });
+    for (const child of fs.readdirSync(source)) {
+      const childSource = path.join(source, child);
+      const childTarget = path.join(scope, child);
+      if (!fs.existsSync(childTarget) && fs.existsSync(childSource)) {
+        fs.symlinkSync(path.relative(path.dirname(childTarget), fs.realpathSync(childSource)), childTarget, 'junction');
+      }
+    }
+    continue;
+  }
+  const target = path.join(destination, name);
+  if (!fs.existsSync(target) && fs.existsSync(source)) {
+    fs.symlinkSync(path.relative(path.dirname(target), fs.realpathSync(source)), target, 'junction');
+  }
+}
+NODE
 mkdir -p "$RUNTIME/studio/node_modules"
 node - "$RUNTIME/node_modules/.pnpm/node_modules" "$RUNTIME/studio/node_modules" <<'NODE'
 const fs = require('node:fs');
@@ -324,25 +396,22 @@ done
 # ---------------------------------------------------------------------------
 # 6. Pack the archive
 # ---------------------------------------------------------------------------
+TAR_CREATE_FLAGS=''
+if tar --version 2>/dev/null | grep -q 'GNU tar'; then
+  TAR_CREATE_FLAGS='--format=gnu --owner=0 --group=0 --numeric-owner --sort=name'
+fi
+
+rm -rf "$RUNTIME/node_modules/.pnpm/node_modules/@seevee"
+# shellcheck disable=SC2086
 case "$OUTPUT" in
   *.tar.gz)
-    (cd "$STAGE" && tar -czf "$OUTPUT" "$ARCHIVE_BASE")
+    (cd "$STAGE" && tar $TAR_CREATE_FLAGS -czf "$OUTPUT" "$ARCHIVE_BASE")
     ;;
   *.zip)
     if command -v zip >/dev/null 2>&1; then
-      (cd "$STAGE" && zip -qr "$OUTPUT" "$ARCHIVE_BASE")
+      (cd "$STAGE" && zip -qrX "$OUTPUT" "$ARCHIVE_BASE")
     elif command -v python3 >/dev/null 2>&1; then
-      python3 - "$STAGE" "$OUTPUT" "$ARCHIVE_BASE" <<'PY'
-import pathlib
-import sys
-import zipfile
-
-stage, output, root = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2]), sys.argv[3]
-with zipfile.ZipFile(output, 'w', compression=zipfile.ZIP_DEFLATED) as archive:
-    for path in (stage / root).rglob('*'):
-        if path.is_file():
-            archive.write(path, path.relative_to(stage))
-PY
+      python3 "$ROOT_DIR/scripts/zip_bundle.py" "$STAGE" "$OUTPUT" "$ARCHIVE_BASE"
     else
       echo "bundle.sh: 'zip' or 'python3' is required for Windows bundles" >&2
       exit 1

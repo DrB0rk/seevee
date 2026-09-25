@@ -58,11 +58,20 @@ case "$ARCHIVE" in
     tar -xzf "$ARCHIVE" -C "$WORK"
     ;;
   *.zip)
-    if ! command -v unzip >/dev/null 2>&1; then
-      echo "verify_bundle.sh: 'unzip' not found on PATH; required for .zip bundles" >&2
+    if command -v unzip >/dev/null 2>&1; then
+      (cd "$WORK" && unzip -q "$ARCHIVE")
+    elif command -v python3 >/dev/null 2>&1; then
+      python3 - "$ARCHIVE" "$WORK" <<'PY'
+import sys
+import zipfile
+
+with zipfile.ZipFile(sys.argv[1]) as archive:
+    archive.extractall(sys.argv[2])
+PY
+    else
+      echo "verify_bundle.sh: 'unzip' or 'python3' is required for .zip bundles" >&2
       exit 1
     fi
-    (cd "$WORK" && unzip -q "$ARCHIVE")
     ;;
   *)
     echo "verify_bundle.sh: unsupported archive extension: $ARCHIVE" >&2
@@ -79,6 +88,9 @@ BUNDLE_DIR="$WORK/$(ls "$WORK")"  # single top-level entry: seevee-<platform>/
 # ---------------------------------------------------------------------------
 # 4. Run the launcher's --version and compare to VERSION.
 # ---------------------------------------------------------------------------
+case "$(basename "$BUNDLE_DIR")" in
+  *windows-*) chmod +x "$BUNDLE_DIR/bin/seevee" 2>/dev/null || true ;;
+esac
 VERSION_FILE="$(cat "$BUNDLE_DIR/VERSION")"
 LAUNCHER="$BUNDLE_DIR/bin/seevee"
 

@@ -37,3 +37,9 @@ release/
 
 # Checksums
 SHA256SUMS
+
+# Local agent tooling state
+**/.claude/
+**/.wolf/
+**/.bizar/
+**/CLAUDE.md

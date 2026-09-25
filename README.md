@@ -45,7 +45,7 @@ A CV never owns its Astro/CSS. A template never owns the facts.
 
 ## Installation model
 
-Seevee installs from GitHub Release bundles and requires Node.js 20 or newer. The installers show download progress, verify SHA-256 checksums, and install a versioned runtime plus a stable `seevee` launcher.
+Seevee installs from GitHub Release bundles. It requires Node.js 20 or newer, `curl` and `tar` on Unix, or Windows PowerShell 5.1+ on Windows. The bundle contains the CLI, Studio server, agent runtime, templates, and production dependencies. It does not bundle Claude Code, Codex, or OMP binaries; the dashboard uses the executables already installed on your machine.
 
 Install the latest public release directly:
 
@@ -59,7 +59,11 @@ On Windows, run this in PowerShell:
 irm https://raw.githubusercontent.com/DrB0rk/seevee/main/install.ps1 | iex
 ~~~
 
-Both installers download public GitHub Release assets without GitHub CLI or credentials. Pass `--version VERSION` to `install.sh`, or `-Version VERSION` to `install.ps1`, to install a specific release.
+Both installers download public GitHub Release assets without GitHub CLI or credentials. The default lookup prefers the latest stable release and falls back to the newest public prerelease when a project has no stable release. Pass `--version VERSION` to `install.sh`, or `-Version VERSION` to `install.ps1`, to pin an exact release.
+
+The installers use HTTPS-only downloads, verify the published SHA-256 manifest before extraction, reject unsafe archive paths, stage the new runtime, verify `seevee --version`, and roll back on failure. By default they install user-locally under `~/.local/share/seevee` and `~/.local/bin` (`%LOCALAPPDATA%\seevee` on Windows). On Unix, `SEEVEE_INSTALL_DIR` and `SEEVEE_BIN_DIR` can select different absolute directories.
+
+Release bundles also omit optional native build tools and agent binaries. This keeps the runtime compact while still using the provider executables installed on the host.
 
 Then create/open a workspace:
 
@@ -69,7 +73,7 @@ cd my-cv
 seevee init
 ~~~
 
-<code>seevee init</code> is non-interactive. It will scaffold the directory, start the local dashboard server in the background, health-check it, open the browser, and return terminal control. You can then open **any agent you want** in the same directory.
+<code>seevee init</code> is non-interactive. It will scaffold the directory, start the local dashboard server in the background, health-check it, open the browser, and return terminal control. The dashboard can then start a detected Claude Code, Codex, or OMP session from the agent chat.
 
 See the [v0.1.0-alpha.4 prerelease](https://github.com/DrB0rk/seevee/releases/tag/v0.1.0-alpha.4) for platform bundles and checksums.
 
@@ -122,12 +126,10 @@ The dashboard itself is intentionally consistent: a dark technical workstation a
 
 ~~~text
 ┌─────────────────────────────────────────────────────────────────────┐
-│ workspace · active CV · save · template · settings · export        │
-├──────────────────┬───┬───────────────────────┬─────────────────────┤
-│ Agent chat       │ R │                       │ Document editor     │
-│ messages/reason  │ e │     physical CV       │ Sections / fields   │
-│ plans/tools      │ s │       pages           │ Comments / tools    │
-│ approvals/status │ z │                       │                     │
+│ Document editor  │ R │                       │ Agent chat          │
+│ sections/fields  │ e │     physical CV       │ messages/reason     │
+│ comments/tools   │ s │       pages           │ plans/tools         │
+│                  │ z │                       │ approvals/status    │
 ├──────────────────┴───┴───────────────────────┴─────────────────────┤
 │ path · schema · render status · watcher · agent state              │
 └─────────────────────────────────────────────────────────────────────┘

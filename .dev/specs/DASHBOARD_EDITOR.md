@@ -32,17 +32,17 @@ Recommended shell:
 ┌──────────────────────────────────────────────────────────────────────┐
 │ Top bar: workspace | status | save | template | settings | export   │
 ├────────────────────┬───┬──────────────────────┬───┬─────────────────┤
-│ Agent chat         │ R │ paged CV canvas      │ R │ Document editor │
-│                    │ e │                      │ e │ Sections        │
-│ provider-neutral   │ s │    [ A4 page 1 ]     │ s │ Fields          │
-│ timeline/tool      │ i │    [ A4 page 2 ]     │ i │ Comments        │
-│ status/approvals   │ z │                      │ z │ Tools/settings  │
+│ Document editor   │ R │ paged CV canvas      │ R │ Agent chat       │
+│ Sections/fields   │ e │                      │ e │ messages/reason  │
+│ Comments/tools    │ s │    [ A4 page 1 ]     │ s │ plans/tools      │
+│                   │ i │    [ A4 page 2 ]     │ i │ approvals/status │
+│                   │ z │                      │ z │                  │
 └────────────────────┴───┴──────────────────────┴───┴─────────────────┘
 ~~~
 
-The left agent chat and right document editor are independently resizable. The left chat defaults to 460 px; the right editor keeps its local width preference. Below the narrow breakpoint both become fixed drawer regions without resizers.
+The left document editor and right agent chat are independently resizable. The right chat defaults to 460 px; the left editor keeps its local width preference. Below the narrow breakpoint both become fixed drawer regions without resizers.
 
-Agent selection, provider version/readiness, session start/resume, model, and permission-mode configuration belong in Settings. The chat window displays the active session and activity but does not provide a second provider selector.
+Agent selection, provider version/readiness, session start/resume, provider-native model, and permission-mode configuration belong in Settings and the chat composer. The chat window displays the active session and activity but does not provide a second provider selector.
 
 ## 4. Top toolbar
 

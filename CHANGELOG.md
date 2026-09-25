@@ -9,15 +9,17 @@ This project uses Semantic Versioning. See `.dev/VERSIONING.md` for the project 
 ### Added
 
 - Central local agent control with isolated Claude Code Agent SDK, Codex App Server, and OMP ACP adapter modules.
-- Resizable left agent chat with streamed messages, provider-visible reasoning, plans, tool lifecycle, usage, workspace changes, validation, and inline approvals.
-- Settings-driven agent detection, provider selection, session start/resume, model, permission-mode, and saved-session controls.
+- Resizable right-sidebar agent chat with streamed messages, provider-visible reasoning, plans, tool lifecycle, usage, workspace changes, validation, and inline approvals.
+- Settings-driven agent detection, provider selection, session start/resume, provider-native model/permission controls, and saved-session controls.
 - Same-origin agent APIs, resumable SSE agent events, bounded/redacted provider payloads, and atomic runtime session indexing.
+- Hardened Unix and Windows installers with HTTPS-only transport, archive-path validation, atomic rollback, install locking, stale-version cleanup, and CI contract tests.
+- Lockfile-pinned production runtime bundles that exclude optional native platform binaries and compile the agent runtime for release use.
 
 ### Changed
 
-- Restored the document editor and comments to the right sidebar while moving the unified agent experience to the left.
-- Agent chat width now defaults to 460 px and persists independently from the right editor width.
-- Refined the left chat into a rounded minimal composer with active-document context, read-only model summary, focused send control, and functional document/source/settings shortcuts.
+- Moved the unified agent experience to the right sidebar while keeping the document editor and comments on the left.
+- Agent chat width defaults to 460 px and persists independently from the editor width.
+- Refined the chat into a rounded composer with active-document context, native model/permission dropdowns, send control, and document/source/settings shortcuts.
 
 ## [0.1.0-alpha.4] - 2026-09-23
 

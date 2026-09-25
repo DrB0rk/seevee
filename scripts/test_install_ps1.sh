@@ -5,6 +5,16 @@ set -e
 
 SCRIPT="$(dirname "$0")/../install.ps1"
 
+assert() {
+  desc="$1"; shift
+  if "$@" >/dev/null 2>&1; then
+    echo "PASS: $desc"
+  else
+    echo "FAIL: $desc"
+    exit 1
+  fi
+}
+
 # Test: script has param block (PowerShell function param syntax)
 if grep -q "^\s*param(" "$SCRIPT"; then
   echo "PASS: install.ps1 has param block"
@@ -83,4 +93,14 @@ else
   exit 1
 fi
 
+assert "validates archive entries and rejects symlinks" grep -q 'Assert-ArchiveEntries' "$SCRIPT"
+assert "enforces HTTPS response scheme" sh -c "grep -q 'RequestMessage.RequestUri' '$SCRIPT' && grep -q 'Refusing insecure redirect' '$SCRIPT'"
+assert "guards launcher rollback" grep -q 'LauncherTouched' "$SCRIPT"
+assert "locks concurrent installations" grep -q 'install.lock' "$SCRIPT"
+assert "only removes an owned install lock" sh -c "grep -q 'LockAcquired' '$SCRIPT' && grep -q 'LockDir = \$null' '$SCRIPT'"
+assert "creates a private temp directory with retries" grep -q 'GetRandomFileName' "$SCRIPT"
+assert "creates launcher temp files with CreateNew" sh -c "grep -q 'Guid.*NewGuid' '$SCRIPT' && grep -q 'FileMode.*CreateNew' '$SCRIPT'"
+assert "matches PATH entries exactly" grep -q 'PathEntries -notcontains' "$SCRIPT"
+assert "prunes superseded versions" grep -q "Get-ChildItem.*-Filter 'v\*'" "$SCRIPT"
+assert "checks the bundled agent runtime" grep -q 'agent-runtime\\dist\\index.js' "$SCRIPT"
 echo "All install.ps1 static tests passed"
