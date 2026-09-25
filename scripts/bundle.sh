@@ -261,6 +261,10 @@ cat > "$WORK/pnpm-workspace.yaml" <<'YAML'
 packages:
   - 'packages/*'
   - 'apps/studio'
+
+allowBuilds:
+  esbuild: true
+  sharp: true
 YAML
 cp "$ROOT_DIR/pnpm-lock.yaml" "$WORK/pnpm-lock.yaml"
 for pkg in $RUNTIME_PKGS; do
@@ -281,7 +285,7 @@ cp -R "$ROOT_DIR/apps/studio/dist" "$WORK/apps/studio/"
 # Optional platform binaries (Claude SDK, Sharp, esbuild, Rollup, Lightning CSS)
 # are build-time or user-agent-provided; Seevee launches the user's installed
 # agent executables and does not need those native packages in the runtime.
-(cd "$WORK" && pnpm install --prod --frozen-lockfile --no-optional --prefer-offline --config.ignore-scripts=false --silent)
+(cd "$WORK" && pnpm install --prod --frozen-lockfile --no-optional --prefer-offline --config.ignore-scripts=false)
 if [ -d "$WORK/node_modules" ]; then
   cp -R "$WORK/node_modules/." "$RUNTIME/node_modules/"
 fi

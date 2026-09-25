@@ -6,7 +6,7 @@ This project uses Semantic Versioning. See `.dev/VERSIONING.md` for the project 
 
 ## [Unreleased]
 
-## [0.1.0-alpha.10] - 2026-09-25
+## [0.1.0-alpha.11] - 2026-09-25
 
 ### Added
 
@@ -31,6 +31,7 @@ This project uses Semantic Versioning. See `.dev/VERSIONING.md` for the project 
 - Reduced Linux release bundles from roughly 150 MB to roughly 30 MB by excluding optional native binaries and non-runtime build artifacts.
 - Aligned CI and release installs with pnpm 11.18.0 so the committed lockfile can be consumed with `--frozen-lockfile`.
 - Configured pnpm 11 `allowBuilds` for the required native tools and moved dependency installation ahead of package scripts in release CI.
+- Applied the same pnpm build policy to the synthetic runtime resolver used for release bundles.
 
 ## [0.1.0-alpha.4] - 2026-09-23
 
