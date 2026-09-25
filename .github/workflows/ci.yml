@@ -25,6 +25,8 @@ jobs:
         with:
           node-version: '20'
           cache: 'pnpm'
+      - name: Approve native build scripts
+        run: pnpm approve-builds --all
       - name: Install
         run: pnpm install --frozen-lockfile --prefer-offline
       - name: Typecheck

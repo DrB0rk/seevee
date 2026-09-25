@@ -6,7 +6,7 @@ This project uses Semantic Versioning. See `.dev/VERSIONING.md` for the project 
 
 ## [Unreleased]
 
-## [0.1.0-alpha.7] - 2026-09-25
+## [0.1.0-alpha.8] - 2026-09-25
 
 ### Added
 

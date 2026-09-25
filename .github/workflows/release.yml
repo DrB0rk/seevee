@@ -30,6 +30,8 @@ jobs:
         with:
           node-version: '22'
           cache: 'pnpm'
+      - name: Approve native build scripts
+        run: pnpm approve-builds --all
 
       - name: Verify tag matches VERSION
         run: test "${GITHUB_REF_NAME#v}" = "$(cat VERSION)"
