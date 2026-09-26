@@ -1,6 +1,6 @@
 {
   "name": "@seevee/cli",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Seevee command-line interface — install once, run `seevee init` to scaffold a workspace.",
   "type": "module",

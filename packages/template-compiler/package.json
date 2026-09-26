@@ -1,6 +1,6 @@
 {
   "name": "@seevee/template-compiler",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Seevee source-template compiler — converts a versioned Astro template into an immutable, hashable artifact directory after a static safety scan, manifest validation, fixture renders, and layout diagnostics.",
   "type": "module",
