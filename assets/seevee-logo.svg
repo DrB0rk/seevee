@@ -1,23 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="760" height="180" viewBox="0 0 760 180" fill="none" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="650" height="160" viewBox="0 0 650 160" role="img" aria-labelledby="title desc">
   <title id="title">Seevee</title>
-  <desc id="desc">Seevee logo: a blue checkmark on a folded-corner document, beside the Seevee wordmark.</desc>
-  <defs>
-    <linearGradient id="check" x1="55" y1="61" x2="101" y2="111" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#3478F6"/>
-      <stop offset="1" stop-color="#174BBE"/>
-    </linearGradient>
-    <filter id="shadow" x="0" y="0" width="180" height="180" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-      <feDropShadow dx="0" dy="5" stdDeviation="7" flood-color="#000000" flood-opacity=".2"/>
-    </filter>
-  </defs>
-  <rect x="1" y="1" width="758" height="178" rx="34" fill="#0F1113" stroke="#242A30" stroke-width="2"/>
-  <g filter="url(#shadow)">
-    <rect x="12" y="12" width="156" height="156" rx="32" fill="#1B2A44"/>
-    <rect x="12.75" y="12.75" width="154.5" height="154.5" rx="31.25" stroke="#6A91D5" stroke-width="1.5"/>
-  </g>
-  <path d="M62 45.5H104L122.5 64V119C122.5 124.799 117.799 129.5 112 129.5H62C56.201 129.5 51.5 124.799 51.5 119V56C51.5 50.201 56.201 45.5 62 45.5Z" fill="#F3F6FC" stroke="#FFFFFF"/>
-  <path d="M104 46V59C104 62.314 106.686 65 110 65H122" stroke="#879EC3" stroke-width="1.5"/>
-  <path d="M63 81L76.5 104L103 62" stroke="url(#check)" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <text x="198" y="112" fill="#F2F4F6" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="78" font-weight="700" letter-spacing="-4">seevee</text>
-  <text x="204" y="142" fill="#88919B" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="18" font-weight="500" letter-spacing=".5">agent-driven CV studio</text>
+  <desc id="desc">Seevee wordmark on a dark background.</desc>
+<rect width="650" height="160" rx="24" fill="#171d27"/><g transform="translate(16 16)"><rect width="128" height="128" rx="28" fill="#182338"/><path d="M27 31c14-2 27 1 37 9v61c-10-8-23-11-37-9V31Z" fill="#f7f9fc"/><path d="M101 31c-14-2-27 1-37 9v61c10-8 23-11 37-9V31Z" fill="#5d8cff"/></g><g fill="#f7f9fc" transform="translate(166 112) scale(0.098 -0.098)"><path d="M438 482 384 401Q317 443 252 443Q217 443 198.0 430.0Q179 417 179 395Q179 379 187.5 368.0Q196 357 219.5 347.0Q243 337 290 323Q374 300 415.0 261.5Q456 223 456 156Q456 103 425.5 64.0Q395 25 343.0 4.5Q291 -16 227 -16Q160 -16 105.0 4.5Q50 25 11 61L81 139Q148 87 223 87Q263 87 286.5 102.5Q310 118 310 145Q310 166 301.0 178.0Q292 190 268.0 200.5Q244 211 193 225Q113 247 74.5 287.5Q36 328 36 388Q36 433 62.0 469.0Q88 505 135.5 525.5Q183 546 246 546Q358 546 438 482Z" transform="translate(0 0)"/><path d="M515 222H184Q191 150 223.0 120.0Q255 90 310 90Q344 90 374.0 101.0Q404 112 439 136L498 56Q409 -16 297 -16Q172 -16 105.0 59.0Q38 134 38 262Q38 343 66.5 407.5Q95 472 149.5 509.0Q204 546 279 546Q392 546 455.0 475.0Q518 404 518 277Q518 267 515 222ZM377 317Q377 449 282 449Q238 449 213.5 416.5Q189 384 184 311H377Z" transform="translate(477 0)"/><path d="M515 222H184Q191 150 223.0 120.0Q255 90 310 90Q344 90 374.0 101.0Q404 112 439 136L498 56Q409 -16 297 -16Q172 -16 105.0 59.0Q38 134 38 262Q38 343 66.5 407.5Q95 472 149.5 509.0Q204 546 279 546Q392 546 455.0 475.0Q518 404 518 277Q518 267 515 222ZM377 317Q377 449 282 449Q238 449 213.5 416.5Q189 384 184 311H377Z" transform="translate(1029 0)"/><path d="M340 0H171L-2 530H152L257 111L364 530H510Z" transform="translate(1581 0)"/><path d="M515 222H184Q191 150 223.0 120.0Q255 90 310 90Q344 90 374.0 101.0Q404 112 439 136L498 56Q409 -16 297 -16Q172 -16 105.0 59.0Q38 134 38 262Q38 343 66.5 407.5Q95 472 149.5 509.0Q204 546 279 546Q392 546 455.0 475.0Q518 404 518 277Q518 267 515 222ZM377 317Q377 449 282 449Q238 449 213.5 416.5Q189 384 184 311H377Z" transform="translate(2089 0)"/><path d="M515 222H184Q191 150 223.0 120.0Q255 90 310 90Q344 90 374.0 101.0Q404 112 439 136L498 56Q409 -16 297 -16Q172 -16 105.0 59.0Q38 134 38 262Q38 343 66.5 407.5Q95 472 149.5 509.0Q204 546 279 546Q392 546 455.0 475.0Q518 404 518 277Q518 267 515 222ZM377 317Q377 449 282 449Q238 449 213.5 416.5Q189 384 184 311H377Z" transform="translate(2641 0)"/></g>
 </svg>

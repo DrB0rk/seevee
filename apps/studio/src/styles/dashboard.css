@@ -103,8 +103,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 
 .topbar { grid-area: top; display: flex; align-items: center; gap: 16px; min-width: 0; padding: 0 12px 0 16px; background: var(--surface-raised); border-bottom: 1px solid var(--border-default); }
 .brand { display: inline-flex; align-items: center; gap: 8px; color: var(--text-primary); text-decoration: none; }
-.brand-mark { display: block; width: 22px; height: 22px; flex: 0 0 auto; border-radius: var(--radius-sm); object-fit: contain; }
-.brand-name { font-size: 12.5px; font-weight: 640; letter-spacing: -.02em; }
+.brand-mark { display: block; width: 26px; height: 26px; flex: 0 0 auto; object-fit: contain; }
+.brand-name { font-size: 14px; font-weight: 640; letter-spacing: -.025em; }
 .topbar-divider, .control-divider { width: 1px; height: 25px; background: var(--separator); flex: 0 0 auto; }
 .workspace-label, .cv-select-wrap { min-width: 110px; display: flex; flex-direction: column; gap: 2px; }
 .workspace-label strong { max-width: 210px; overflow: hidden; color: var(--text-primary); font-size: 12px; font-weight: 540; text-overflow: ellipsis; white-space: nowrap; }
@@ -744,7 +744,7 @@ button:active { background-color: var(--control-hover); }
 }
 .topbar, .canvas-bar { background: var(--surface-panel); box-shadow: none; }
 .topbar { gap: 18px; padding-inline: 18px; border-bottom-color: var(--border-default); }
-.brand-mark { width: 25px; height: 25px; }
+.brand-mark { width: 26px; height: 26px; }
 .brand-name { font-size: 14px; font-weight: 680; }
 .topbar-divider { height: 30px; background: var(--border-default); }
 .workspace-label strong, .cv-select-wrap select { font-size: 12px; }

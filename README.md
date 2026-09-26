@@ -1,9 +1,12 @@
 <p align="center">
-  <img src="assets/seevee-logo.svg" alt="Seevee — agent-driven CV studio" width="560" />
+  <picture>
+    <source media="(prefers-color-scheme: light)" srcset="assets/brand/banner-light.svg" />
+    <img src="assets/brand/banner-dark.svg" alt="Seevee — a focused workspace for your CV" width="1600" />
+  </picture>
 </p>
 
 <p align="center">
-  <img alt="Status" src="https://img.shields.io/badge/status-pre--release%20runtime-4C8DFF?style=flat-square" />
+  <img alt="Release status" src="https://img.shields.io/badge/release-v0.1.0-4C8DFF?style=flat-square" />
   <img alt="CV data" src="https://img.shields.io/badge/CV%20data-modular%20JSON-22272E?style=flat-square" />
   <img alt="Templates" src="https://img.shields.io/badge/templates-Astro-BC52EE?style=flat-square&logo=astro&logoColor=white" />
   <img alt="Schema" src="https://img.shields.io/badge/schema-JSON%20Schema%202020--12-22272E?style=flat-square" />
@@ -14,6 +17,8 @@
 # Seevee
 
 Seevee is a local, agent-driven CV studio.
+
+The [logo and banner pack](assets/brand/README.md) includes vector and PNG assets for light and dark surfaces, social previews, and app icons.
 
 Give an agent source material, let it normalize your information into structured JSON, and render that information through interchangeable Astro templates. The fixed Seevee dashboard gives you physical-page preview, comments, provenance, history, diagnostics, and PDF export without dictating what your CV has to look like.
 

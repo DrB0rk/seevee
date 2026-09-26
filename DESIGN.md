@@ -3,15 +3,17 @@
 ## Source of truth
 
 **Status:** Active  
-**Date:** 2026-09-25  
-**Product surfaces:** Seevee Studio dashboard shell, CV editor, page canvas, agent workspace, settings  
-**Evidence reviewed:** `README.md`, `.dev/specs/DASHBOARD_EDITOR.md`, `.dev/specs/DASHBOARD_VISUAL_DESIGN.md`, `apps/studio/src/layouts/Dashboard.astro`, `apps/studio/src/styles/dashboard.css`, and the agent chat component.
+**Date:** 2026-09-26
+**Product surfaces:** Seevee Studio dashboard shell, CV editor, page canvas, agent workspace, settings, and public brand assets
+**Evidence reviewed:** `README.md`, `.dev/specs/DASHBOARD_EDITOR.md`, `.dev/specs/DASHBOARD_VISUAL_DESIGN.md`, `apps/studio/src/layouts/Dashboard.astro`, `apps/studio/src/styles/dashboard.css`, the agent chat component, and `assets/brand/`.
 
 The two dashboard specs define the detailed behavior. This file is the concise, product-level design contract. The user confirmed the panel order: **agent workspace on the left, CV section editor on the right, physical CV pages in the center.**
 
 ## Brand
 
 Seevee is a focused, local-first CV studio. The interface should feel considered, capable, and quiet. Trust comes from visible save state, explicit agent activity, direct access to document facts, and an accurate physical-page preview.
+
+The brand mark is two facing pages forming a V at their spine. It uses a navy tile, an off-white left page, and a single blue right page. The lowercase Fira Sans wordmark is supplied as vector outlines. Use the light or dark lockup for the surrounding surface; use the monochrome marks where color is unavailable. `assets/brand/README.md` is the asset and usage guide.
 
 Avoid dashboard metrics, promotional cards, decorative gradients, excess chrome, opaque agent actions, and any dashboard styling that leaks into the rendered CV.
 
@@ -55,6 +57,8 @@ Settings use grouped navigation for workspace, agent, document, and product pref
 ## Visual language
 
 Use a restrained neutral palette with one blue accent and semantic status colors. Dark mode uses graphite surfaces with clear elevation steps; light mode uses cool white and gray surfaces with equivalent separation. Keep the center pasteboard distinct from both side panels. Use the existing UI font stack and compact, readable type. Use a 4px spacing rhythm, square panel edges, modest control radii, and shadows only for floating tools and dialogs. Motion is short and state-oriented. Avoid decorative grids, glow, and gradient effects.
+
+Brand artwork uses navy `#182338`, blue `#5D8CFF`, off-white `#F7F9FC`, and ink `#172133`. Banner artwork is flat and document-led so it remains legible at social preview sizes. Keep descriptive copy outside the compact wordmark.
 
 ## Components
 

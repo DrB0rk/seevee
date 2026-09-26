@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="560" viewBox="0 0 1600 560" role="img" aria-labelledby="title desc">
+  <title id="title">Seevee — a focused workspace for your CV</title>
+  <desc id="desc">Seevee logo and a pair of clean CV pages on a restrained background.</desc>
+
+  <rect width="1600" height="560" rx="24" fill="#171d27"/>
+  <rect x="1" y="1" width="1598" height="558" rx="23" fill="none" stroke="#303b4a" stroke-width="2"/>
+  <g transform="translate(91 72) scale(1.25)"><rect width="128" height="128" rx="28" fill="#182338"/><path d="M27 31c14-2 27 1 37 9v61c-10-8-23-11-37-9V31Z" fill="#f7f9fc"/><path d="M101 31c-14-2-27 1-37 9v61c10-8 23-11 37-9V31Z" fill="#5d8cff"/></g>
+  <g fill="#f7f9fc" transform="translate(273 204) scale(0.118 -0.118)"><path d="M438 482 384 401Q317 443 252 443Q217 443 198.0 430.0Q179 417 179 395Q179 379 187.5 368.0Q196 357 219.5 347.0Q243 337 290 323Q374 300 415.0 261.5Q456 223 456 156Q456 103 425.5 64.0Q395 25 343.0 4.5Q291 -16 227 -16Q160 -16 105.0 4.5Q50 25 11 61L81 139Q148 87 223 87Q263 87 286.5 102.5Q310 118 310 145Q310 166 301.0 178.0Q292 190 268.0 200.5Q244 211 193 225Q113 247 74.5 287.5Q36 328 36 388Q36 433 62.0 469.0Q88 505 135.5 525.5Q183 546 246 546Q358 546 438 482Z" transform="translate(0 0)"/><path d="M515 222H184Q191 150 223.0 120.0Q255 90 310 90Q344 90 374.0 101.0Q404 112 439 136L498 56Q409 -16 297 -16Q172 -16 105.0 59.0Q38 134 38 262Q38 343 66.5 407.5Q95 472 149.5 509.0Q204 546 279 546Q392 546 455.0 475.0Q518 404 518 277Q518 267 515 222ZM377 317Q377 449 282 449Q238 449 213.5 416.5Q189 384 184 311H377Z" transform="translate(477 0)"/><path d="M515 222H184Q191 150 223.0 120.0Q255 90 310 90Q344 90 374.0 101.0Q404 112 439 136L498 56Q409 -16 297 -16Q172 -16 105.0 59.0Q38 134 38 262Q38 343 66.5 407.5Q95 472 149.5 509.0Q204 546 279 546Q392 546 455.0 475.0Q518 404 518 277Q518 267 515 222ZM377 317Q377 449 282 449Q238 449 213.5 416.5Q189 384 184 311H377Z" transform="translate(1029 0)"/><path d="M340 0H171L-2 530H152L257 111L364 530H510Z" transform="translate(1581 0)"/><path d="M515 222H184Q191 150 223.0 120.0Q255 90 310 90Q344 90 374.0 101.0Q404 112 439 136L498 56Q409 -16 297 -16Q172 -16 105.0 59.0Q38 134 38 262Q38 343 66.5 407.5Q95 472 149.5 509.0Q204 546 279 546Q392 546 455.0 475.0Q518 404 518 277Q518 267 515 222ZM377 317Q377 449 282 449Q238 449 213.5 416.5Q189 384 184 311H377Z" transform="translate(2089 0)"/><path d="M515 222H184Q191 150 223.0 120.0Q255 90 310 90Q344 90 374.0 101.0Q404 112 439 136L498 56Q409 -16 297 -16Q172 -16 105.0 59.0Q38 134 38 262Q38 343 66.5 407.5Q95 472 149.5 509.0Q204 546 279 546Q392 546 455.0 475.0Q518 404 518 277Q518 267 515 222ZM377 317Q377 449 282 449Q238 449 213.5 416.5Q189 384 184 311H377Z" transform="translate(2641 0)"/></g>
+  <rect x="93" y="265" width="66" height="5" rx="2.5" fill="#5d8cff"/>
+  <text x="91" y="338" fill="#f7f9fc" font-family="Fira Sans, Arial, sans-serif" font-size="44" font-weight="500">A focused workspace for your CV.</text>
+  <text x="93" y="391" fill="#aab6c6" font-family="Fira Sans, Arial, sans-serif" font-size="25">Create, edit, and collaborate with your agent.</text>
+  <text x="93" y="489" fill="#aab6c6" font-family="Fira Sans, Arial, sans-serif" font-size="18" font-weight="500" letter-spacing="3">LOCAL  ·  STRUCTURED  ·  YOURS</text>
+  
+  <g transform="translate(1115 32) rotate(9 170 246)" opacity=".55">
+    <rect x="0" y="0" width="330" height="470" rx="20" fill="#272f3b" stroke="#3b4656" stroke-width="2"/>
+  </g>
+  <g transform="translate(1030 51) rotate(-7 170 246)">
+    <rect x="0" y="0" width="330" height="470" rx="20" fill="#272f3b" stroke="#3b4656" stroke-width="2"/>
+    <rect x="34" y="40" width="86" height="6" rx="3" fill="#5d8cff"/>
+    <rect x="34" y="78" width="193" height="18" rx="7" fill="#f7f9fc" opacity=".88"/>
+    <rect x="34" y="116" width="262" height="4" rx="2" fill="#748195"/>
+    <rect x="34" y="134" width="236" height="4" rx="2" fill="#748195"/>
+    <rect x="34" y="173" width="90" height="5" rx="2.5" fill="#5d8cff"/>
+    <rect x="34" y="200" width="262" height="4" rx="2" fill="#748195"/>
+    <rect x="34" y="219" width="243" height="4" rx="2" fill="#748195"/>
+    <rect x="34" y="238" width="255" height="4" rx="2" fill="#748195"/>
+    <rect x="34" y="290" width="90" height="5" rx="2.5" fill="#5d8cff"/>
+    <rect x="34" y="317" width="262" height="4" rx="2" fill="#748195"/>
+    <rect x="34" y="336" width="237" height="4" rx="2" fill="#748195"/>
+    <rect x="34" y="355" width="253" height="4" rx="2" fill="#748195"/>
+  </g>
+</svg>
