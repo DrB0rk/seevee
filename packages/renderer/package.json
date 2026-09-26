@@ -1,6 +1,6 @@
 {
   "name": "@seevee/renderer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Deterministic physical-page renderer for Seevee CV/Presentation documents with per-page layout diagnostics.",
   "type": "module",

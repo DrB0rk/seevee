@@ -1,6 +1,6 @@
 {
   "name": "@seevee/studio",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Seevee local self-hosted studio dashboard — Astro app that owns /, /api/* and the SSE event bus for a workspace.",
   "type": "module",

@@ -2,7 +2,7 @@
 
 Audience: repository development agents.
 
-Last audited: 2026-09-23
+Last audited: 2026-09-26
 
 ## Status legend
 
@@ -12,7 +12,7 @@ Last audited: 2026-09-23
 
 ## Current repository reality
 
-Seevee has usable schema, CLI, ingestion, agent tools, local dashboard, and central multi-agent control implementations. Template-driven rendering and server-side PDF export remain incomplete. The dashboard supports browser print-to-PDF, a resizable right agent chat, and the restored left document editor.
+Seevee has usable schema, CLI, ingestion, agent tools, local dashboard, and central multi-agent control implementations. Template-driven rendering and server-side PDF export remain incomplete. The dashboard supports browser print-to-PDF, a resizable right agent chat, and the left document editor with social links. Agent prompts receive the active CV, source excerpts, and a text/layout snapshot of the current editor preview; that snapshot is not a pixel screenshot.
 
 All packages typecheck (`pnpm typecheck` exit 0). All tests pass (`pnpm test` exit 0). End-to-end smoke verified: `seevee init --no-open → seevee status → seevee stop`.
 

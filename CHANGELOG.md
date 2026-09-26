@@ -6,6 +6,25 @@ This project uses Semantic Versioning. See `.dev/VERSIONING.md` for the project 
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-26
+
+### Added
+
+- The CV editor supports phone, LinkedIn, GitHub, website, Mastodon, ORCID, and another profile link. Safe social URLs appear in the document preview with distinct Lucide icons.
+- Every agent prompt privately includes the active CV state, exact resource and template paths, source excerpts, and the open editor's rendered page text and image details. Uploaded reference PDFs are extracted when `pdftotext` is available.
+- A reusable light and dark logo and banner pack with app icons and social artwork, with corrected mark and wordmark alignment.
+
+### Changed
+
+- Agent chat omits empty provider reasoning frames and places tool activity closer to the reply that led to it.
+- Workspace agent guidance directs agents to work from the supplied CV and preview state instead of repeatedly rediscovering the workspace or starting another dashboard for routine inspection.
+- CI uses Node 22, which is compatible with the pinned pnpm 11 release.
+
+### Notes
+
+- The private editor preview supplies page text and image metadata, not a pixel screenshot. Template-driven Studio preview, server-side PDF export, and image recognition remain incomplete.
+- No workspace schema migration is required.
+
 ## [0.1.0] - 2026-09-26
 
 ### Changed
