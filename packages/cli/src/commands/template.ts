@@ -22,9 +22,7 @@
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import type { z } from 'zod';
-
-import { workspaceDocumentSchema } from '@seevee/schema';
+import { workspaceDocumentSchema, type WorkspaceDocument } from '@seevee/schema';
 import { compileTemplate, runPolicyScan, validateManifest } from '@seevee/template-compiler';
 
 import type { CommandContext, CommandResult } from '../cli.js';
@@ -34,7 +32,6 @@ import { discoverWorkspace } from '../runtime/workspace-discovery.js';
 const SUBCOMMANDS = ['list', 'draft', 'validate', 'compile', 'activate'] as const;
 type Subcommand = (typeof SUBCOMMANDS)[number];
 
-type WorkspaceDocument = z.infer<typeof workspaceDocumentSchema>;
 type TemplateEntry = WorkspaceDocument['data']['resources']['templates'][string];
 
 /** Where compiled artifacts land, relative to the workspace root. */
