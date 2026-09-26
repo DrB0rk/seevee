@@ -12,6 +12,8 @@ export interface CreateAdapterSessionOptions {
   workspaceRoot: string;
   executablePath: string;
   resumeSessionId?: string;
+  /** Fully rendered system instructions, including workspace context. */
+  instructions: string;
   emit: (event: AgentEventInput) => void;
   signal: AbortSignal;
 }

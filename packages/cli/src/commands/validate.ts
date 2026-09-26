@@ -208,8 +208,11 @@ export async function runValidate(ctx: CommandContext): Promise<CommandResult> {
 }
 
 async function runSemanticPass(ws: DiscoveredWorkspace): Promise<SemanticIssue[]> {
-  // Load the whole workspace's worth of documents. Best-effort: missing
-  // files are silently absent in the context and the semantic pass skips.
+  // The semantic pass only sees what it loads, so it must load the same
+  // documents the dashboard validates — the ones `seevee.json` registers.
+  // Looking for fixed filenames here made the pass a silent no-op: it
+  // reported "0 semantic issues" for workspaces that were in fact broken,
+  // which is worse than no check at all.
   const ctx = await loadSemanticContext({ ws });
   return validateWorkspaceSemantics(ctx);
 }
@@ -218,35 +221,44 @@ interface SemanticContextInputs {
   ws: DiscoveredWorkspace;
 }
 
-async function loadSemanticContext(input: SemanticContextInputs): Promise<Parameters<typeof validateWorkspaceSemantics>[0]> {
-  const { ws } = input;
-  const ctx: Parameters<typeof validateWorkspaceSemantics>[0] = {};
-  const want = [
-    { dir: 'cvs', kind: 'seevee.cv', slot: 'cv' as const },
-    { dir: 'provenance', kind: 'seevee.provenance', slot: 'provenance' as const },
-    { dir: 'comments', kind: 'seevee.comments', slot: 'comments' as const },
-    { dir: 'presentations', kind: 'seevee.presentation', slot: 'presentation' as const },
-    { dir: '', kind: 'seevee.workspace', slot: 'workspace' as const },
-  ];
-  for (const target of want) {
-    const file =
-      target.dir === ''
-        ? ws.workspaceFile
-        : path.join(ws.root, target.dir, 'main.json');
-    let raw: string;
-    try {
-      raw = await fs.readFile(file, 'utf8');
-    } catch {
-      continue;
-    }
-    try {
-      const parsed: unknown = JSON.parse(raw);
-      ctx[target.slot] = parsed as never;
-    } catch {
-      // skip malformed canonical file
-    }
+type SemanticContext = Parameters<typeof validateWorkspaceSemantics>[0];
+type SemanticDocument<K extends keyof SemanticContext> = NonNullable<SemanticContext[K]>;
+
+async function readDocument<T>(file: string): Promise<T | null> {
+  try {
+    return JSON.parse(await fs.readFile(file, 'utf8')) as T;
+  } catch {
+    return null;
   }
-  return ctx;
+}
+
+async function loadSemanticContext(input: SemanticContextInputs): Promise<SemanticContext> {
+  const { ws } = input;
+  const workspace = await readDocument<SemanticDocument<'workspace'>>(ws.workspaceFile);
+  if (workspace === null) return {};
+
+  const resources = workspace.data.resources;
+  const cvEntry = workspace.data.active.cvId === null ? undefined : resources.cvs[workspace.data.active.cvId];
+  if (cvEntry === undefined) return { workspace };
+  const cv = await readDocument<SemanticDocument<'cv'>>(path.join(ws.root, cvEntry.relativePath));
+  if (cv === null) return { workspace };
+
+  const presentationId = workspace.data.active.presentationId;
+  const presentationEntry = presentationId === null ? undefined : resources.presentations[presentationId];
+  const provenanceEntry = Object.values(resources.provenance).find((entry) => entry.cvId === cv.id);
+  const commentsEntry = Object.values(resources.comments).find((entry) => entry.cvId === cv.id);
+  const [presentation, provenance, comments] = await Promise.all([
+    presentationEntry === undefined ? null : readDocument<SemanticDocument<'presentation'>>(path.join(ws.root, presentationEntry.relativePath)),
+    provenanceEntry === undefined ? null : readDocument<SemanticDocument<'provenance'>>(path.join(ws.root, provenanceEntry.relativePath)),
+    commentsEntry === undefined ? null : readDocument<SemanticDocument<'comments'>>(path.join(ws.root, commentsEntry.relativePath)),
+  ]);
+  return {
+    workspace,
+    cv,
+    ...(presentation === null ? {} : { presentation }),
+    ...(provenance === null ? {} : { provenance }),
+    ...(comments === null ? {} : { comments }),
+  };
 }
 
 async function collectValidateTargets(

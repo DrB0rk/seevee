@@ -24,7 +24,8 @@
     "test:unit": "vitest run"
   },
   "dependencies": {
-    "@seevee/schema": "workspace:*"
+    "@seevee/schema": "workspace:*",
+    "@seevee/template-compiler": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

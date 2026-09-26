@@ -2,19 +2,29 @@
   "kind": "seevee.cv",
   "schemaVersion": "1.0.0",
   "id": "cv_test",
-  "revision": 1,
+  "revision": 3,
   "createdAt": "2026-01-01T00:00:00.000Z",
-  "updatedAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-09-25T20:06:48.163Z",
   "data": {
     "locale": "en-GB",
     "identity": {
       "id": "person_test",
-      "name": { "display": "Ada Lovelace" },
+      "name": {
+        "display": "Ada Lovelace"
+      },
+      "contact": [
+        {
+          "kind": "email",
+          "value": "ada@example.com"
+        }
+      ],
       "headline": "Mathematician",
-      "summary": "First programmer.",
-      "contact": [{ "kind": "email", "value": "ada@example.com" }]
+      "summary": "First programmer."
     },
-    "sectionOrder": ["sec_summary", "sec_experience"],
+    "sectionOrder": [
+      "sec_summary",
+      "sec_experience"
+    ],
     "sections": {
       "sec_summary": {
         "id": "sec_summary",
@@ -31,7 +41,9 @@
         "visible": true,
         "collapsible": false,
         "defaultCollapsed": false,
-        "nodeOrder": ["exp_acme"]
+        "nodeOrder": [
+          "exp_acme"
+        ]
       }
     },
     "entities": {
@@ -39,16 +51,36 @@
         "exp_acme": {
           "id": "exp_acme",
           "type": "experience",
-          "organization": { "id": "org_acme", "type": "organization", "name": "Acme" },
-          "role": { "id": "role_one", "type": "role", "title": "Senior Engineer" },
-          "period": { "start": { "precision": "year", "year": 2020 } },
-          "bulletOrder": ["bul_1"],
+          "organization": {
+            "id": "org_acme",
+            "type": "organization",
+            "name": "Acme"
+          },
+          "role": {
+            "id": "role_one",
+            "type": "role",
+            "title": "Senior Engineer"
+          },
+          "period": {
+            "start": {
+              "precision": "year",
+              "year": 2020
+            }
+          },
+          "bulletOrder": [
+            "bul_1"
+          ],
           "bullets": {
-            "bul_1": { "id": "bul_1", "text": "Shipped Seevee v0.1." }
+            "bul_1": {
+              "id": "bul_1",
+              "text": "Shipped Seevee v0.1."
+            }
           },
           "technologyRefs": []
         }
       },
+      "education": {},
+      "projects": {},
       "skills": {
         "skill_soldering": {
           "id": "skill_soldering",
@@ -64,13 +96,19 @@
       "publications": {},
       "volunteering": {},
       "references": {},
-      "education": {},
-      "projects": {},
       "organizations": {
-        "org_acme": { "id": "org_acme", "type": "organization", "name": "Acme" }
+        "org_acme": {
+          "id": "org_acme",
+          "type": "organization",
+          "name": "Acme"
+        }
       },
       "roles": {
-        "role_one": { "id": "role_one", "type": "role", "title": "Senior Engineer" }
+        "role_one": {
+          "id": "role_one",
+          "type": "role",
+          "title": "Senior Engineer"
+        }
       },
       "bulletCollections": {},
       "custom": {}

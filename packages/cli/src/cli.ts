@@ -25,6 +25,7 @@ import { runValidate } from './commands/validate.js';
 import { runDoctor } from './commands/doctor.js';
 import { runExport } from './commands/export.js';
 import { runComments } from './commands/comments.js';
+import { runTemplate } from './commands/template.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -59,6 +60,7 @@ export const COMMANDS = [
   'doctor',
   'export',
   'comments',
+  'template',
 ] as const;
 export type Command = (typeof COMMANDS)[number];
 
@@ -73,6 +75,7 @@ export interface GlobalFlags {
   allowNetwork: boolean;
   template: string | null;
   output: string | null;
+  draft: string | null;
   all: boolean;
   logLevel: 'silent' | 'error' | 'warn' | 'info' | 'debug';
 }
@@ -108,6 +111,7 @@ const DEFAULT_FLAGS: GlobalFlags = {
   allowNetwork: false,
   template: null,
   output: null,
+  draft: null,
   all: false,
   logLevel: 'info',
 };
@@ -125,6 +129,7 @@ const COMMAND_HANDLERS: Readonly<Record<Command, CommandHandler>> = {
   doctor: runDoctor,
   export: runExport,
   comments: runComments,
+  template: runTemplate,
 };
 
 /**
@@ -221,6 +226,18 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
     }
     if (arg.startsWith('--template=')) {
       flags.template = arg.slice('--template='.length);
+      i += 1;
+      continue;
+    }
+    if (arg === '--draft') {
+      const next = argv[i + 1];
+      if (next === undefined) throw new CliUsageError('--draft requires a value');
+      flags.draft = next;
+      i += 2;
+      continue;
+    }
+    if (arg.startsWith('--draft=')) {
+      flags.draft = arg.slice('--draft='.length);
       i += 1;
       continue;
     }
@@ -334,15 +351,17 @@ Commands:
   doctor [path]        diagnose runtime/browser/schema/template problems
   export [path]        export PDF from canonical state
   comments list [path] list actionable comments for the active CV
+  template <sub>       template lifecycle: list, draft, validate, compile, activate
 
 Flags:
-  --json               emit structured JSON for status/validate/doctor/export/comments
+  --json               emit structured JSON for status/validate/doctor/export/comments/template
   --all                include resolved comments (comments list)
   --no-open            skip launching the browser (init, open)
   --port <number>      bind port (default: workspace runtime, else random loopback)
   --host <address>     bind host (default: 127.0.0.1; non-loopback requires --allow-network)
   --allow-network      permit non-loopback --host
-  --template <id>      template id (export)
+  --template <id>      template id (export, template)
+  --draft <version>    template draft version id (template)
   --output, -o <path>  output path (export)
   --silent             suppress non-error output
   --quiet, -q          suppress informational output

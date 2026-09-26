@@ -17,7 +17,6 @@ import type {
   CreateAdapterSessionOptions,
 } from '../control/adapter.js';
 import { asRecord, optionalNumber, optionalString, sanitizeAgentValue } from '../control/payload.js';
-import { seeveeAgentInstructions } from '../control/seevee-agent.js';
 import {
   DEFAULT_AGENT_CAPABILITIES,
   type AgentCapabilities,
@@ -199,7 +198,7 @@ class ClaudeAdapterSession implements AdapterSession {
       options: {
         cwd: options.workspaceRoot,
         pathToClaudeCodeExecutable: options.executablePath,
-        systemPrompt: { type: 'preset', preset: 'claude_code', append: seeveeAgentInstructions() },
+        systemPrompt: { type: 'preset', preset: 'claude_code', append: options.instructions },
         includePartialMessages: true,
         forwardSubagentText: true,
         includeHookEvents: true,

@@ -1,0 +1,98 @@
+{
+  "kind": "seevee.template-manifest",
+  "schemaVersion": "1.0.0",
+  "id": "tpl_minimal_v1",
+  "templateId": "tpl_minimal",
+  "name": "Minimal with Serif Accent",
+  "version": "1.0.0",
+  "entry": "source.astro",
+  "engine": "astro",
+  "capabilities": {
+    "multiPage": true,
+    "customPageSize": false,
+    "comments": true,
+    "twoColumn": false
+  },
+  "supportedCvSchema": "1.0.0",
+  "supportedPresentationSchema": "1.0.0",
+  "tokens": {
+    "accent-color": {
+      "type": "color",
+      "default": "#743d5b",
+      "dashboardEditable": true,
+      "affectsPagination": false
+    },
+    "font-family": {
+      "type": "string",
+      "default": "Inter, system-ui, sans-serif",
+      "dashboardEditable": true,
+      "affectsPagination": true
+    },
+    "base-font-size": {
+      "type": "number",
+      "default": 10.5,
+      "min": 9,
+      "max": 14,
+      "step": 0.5,
+      "dashboardEditable": true,
+      "affectsPagination": true
+    },
+    "line-height": {
+      "type": "number",
+      "default": 1.4,
+      "min": 1.0,
+      "max": 2.0,
+      "step": 0.05,
+      "dashboardEditable": true,
+      "affectsPagination": true
+    }
+  },
+  "bindings": {
+    "identity": {
+      "id": "identity",
+      "selector": "[data-seevee-identity]",
+      "kind": "section",
+      "description": "Identity header."
+    },
+    "summary": {
+      "id": "summary",
+      "selector": "[data-seevee-section=\"summary\"]",
+      "kind": "section",
+      "description": "Profile summary."
+    },
+    "experience": {
+      "id": "experience",
+      "selector": "[data-seevee-section=\"experience\"]",
+      "kind": "collection",
+      "description": "Experience entries."
+    },
+    "education": {
+      "id": "education",
+      "selector": "[data-seevee-section=\"education\"]",
+      "kind": "collection",
+      "description": "Education entries."
+    },
+    "skills": {
+      "id": "skills",
+      "selector": "[data-seevee-section=\"skills\"]",
+      "kind": "collection",
+      "description": "Skills."
+    },
+    "projects": {
+      "id": "projects",
+      "selector": "[data-seevee-section=\"projects\"]",
+      "kind": "collection",
+      "description": "Projects."
+    }
+  },
+  "extensions": {},
+  "designIntent": {
+    "sector": "technical",
+    "voice": "custom",
+    "constraints": [
+      "single-column",
+      "serif-identity-header",
+      "A4-portrait"
+    ]
+  }
+}

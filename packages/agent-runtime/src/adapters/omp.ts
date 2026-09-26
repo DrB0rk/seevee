@@ -13,7 +13,6 @@ import {
   type JsonRpcRequestMessage,
 } from '../control/json-rpc.js';
 import { asRecord, optionalString, sanitizeAgentValue } from '../control/payload.js';
-import { seeveeAgentInstructions } from '../control/seevee-agent.js';
 import {
   DEFAULT_AGENT_CAPABILITIES,
   type AgentCapabilities,
@@ -129,7 +128,7 @@ class OmpAdapterSession implements AdapterSession {
     this.requestedResumeSessionId = options.resumeSessionId;
     this.rpc = new JsonRpcProcessClient({
       command: options.executablePath,
-      args: ['acp', '--approval-mode', 'always-ask', '--append-system-prompt', seeveeAgentInstructions()],
+      args: ['acp', '--approval-mode', 'always-ask', '--append-system-prompt', options.instructions],
       cwd: options.workspaceRoot,
       includeJsonRpcVersion: true,
       requestTimeoutMs: 60_000,
@@ -242,7 +241,7 @@ class OmpAdapterSession implements AdapterSession {
       const modeId = options.permissionMode === 'plan' ? 'plan' : 'default';
       await this.rpc.request('session/set_mode', { sessionId: this.externalSessionId, modeId });
       this.modeId = modeId;
-      this.permissionMode = modeId === 'plan' ? 'plan' : 'ask';
+      this.permissionMode = options.permissionMode === 'full' ? 'full' : modeId === 'plan' ? 'plan' : 'ask';
     }
     if (options.model !== undefined) {
       await this.rpc.request('session/set_config_option', {
@@ -268,6 +267,7 @@ class OmpAdapterSession implements AdapterSession {
       permissions: [
         { id: 'ask', label: 'Ask before tools', description: 'Review OMP permission requests.' },
         { id: 'plan', label: 'Plan only', description: 'Use OMP plan mode without workspace edits.' },
+        { id: 'full', label: 'Full access', description: 'Automatically allow OMP tool requests without asking.' },
       ],
     };
   }
@@ -324,6 +324,15 @@ class OmpAdapterSession implements AdapterSession {
     if (SUPPORTED_ACP_REQUESTS[message.method] !== true) {
       this.rpc.respondError(message.id, -32601, `Seevee does not implement ${message.method}.`);
       return;
+    }
+    if (message.method === 'session/request_permission' && this.permissionMode === 'full') {
+      const params = asRecord(message.params);
+      const optionId = ompPermissionOptionId(params, { decision: 'allow-session' })
+        ?? ompPermissionOptionId(params, { decision: 'allow-once' });
+      if (optionId !== null) {
+        this.rpc.respond(message.id, { outcome: { outcome: 'selected', optionId } });
+        return;
+      }
     }
     const approvalId = `approval_${randomUUID()}`;
     const params = asRecord(message.params);

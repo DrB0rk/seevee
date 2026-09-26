@@ -19,6 +19,18 @@ import {
   type ResolveAgentApprovalRequest,
   type UpdateAgentSessionRequest,
 } from './types.js';
+import { seeveeAgentInstructions } from './seevee-agent.js';
+import { formatWorkspaceContext, readWorkspaceContext } from './workspace-context.js';
+
+/**
+ * Build the system instructions for a session: the standing workspace rules
+ * plus a factual block naming the document the user currently has open and
+ * whether this conversation continues an earlier one.
+ */
+async function buildSessionInstructions(workspaceRoot: string, resumed: boolean): Promise<string> {
+  const context = await readWorkspaceContext(workspaceRoot);
+  return seeveeAgentInstructions(formatWorkspaceContext(context, { resumed }));
+}
 
 interface ManagedSession {
   summary: AgentSessionSummary;
@@ -120,6 +132,7 @@ export class AgentRuntimeManager {
       workspaceRoot,
       executablePath: descriptor.executablePath,
       ...(request.resumeSessionId === undefined ? {} : { resumeSessionId: request.resumeSessionId }),
+      instructions: await buildSessionInstructions(workspaceRoot, request.resumeSessionId !== undefined),
       emit,
       signal: controller.signal,
     });

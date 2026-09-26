@@ -2,9 +2,9 @@
   "kind": "seevee.workspace",
   "schemaVersion": "1.0.0",
   "id": "ws_test",
-  "revision": 2,
+  "revision": 4,
   "createdAt": "2026-01-01T00:00:00.000Z",
-  "updatedAt": "2026-09-24T18:14:13.662Z",
+  "updatedAt": "2026-09-25T20:06:48.163Z",
   "data": {
     "name": "Studio test workspace",
     "active": {
@@ -16,8 +16,8 @@
         "cv_test": {
           "id": "cv_test",
           "relativePath": "cvs/cv_test.json",
-          "revision": 1,
-          "updatedAt": "2026-01-01T00:00:00.000Z"
+          "revision": 3,
+          "updatedAt": "2026-09-25T20:06:48.163Z"
         }
       },
       "presentations": {

@@ -1,0 +1,7 @@
+@page { size: A4 portrait; margin: 14mm; }
+@media print {
+  .classic-identity { border-bottom: 0.5mm solid #743d5b; break-after: avoid; }
+  .classic-name { color: #743d5b; font-family: Georgia, 'Times New Roman', serif; }
+  .classic-section-title { break-after: avoid; }
+  [data-seevee-item] { break-inside: avoid; }
+}

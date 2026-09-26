@@ -1,0 +1,10 @@
+:scope { --ron-ink: #252235; --ron-accent: #743d5b; --ron-paper: #fbf9f6; color: var(--ron-ink); background: var(--ron-paper); font-family: Inter, system-ui, sans-serif; padding: 12mm; border: 1px solid #d9d1d2; }
+.cv-header { border-bottom: 1.2px solid var(--ron-accent); padding-bottom: 4mm; margin-bottom: 6mm; }
+.cv-name { color: var(--ron-accent) !important; font: 700 2.25rem/1.05 Georgia, 'Times New Roman', serif !important; letter-spacing: -.04em; }
+.cv-headline { color: var(--ron-accent) !important; font: italic 1rem Georgia, 'Times New Roman', serif !important; }
+.cv-contact { color: #6d6672; }
+h2, h3 { font-family: Georgia, 'Times New Roman', serif; }
+h2 { color: var(--ron-accent); border-bottom: 1px solid #c9b6c0; }
+.cv-section { margin-block: 6mm; }
+.cv-entry { border-left: 2px solid #b58ba1; padding-left: 4mm; }
+.cv-skill { background: #f0e9ee; border: 1px solid #d2bdca; border-radius: 12px; padding: 1mm 2.5mm; }

@@ -13,7 +13,6 @@ import {
   type JsonRpcRequestMessage,
 } from '../control/json-rpc.js';
 import { asRecord, optionalNumber, optionalString, sanitizeAgentValue } from '../control/payload.js';
-import { seeveeAgentInstructions } from '../control/seevee-agent.js';
 import {
   DEFAULT_AGENT_CAPABILITIES,
   type AgentCapabilities,
@@ -114,12 +113,14 @@ class CodexAdapterSession implements AdapterSession {
   private approvalPolicy: 'untrusted' | 'on-request' | 'never' = 'on-request';
   private closed = false;
   private readonly requestedResumeSessionId: string | undefined;
+  private readonly instructions: string;
 
   constructor(options: CreateAdapterSessionOptions) {
     this.workspaceRoot = options.workspaceRoot;
     this.emit = options.emit;
     this.signal = options.signal;
     this.requestedResumeSessionId = options.resumeSessionId;
+    this.instructions = options.instructions;
     this.rpc = new JsonRpcProcessClient({
       command: options.executablePath,
       args: ['app-server', '--stdio'],
@@ -153,14 +154,14 @@ class CodexAdapterSession implements AdapterSession {
         cwd: this.workspaceRoot,
         approvalPolicy: this.approvalPolicy,
         sandbox: 'workspace-write',
-        developerInstructions: seeveeAgentInstructions(),
+        developerInstructions: this.instructions,
       })
       : await this.rpc.request('thread/resume', {
         threadId: resumeSessionId,
         cwd: this.workspaceRoot,
         approvalPolicy: this.approvalPolicy,
         sandbox: 'workspace-write',
-        developerInstructions: seeveeAgentInstructions(),
+        developerInstructions: this.instructions,
       });
     const parsed = threadResultSchema.parse(result);
     this.externalSessionId = parsed.thread.id;
