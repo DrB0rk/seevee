@@ -6,6 +6,11 @@ This project uses Semantic Versioning. See `.dev/VERSIONING.md` for the project 
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-09-26
+
+### Changed
+- Promote the verified alpha.14 build to the first stable 0.1.0 release.
+
 ## [0.1.0-alpha.14] - 2026-09-26
 
 ### Added

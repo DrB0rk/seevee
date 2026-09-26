@@ -17,7 +17,7 @@ Seevee is a local, agent-driven CV studio.
 
 Give an agent source material, let it normalize your information into structured JSON, and render that information through interchangeable Astro templates. The fixed Seevee dashboard gives you physical-page preview, comments, provenance, history, diagnostics, and PDF export without dictating what your CV has to look like.
 
-> **Project status:** Seevee `v0.1.0-alpha.14` is available as a GitHub prerelease. The local dashboard includes provider-neutral agent chat, a direct document editor, workspace validation, and browser print-to-PDF export. Template-driven rendering, server-side PDF export, and image recognition remain incomplete.
+> **Project status:** Seevee `v0.1.0` is available as a stable GitHub release. The local dashboard includes provider-neutral agent chat, a direct document editor, workspace validation, and browser print-to-PDF export. Template-driven rendering, server-side PDF export, and image recognition remain incomplete.
 
 ## The idea
 
@@ -75,7 +75,7 @@ seevee init
 
 <code>seevee init</code> is non-interactive. It will scaffold the directory, start the local dashboard server in the background, health-check it, open the browser, and return terminal control. The dashboard can then start a detected Claude Code, Codex, or OMP session from the agent chat.
 
-See the [v0.1.0-alpha.14 prerelease](https://github.com/DrB0rk/seevee/releases/tag/v0.1.0-alpha.14) for platform bundles and checksums.
+See the [v0.1.0 release](https://github.com/DrB0rk/seevee/releases/tag/v0.1.0) for platform bundles and checksums.
 
 ## Workspace model
 
@@ -250,4 +250,4 @@ See [docs/workspace-agent/CV_GUIDANCE.md](docs/workspace-agent/CV_GUIDANCE.md).
 
 ---
 
-Seevee is currently at **0.1.0-alpha.14**. See [`.dev/IMPLEMENTATION_STATUS.md`](.dev/IMPLEMENTATION_STATUS.md) for the exact implemented-versus-specified status.
+Seevee is currently at **0.1.0**. See [`.dev/IMPLEMENTATION_STATUS.md`](.dev/IMPLEMENTATION_STATUS.md) for the exact implemented-versus-specified status.
