@@ -19,6 +19,7 @@
 #       schema/                        built @seevee/schema (dist/*)
 #       template-sdk/                  built @seevee/template-sdk (dist/*)
 #       renderer/                      built @seevee/renderer (dist/*)
+#       template-compiler/              built @seevee/template-compiler (dist/*)
 #       node_modules/                  production-only deps (workspace pkgs linked)
 
 set -eu
@@ -77,7 +78,7 @@ printf '%s\n' "$VERSION" > "$STAGE/$ARCHIVE_BASE/VERSION"
 # The list of @seevee/* packages we ship in the runtime. We auto-detect
 # @seevee/export only when SEEVEE_INCLUDE_EXPORT=1 is set; mid-implementation
 # breakage in that package must not break the bundle.
-RUNTIME_PKGS="cli schema template-sdk renderer agent-runtime"
+RUNTIME_PKGS="cli schema template-sdk renderer template-compiler agent-runtime"
 if [ "${SEEVEE_INCLUDE_EXPORT:-0}" = "1" ] && [ -f "$ROOT_DIR/packages/export/package.json" ] && [ -d "$ROOT_DIR/packages/export/src" ]; then
   RUNTIME_PKGS="$RUNTIME_PKGS export"
 fi
@@ -105,19 +106,6 @@ else
   pnpm -r $filter_args run build
   pnpm --filter @seevee/studio run build
 
-  # Packages that ship with `noEmit: true` need an explicit compile pass that
-  # emits JS. Agent-runtime builds through tsconfig.build.json.
-  EMIT_PKGS="template-sdk renderer"
-  if [ "${SEEVEE_INCLUDE_EXPORT:-0}" = "1" ]; then
-    EMIT_PKGS="$EMIT_PKGS export"
-  fi
-  for pkg in $EMIT_PKGS; do
-    pkg_dir="$ROOT_DIR/packages/$pkg"
-    if [ -d "$pkg_dir" ] && [ ! -f "$pkg_dir/dist/index.js" ]; then
-      echo "bundle.sh: emitting $pkg/dist (tsc --noEmit false)..." >&2
-      (cd "$pkg_dir" && node_modules/.bin/tsc -p tsconfig.json --noEmit false)
-    fi
-  done
 fi
 
 # ---------------------------------------------------------------------------

@@ -111,6 +111,25 @@ describe('seevee template lifecycle', () => {
     await expect(runTemplate(context(['draft', '--template', 'classic', '--draft', 'version3']))).rejects.toThrow(/already exists/);
   });
 
+  it('keeps generated IDs valid for short version prefixes', async () => {
+    const workspacePath = path.join(root, 'seevee.json');
+    const workspace = JSON.parse(await fs.readFile(workspacePath, 'utf8')) as {
+      data: { resources: { templates: Record<string, { currentVersionId: string }> } };
+    };
+    workspace.data.resources.templates['classic']!.currentVersionId = 'v001';
+    await fs.writeFile(workspacePath, `${JSON.stringify(workspace, null, 2)}\n`);
+
+    const draft = await runTemplate(context(['draft', '--template', 'classic', '--json']));
+    expect((draft.data as { draftId: string }).draftId).toBe('v002');
+    const activated = await runTemplate(context(['activate', '--template', 'classic', '--draft', 'v002', '--json']));
+    expect(activated.ok).toBe(true);
+
+    const updated = JSON.parse(await fs.readFile(workspacePath, 'utf8')) as {
+      data: { resources: { templates: Record<string, { currentVersionId: string }> } };
+    };
+    expect(updated.data.resources.templates['classic']?.currentVersionId).toBe('v002');
+  });
+
   it('validates a draft and reports a manifest that belongs to another template', async () => {
     await runTemplate(context(['draft', '--template', 'classic']));
     const good = await runTemplate(context(['validate', '--template', 'classic', '--draft', 'version2', '--json']));

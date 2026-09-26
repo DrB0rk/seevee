@@ -427,7 +427,7 @@ seevee status [path]        print machine/human-readable runtime status
 seevee open [path]          open the active dashboard
 seevee validate [path]      run schema + semantic validation
 seevee doctor [path]        diagnose runtime/browser/schema/template problems
-seevee export [path]        export PDF from canonical state
+seevee export [path]        explain CLI PDF export is unavailable; use dashboard Print to PDF
 seevee comments list [path] list open comments for the active CV (--json supported)
 seevee --version
 seevee --help

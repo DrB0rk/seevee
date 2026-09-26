@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
-# verify_bundle.sh — Verify a downloaded Seevee bundle by unpacking it and
-# running the launcher's --version flag.
+# verify_bundle.sh — Verify a downloaded Seevee bundle's structure, launcher,
+# workspace and CLI command matrix.
 #
 # Usage: scripts/verify_bundle.sh <archive>
 #
@@ -130,6 +130,83 @@ if ! printf '%s' "$STATUS" | grep -q '"running": true'; then
   printf '%s\n' "$STATUS" >&2
   exit 1
 fi
+# Exercise restart on a clean initialized workspace before template activation
+# changes what the running dashboard reads.
+(cd "$SMOKE_WORKSPACE" && "$LAUNCHER" restart >/dev/null)
+(cd "$SMOKE_WORKSPACE" && "$LAUNCHER" status --json | grep -q '"running": true')
+(cd "$SMOKE_WORKSPACE" && "$LAUNCHER" --help >/dev/null)
+(cd "$SMOKE_WORKSPACE" && "$LAUNCHER" template --help >/dev/null)
+
+# Exercise the commands CV agents use against the installed bundle, with
+# structured results so missing runtime packages and malformed workspaces fail
+# the release check before it can be published.
+run_json_command() {
+  name="$1"
+  shift
+  if ! (cd "$SMOKE_WORKSPACE" && "$LAUNCHER" "$@" --json) > "$WORK/$name.json" 2> "$WORK/$name.err"; then
+    echo "verify_bundle.sh: $name command failed" >&2
+    cat "$WORK/$name.err" "$WORK/$name.json" >&2
+    exit 1
+  fi
+  if ! node - "$WORK/$name.json" <<'NODE'
+const fs = require('node:fs');
+const result = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+if (!result.ok || result.code !== 0) {
+  console.error(JSON.stringify(result, null, 2));
+  process.exit(1);
+}
+NODE
+  then
+    echo "verify_bundle.sh: $name returned an unsuccessful JSON result" >&2
+    exit 1
+  fi
+}
+
+run_json_command open open --no-open
+run_json_command validate validate
+run_json_command doctor doctor
+run_json_command comments comments list
+run_json_command templates template list
+
+# Register a copy of the bundled Classic template so draft, validation,
+# compilation, and activation are verified through the installed CLI too.
+mkdir -p "$SMOKE_WORKSPACE/templates/classic"
+cp -R "$BUNDLE_DIR/runtime/templates/classic/v1" "$SMOKE_WORKSPACE/templates/classic/v001"
+node - "$SMOKE_WORKSPACE/seevee.json" <<'NODE'
+const fs = require('node:fs');
+const file = process.argv[2];
+const workspace = JSON.parse(fs.readFileSync(file, 'utf8'));
+workspace.data.resources.templates.classic = {
+  id: 'classic',
+  relativePath: 'templates/classic/v001',
+  currentVersionId: 'v001',
+  updatedAt: new Date().toISOString(),
+};
+fs.writeFileSync(file, `${JSON.stringify(workspace, null, 2)}\n`);
+NODE
+run_json_command template-draft template draft --template classic
+DRAFT_ID="$(node - "$WORK/template-draft.json" <<'NODE'
+const fs = require('node:fs');
+const result = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+process.stdout.write(result.data.draftId);
+NODE
+)"
+run_json_command template-validate template validate --template classic --draft "$DRAFT_ID"
+run_json_command template-compile template compile --template classic --draft "$DRAFT_ID"
+run_json_command template-activate template activate --template classic --draft "$DRAFT_ID"
+
+if (cd "$SMOKE_WORKSPACE" && "$LAUNCHER" export --json > "$WORK/export.json" 2>/dev/null); then
+  echo 'verify_bundle.sh: export unexpectedly reported success' >&2
+  exit 1
+else
+  EXPORT_CODE=$?
+fi
+if [ "$EXPORT_CODE" -ne 6 ] || ! grep -q 'Print to PDF' "$WORK/export.json"; then
+  echo 'verify_bundle.sh: export did not return its documented actionable status' >&2
+  cat "$WORK/export.json" >&2
+  exit 1
+fi
+
 (cd "$SMOKE_WORKSPACE" && "$LAUNCHER" stop)
 
 # Start twice at the same time from a stopped workspace. Both invocations
@@ -159,4 +236,4 @@ if ! printf '%s' "$STATUS" | grep -q '"running": true'; then
   exit 1
 fi
 (cd "$SMOKE_WORKSPACE" && "$LAUNCHER" stop)
-echo "verify_bundle.sh: init, health, concurrent start reuse, and stop OK"
+echo "verify_bundle.sh: command matrix, templates, lifecycle, and concurrent start reuse OK"

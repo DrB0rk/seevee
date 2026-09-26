@@ -157,7 +157,9 @@ try {
   $LockAcquired = $true
   $InstallDir = Join-Path $LauncherDir "v$Version"
   $BundleDirName = "seevee-$Platform"
+  Write-Step 'Inspecting release archive'
   Assert-ArchiveEntries $TempArchive $BundleDirName
+  Write-Success 'Archive paths verified'
   $BundleDir = Join-Path $InstallDir $BundleDirName
   $StageDir = Join-Path $TempDir 'unpacked'
 
@@ -171,6 +173,9 @@ try {
   if (-not (Test-Path (Join-Path $StagedBundle 'runtime\cli\dist\cli.js'))) { throw 'The Seevee CLI is missing from the release bundle.' }
   if (-not (Test-Path (Join-Path $StagedBundle 'runtime\studio\dist\server\entry.mjs'))) { throw 'The dashboard server is missing from the release bundle.' }
   if (-not (Test-Path (Join-Path $StagedBundle 'runtime\agent-runtime\dist\index.js'))) { throw 'The agent runtime is missing from the release bundle.' }
+  if (-not (Test-Path (Join-Path $StagedBundle 'runtime\template-sdk\dist\index.js'))) { throw 'The template SDK is missing from the release bundle.' }
+  if (-not (Test-Path (Join-Path $StagedBundle 'runtime\renderer\dist\index.js'))) { throw 'The renderer is missing from the release bundle.' }
+  if (-not (Test-Path (Join-Path $StagedBundle 'runtime\template-compiler\dist\index.js'))) { throw 'The template compiler is missing from the release bundle.' }
   if (-not (Test-Path (Join-Path $StagedBundle 'runtime\agent\seevee-workspace-agent\SKILL.md'))) { throw 'The workspace-agent guide is missing from the release bundle.' }
   if (-not (Test-Path (Join-Path $StagedBundle 'runtime\agent\seevee-workspace-agent\references\workflows.md'))) { throw 'The agent workflow instructions are missing from the release bundle.' }
   if (-not (Test-Path (Join-Path $StagedBundle 'runtime\templates\classic\v1\template.json'))) { throw 'The default Classic CV template is missing from the release bundle.' }
@@ -254,6 +259,8 @@ node "%SEEVEE_ROOT%\runtime\cli\dist\cli.js" %*
   }
 
   Write-Success "Seevee v$Version is ready"
+  Write-Success "Installed to $InstallDir"
+  Write-Success "Command available at $Launcher"
   Write-Host ""
   Write-Host 'Next step' -ForegroundColor Cyan -NoNewline
   Write-Host '  Run seevee init in a workspace directory.'

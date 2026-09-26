@@ -86,7 +86,7 @@ else
   exit 1
 fi
 
-if grep -q 'Checking the staged command' "$SCRIPT" && grep -q 'Checking the installed command' "$SCRIPT"; then
+if grep -q 'Inspecting release archive' "$SCRIPT" && grep -q 'Checking the staged command' "$SCRIPT" && grep -q 'Checking the installed command' "$SCRIPT" && grep -q 'Command available at' "$SCRIPT"; then
   echo "PASS: install.ps1 verifies both staged and activated CLI"
 else
   echo "FAIL: install.ps1 must verify the CLI before and after activation"

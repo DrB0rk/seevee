@@ -32,6 +32,7 @@ assert "prints install status"   sh -c "grep -q 'Checking SHA-256 checksum' '$SC
 assert "checks Node requirement" sh -c "grep -q 'NODE_MAJOR' '$SCRIPT'"
 assert "checks bundled dashboard, agent guide, and Classic template" sh -c "grep -q 'runtime/studio/dist/server/entry.mjs' '$SCRIPT' && grep -q 'runtime/agent/seevee-workspace-agent/SKILL.md' '$SCRIPT' && grep -q 'runtime/templates/classic/v1/template.json' '$SCRIPT'"
 assert "checks the staged CLI before replacing the install" sh -c "grep -q 'Checking the staged command' '$SCRIPT' && grep -q 'Staged command is ready' '$SCRIPT'"
+assert "reports unpacking, archive inspection, and installed command path" sh -c "grep -q 'Unpacking release bundle' '$SCRIPT' && grep -q 'Inspecting release archive' '$SCRIPT' && grep -q 'Command available at' '$SCRIPT'"
 assert "keeps rollback copies until installed command starts" sh -c "grep -q 'LAUNCHER_OLD' '$SCRIPT' && grep -q 'OLD_DIR' '$SCRIPT'"
 assert "downloads public release assets directly" sh -c "grep -q 'curl_download \"\$RELEASE_URL/\$asset_name\"' '$SCRIPT'"
 assert "does not require GitHub authentication" sh -c "! grep -Eq 'gh auth|GH_TOKEN|GITHUB_TOKEN|netrc' '$SCRIPT'"

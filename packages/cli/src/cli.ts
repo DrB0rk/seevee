@@ -4,11 +4,8 @@
  * Spec: `.dev/specs/CLI_INSTALLER.md` (§9 commands, §10 exit codes).
  *
  * This module owns argv handling, help/version emission, subcommand dispatch,
- * and structured JSON output. Heavy lifting (workspace discovery, daemon
- * lifecycle, validation, export) lives in dedicated modules under
- * `packages/cli/src/commands/` and is reached through static imports; each
- * subcommand is a small surface that throws `LifecycleError("not implemented")`
- * until its dedicated work item lands.
+ * and structured JSON output. Command implementations live in dedicated
+ * modules under `packages/cli/src/commands/`.
  */
 
 import process from 'node:process';
@@ -349,7 +346,7 @@ Commands:
   open [path]          open the active dashboard in a browser
   validate [path]      run schema + semantic validation
   doctor [path]        diagnose runtime/browser/schema/template problems
-  export [path]        export PDF from canonical state
+  export [path]        report CLI PDF export availability and dashboard fallback
   comments list [path] list actionable comments for the active CV
   template <sub>       template lifecycle: list, draft, validate, compile, activate
 

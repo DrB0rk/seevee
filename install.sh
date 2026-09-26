@@ -330,19 +330,25 @@ TAR_EXTRACT_FLAGS=''
 if tar --help 2>&1 | grep -q -- '--no-same-owner'; then
   TAR_EXTRACT_FLAGS='--no-same-owner --no-same-permissions'
 fi
+step 'Unpacking release bundle'
 # shellcheck disable=SC2086
 tar $TAR_EXTRACT_FLAGS -xzf "$TMP_DIR/$ARCHIVE" -C "$STAGE_DIR" || fail 'Could not unpack the release archive.'
 BUNDLE_DIR="$STAGE_DIR/seevee-${PLATFORM}"
+step 'Inspecting release archive'
 [ -f "$BUNDLE_DIR/VERSION" ] || fail 'The bundle is missing its VERSION file.'
 [ "$(cat "$BUNDLE_DIR/VERSION")" = "$VERSION" ] || fail 'Bundle version does not match the requested release.'
 [ -x "$BUNDLE_DIR/bin/seevee" ] || fail 'The bundle launcher is missing or not executable.'
 [ -f "$BUNDLE_DIR/runtime/cli/dist/cli.js" ] || fail 'The bundle is missing the Seevee CLI.'
 [ -f "$BUNDLE_DIR/runtime/studio/dist/server/entry.mjs" ] || fail 'The bundle is missing the dashboard server.'
 [ -f "$BUNDLE_DIR/runtime/agent-runtime/dist/index.js" ] || fail 'The bundle is missing the agent runtime.'
+[ -f "$BUNDLE_DIR/runtime/template-sdk/dist/index.js" ] || fail 'The bundle is missing the template SDK.'
+[ -f "$BUNDLE_DIR/runtime/renderer/dist/index.js" ] || fail 'The bundle is missing the renderer.'
+[ -f "$BUNDLE_DIR/runtime/template-compiler/dist/index.js" ] || fail 'The bundle is missing the template compiler.'
 [ -f "$BUNDLE_DIR/runtime/agent/seevee-workspace-agent/SKILL.md" ] || fail 'The bundle is missing the workspace-agent guide.'
 [ -f "$BUNDLE_DIR/runtime/agent/seevee-workspace-agent/references/workflows.md" ] || fail 'The bundle is missing the agent workflow instructions.'
 [ -f "$BUNDLE_DIR/runtime/templates/classic/v1/template.json" ] || fail 'The bundle is missing the default Classic CV template.'
 [ -f "$BUNDLE_DIR/runtime/templates/classic/v1/src/Resume.astro" ] || fail 'The bundle is missing the Classic template source.'
+success 'Release archive contents verified'
 
 step 'Checking the staged command'
 if ! VERSION_OUTPUT="$("$BUNDLE_DIR/bin/seevee" --version 2>&1)"; then
@@ -408,6 +414,8 @@ case "$VERSION_OUTPUT" in
     ;;
 esac
 INSTALL_COMMITTED=1
+success "Installed Seevee v$VERSION to $INSTALL_DIR"
+success "Command available at $LAUNCHER"
 rm -rf "$OLD_DIR" "$LAUNCHER_OLD" "$STAGE_DIR" "$LAUNCHER_TMP"
 for old_bundle in "$DATA_ROOT"/v*; do
   [ -d "$old_bundle" ] || continue

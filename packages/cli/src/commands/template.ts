@@ -137,9 +137,10 @@ async function nextDraftId(workspaceRoot: string, templateId: string, currentVer
   );
   const trailing = /^(.*?)(\d+)$/.exec(currentVersionId);
   const prefix = trailing?.[1] !== undefined && trailing[1].length > 0 ? trailing[1] : 'version';
+  const suffixWidth = Math.max(trailing?.[2]?.length ?? 1, 3 - prefix.length);
   let index = trailing === null ? 2 : Number.parseInt(trailing[2] ?? '2', 10) + 1;
   for (; index < 1000; index += 1) {
-    const candidate = `${prefix}${index}`;
+    const candidate = `${prefix}${String(index).padStart(suffixWidth, '0')}`;
     if (!existing.has(candidate)) return candidate;
   }
   throw new CliUsageError(`could not allocate a draft id for template '${templateId}'`);
