@@ -115,19 +115,19 @@ describe('Studio API', () => {
     const request = new Request('http://127.0.0.1:43129/api/cv/cv_test', {
       method: 'PUT',
       headers: { 'content-type': 'application/json', origin: 'http://localhost:43129', host: 'localhost:43129' },
-      body: JSON.stringify({ expectedRevision: 1, document: current.document }),
+      body: JSON.stringify({ expectedRevision: current.document.revision, document: current.document }),
     });
     const saved = await settle(mod.PUT({ params: { id: 'cv_test' }, request } as Parameters<typeof mod.PUT>[0]));
     expect(saved.status).toBe(200);
     const body = await saved.json() as { ok: boolean; document: { revision: number; data: { identity: { name: { display: string } } } } };
     expect(body.ok).toBe(true);
-    expect(body.document.revision).toBe(2);
+    expect(body.document.revision).toBe(current.document.revision + 1);
     expect(body.document.data.identity.name.display).toBe('Grace Hopper');
 
     const crossOriginRequest = new Request('http://127.0.0.1:43129/api/cv/cv_test', {
       method: 'PUT',
       headers: { 'content-type': 'application/json', origin: 'http://attacker.invalid', host: 'localhost:43129' },
-      body: JSON.stringify({ expectedRevision: 2, document: body.document }),
+      body: JSON.stringify({ expectedRevision: body.document.revision, document: body.document }),
     });
     const crossOrigin = await settle(mod.PUT({ params: { id: 'cv_test' }, request: crossOriginRequest } as Parameters<typeof mod.PUT>[0]));
     expect(crossOrigin.status).toBe(403);
@@ -135,7 +135,7 @@ describe('Studio API', () => {
     const staleRequest = new Request('http://localhost/api/cv/cv_test', {
       method: 'PUT',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ expectedRevision: 1, document: current.document }),
+      body: JSON.stringify({ expectedRevision: current.document.revision, document: current.document }),
     });
     const stale = await settle(mod.PUT({ params: { id: 'cv_test' }, request: staleRequest } as Parameters<typeof mod.PUT>[0]));
     expect(stale.status).toBe(409);

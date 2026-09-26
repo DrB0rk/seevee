@@ -6,6 +6,8 @@ This project uses Semantic Versioning. See `.dev/VERSIONING.md` for the project 
 
 ## [Unreleased]
 
+## [0.1.0-alpha.14] - 2026-09-26
+
 ### Added
 
 - A light theme with a top-bar toggle. Both themes are defined by the same semantic tokens, so switching is one attribute on the root; the choice persists to local storage, follows `prefers-color-scheme` until the user picks for themselves, and is applied before first paint so light-mode users never see a dark flash. Agent chat surfaces (code blocks, failure blocks, question cards, session menu) read tokens so they invert with the shell.
