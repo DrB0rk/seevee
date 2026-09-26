@@ -59,8 +59,8 @@ describe('workspace context preamble', () => {
     expect(block).toContain('Active CV: cv_artist');
     expect(block).toContain('Active presentation: pres_artist');
     expect(block).toContain('2 CV(s)');
-    expect(block).toContain('read `cvs/<active CV>.json` before answering');
-    expect(block).toContain('Do not say you have not read it without checking the file');
+    expect(block).toContain('private, fresh snapshot of the active CV');
+    expect(block).toContain('Read a registered file only when the current prompt needs detail');
   });
 
   it('tells a new session it has no earlier conversation', async () => {

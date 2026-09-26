@@ -1028,12 +1028,44 @@ export function buildTimeline(events: AgentEvent[]): TimelineItem[] {
   // Items stay in the exact order the provider emitted them. Reordering a
   // finished message after later tool activity made the transcript jump
   // while it streamed, which reads as the agent losing its place.
-  return compactToolActivity(items);
+  // The status bar already shows live progress. Empty provider reasoning
+  // frames carry no readable content and can number in the hundreds.
+  return compactToolActivity(items.filter((item) => item.kind !== 'reasoning' || item.text.trim().length > 0));
 }
 
 export type ChatStreamEntry =
   | { key: string; kind: 'prompt'; at: number; prompt: LocalPrompt }
   | { key: string; kind: 'item'; at: number; item: TimelineItem };
+
+function currentDocumentView(): string | undefined {
+  const pages = Array.from(document.querySelectorAll<HTMLElement>('#cv-paper .paper'));
+  if (pages.length === 0 || pages[0]?.querySelector('.paper-loading')) return undefined;
+  let remaining = 24_000;
+  const visiblePages = pages.slice(0, 8).map((page, index) => {
+    const content = page.querySelector<HTMLElement>('.cv-content') ?? page;
+    const clone = content.cloneNode(true) as HTMLElement;
+    clone.querySelectorAll('button, .comment-marker, .cv-inline-actions, .cv-current-toggle').forEach((element) => element.remove());
+    clone.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input, textarea').forEach((field) => {
+      field.replaceWith(document.createTextNode(field.value));
+    });
+    const pageText = (clone.textContent ?? '').replace(/\s+/g, ' ').trim();
+    const text = pageText.slice(0, remaining);
+    remaining -= text.length;
+    return {
+      page: index + 1,
+      text,
+      textTruncated: text.length < pageText.length,
+      images: Array.from(content.querySelectorAll<HTMLImageElement>('img')).map((image) => ({
+        alt: image.alt,
+        source: (image.getAttribute('src') ?? '').slice(0, 256),
+        visible: image.getClientRects().length > 0,
+        width: image.naturalWidth,
+        height: image.naturalHeight,
+      })),
+    };
+  });
+  return JSON.stringify({ pageCount: pages.length, pages: visiblePages, pagesTruncated: pages.length > visiblePages.length });
+}
 
 /**
  * Merge user prompts and agent activity into one strictly ordered stream.
@@ -1385,7 +1417,7 @@ export default function AgentChat({ workspaceId }: AgentChatProps) {
       const response = await fetch(`/api/agents/session/${encodeURIComponent(sessionId)}/prompt`, {
         method: 'POST',
         headers: jsonHeaders(),
-        body: JSON.stringify({ text: requestText, displayText: text, delivery: 'auto', promptId }),
+        body: JSON.stringify({ text: requestText, displayText: text, documentView: currentDocumentView(), delivery: 'auto', promptId }),
       });
       await readJson(response);
       await refreshSnapshot();
@@ -1684,18 +1716,7 @@ export function TimelineItemView({ item, last, busy, providerLabel, elicitationV
     );
   }
   if (item.kind === 'reasoning') {
-    // Providers that stream reasoning text get a disclosure; providers that
-    // stream an empty content array still get a visible heartbeat, because
-    // silence here is indistinguishable from a frozen run.
-    if (item.text.trim().length === 0) {
-      const live = item.status === 'streaming' && last;
-      return (
-        <p className="agent-thinking" data-live={String(live)} data-last-timeline-item={String(last)} role="status">
-          <span className="agent-thinking-dots" aria-hidden="true"><i /><i /><i /></span>
-          <span>{live ? 'Thinking' : 'Thought'}</span>
-        </p>
-      );
-    }
+    if (item.text.trim().length === 0) return null;
     return (
       <details className="agent-reasoning" data-last-timeline-item={String(last)} data-status={item.status}>
         <summary><span>Thinking</span><small>{item.status === 'streaming' ? 'in progress' : 'summary'}</small></summary>
