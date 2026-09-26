@@ -43,8 +43,8 @@ def svg(width: int, height: int, body: str, title: str, desc: str) -> str:
 # Two facing pages form a V at the spine. The leaves also read as a compact
 # document mark at favicon size without relying on outlines or tiny details.
 LEAVES = (
-    '<path d="M27 31c14-2 27 1 37 9v61c-10-8-23-11-37-9V31Z" fill="{left}"/>'
-    '<path d="M101 31c-14-2-27 1-37 9v61c10-8 23-11 37-9V31Z" fill="{right}"/>'
+    '<path d="M27 29c14-2 27 1 37 9v61c-10-8-23-11-37-9V29Z" fill="{left}"/>'
+    '<path d="M101 29c-14-2-27 1-37 9v61c10-8 23-11 37-9V29Z" fill="{right}"/>'
 )
 
 
@@ -89,7 +89,7 @@ save("mark-mono-light.svg", svg(128, 128, mark(False, WHITE, WHITE), "Seevee mar
 PUBLIC.joinpath("seevee-logo.svg").write_text((ROOT / "mark.svg").read_text())
 
 for surface, word in (("dark", WHITE), ("light", INK)):
-    title_path, _ = outlined_text("seevee", 166, 112, 98, word)
+    title_path, _ = outlined_text("seevee", 166, 106, 98, word)
     body = f'<g transform="translate(16 16)">{mark()}</g>{title_path}'
     save(
         f"wordmark-{surface}.svg",
@@ -102,7 +102,7 @@ for surface, word in (("dark", WHITE), ("light", INK)):
     )
 
 # Keep the historical root asset path valid for documentation and links.
-legacy_title, _ = outlined_text("seevee", 166, 112, 98, WHITE)
+legacy_title, _ = outlined_text("seevee", 166, 106, 98, WHITE)
 (ROOT.parent / "seevee-logo.svg").write_text(
     svg(
         650,
@@ -145,7 +145,7 @@ for surface in ("dark", "light"):
     headline = WHITE if dark else INK
     sub = "#aab6c6" if dark else "#536276"
     border = "#303b4a" if dark else "#e0e6ee"
-    name_path, _ = outlined_text("seevee", 273, 204, 118, headline)
+    name_path, _ = outlined_text("seevee", 273, 184, 118, headline)
     body = f'''
   <rect width="1600" height="560" rx="24" fill="{bg}"/>
   <rect x="1" y="1" width="1598" height="558" rx="23" fill="none" stroke="{border}" stroke-width="2"/>
@@ -163,7 +163,7 @@ for surface in ("dark", "light"):
     card = f'''
   <rect width="1200" height="630" fill="{bg}"/>
   <g transform="translate(54 64) scale(.92)">{mark()}</g>
-  {outlined_text("seevee", 198, 174, 100, headline)[0]}
+  {outlined_text("seevee", 198, 150, 100, headline)[0]}
   <rect x="57" y="242" width="55" height="5" rx="2.5" fill="{BLUE}"/>
   <text x="55" y="315" fill="{headline}" font-family="Fira Sans, Arial, sans-serif" font-size="42" font-weight="500">A focused workspace</text>
   <text x="55" y="366" fill="{headline}" font-family="Fira Sans, Arial, sans-serif" font-size="42" font-weight="500">for your CV.</text>

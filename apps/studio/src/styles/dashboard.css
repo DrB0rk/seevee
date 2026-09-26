@@ -309,6 +309,13 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .cv-name { margin: 0 0 1mm; color: var(--cv-accent-color, #1f2937); font-family: var(--cv-font-family, Inter, system-ui, sans-serif); font-size: var(--cv-name-size, 22pt); font-weight: 650; line-height: var(--cv-line-height, 1.4); letter-spacing: 0; }
 .cv-headline { color: var(--text-faint); font-family: inherit; font-size: var(--cv-font-size, 11pt); line-height: var(--cv-line-height, 1.4); }
 .cv-contact { margin-top: 1mm; color: #68727b; font-family: inherit; font-size: var(--cv-small-size, 10pt); line-height: var(--cv-line-height, 1.4); }
+.cv-social-links { display: flex; flex-wrap: wrap; gap: 1.5mm 4mm; margin-top: 2mm; }
+.cv-social-link { display: inline-flex; align-items: center; gap: 1mm; color: var(--cv-accent-color, #1f2937); font-size: var(--cv-small-size, 10pt); text-decoration: none; }
+.cv-social-link:hover { text-decoration: underline; }
+.cv-social-link:focus-visible { outline: 1px solid currentColor; outline-offset: 2px; }
+.cv-social-icon { width: 3.2mm; height: 3.2mm; flex: 0 0 auto; }
+.profile-social-heading { display: flex; align-items: center; gap: 7px; margin: 18px 0 6px; color: var(--text-secondary); font-size: 10px; font-weight: 650; }
+.profile-social-heading .icon { width: 14px; height: 14px; color: var(--accent); }
 .paper [data-field]:focus { outline: 1px solid var(--accent); outline-offset: 3px; }
 .paper[data-mode="preview"] [data-field] { cursor: default; caret-color: transparent !important; }
 .paper[data-mode="preview"] [data-field]:focus { outline: 0; }

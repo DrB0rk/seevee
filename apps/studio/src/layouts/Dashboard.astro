@@ -526,7 +526,8 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
         name: { display: string };
         headline?: string;
         summary?: string;
-        contact: Array<{ kind: string; value: string; primary?: boolean }>;
+        contact: Array<{ kind: string; value: string; label?: string; primary?: boolean }>;
+        links?: Array<{ rel: string; href: string; title?: string }>;
       };
       sectionOrder: string[];
       sections: Record<string, { id: string; type: string; title: string; visible: boolean; nodeOrder?: string[] }>;
@@ -1263,6 +1264,11 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" />',
     trash2: '<path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="m19 6-1 14H6L5 6" /><path d="M10 11v5M14 11v5" />',
     arrowRight: '<path d="M5 12h14" /><path d="m12 5 7 7-7 7" />',
+    globe: '<circle cx="12" cy="12" r="10" /><path d="M2 12h20" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z" />',
+    link2: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />',
+    atSign: '<circle cx="12" cy="12" r="4" /><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8" />',
+    codeXml: '<path d="m18 16 4-4-4-4" /><path d="m6 8-4 4 4 4" /><path d="m14.5 4-5 16" />',
+    badgeCheck: '<path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z" /><path d="m16 9-5.5 5.5L8 12" />',
   } as const;
   const iconMarkup = (name: keyof typeof lucidePaths, className = 'icon action-icon') => `<svg class="${className}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${lucidePaths[name]}</svg>`;
   const sectionIcons: Record<string, keyof typeof lucidePaths> = { summary: 'userRound', experience: 'briefcaseBusiness', education: 'graduationCap', projects: 'folder', skills: 'listChecks' };
@@ -1706,11 +1712,20 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
       return [`<section class="editor-section" id="edit-custom-section-${escapeHtml(section.id)}">${heading}<div class="editor-section-body"><div>${entries || '<p class="custom-empty">This section has no entries yet.</p>'}</div><button type="button" class="add-entry" data-add-custom-entry="${escapeHtml(section.id)}">${iconMarkup('plus')} Add entry</button></div></section>`];
     }).join('');
     const email = identity.contact.find((item) => item.kind === 'email')?.value ?? '';
+    const contactValue = (kind: string) => identity.contact.find((item) => item.kind === kind)?.value ?? '';
     const editorSection = (title: string, meta: string, body: string, id = '') => `<section class="editor-section"${id ? ` id="${id}"` : ''}><header class="editor-section-heading"><h3>${escapeHtml(title)}</h3><span>${escapeHtml(meta)}</span></header><div class="editor-section-body">${body}</div></section>`;
-    editor.innerHTML = `${editorSection('Profile', '4 fields', `
+    editor.innerHTML = `${editorSection('Profile', 'Contact and social links', `
       ${field('identity.name.display', identity.name.display, 'Your name', 'Name')}
       ${field('identity.headline', identity.headline ?? '', 'Role or professional focus', 'Headline')}
       ${field('contact.email', email, 'name@example.com', 'Email')}
+      ${field('contact.phone', contactValue('phone'), '+1 555 000 0000', 'Phone')}
+      <div class="profile-social-heading">${iconMarkup('link2')}<span>Social links</span></div>
+      ${field('contact.linkedin', contactValue('linkedin'), 'https://linkedin.com/in/your-name', 'LinkedIn')}
+      ${field('contact.github', contactValue('github'), 'https://github.com/your-name', 'GitHub')}
+      ${field('contact.website', contactValue('website'), 'https://your-site.com', 'Website')}
+      ${field('contact.mastodon', contactValue('mastodon'), 'https://your-instance/@you', 'Mastodon')}
+      ${field('contact.orcid', contactValue('orcid'), 'https://orcid.org/0000-0000-0000-0000', 'ORCID')}
+      ${field('contact.other', contactValue('other'), 'https://your-profile.example', 'Other link')}
       ${field('identity.summary', identity.summary ?? '', 'A concise introduction to your work', 'Summary', true)}
     `, 'edit-identity')}
       ${editorSection('Experience', `${experienceIds().length} entries`, `<div id="edit-experience">${experiences}</div><button type="button" class="add-entry" id="add-experience-inline">${iconMarkup('plus')} Add experience</button>`)}
@@ -1733,7 +1748,34 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
   function renderPreview() {
     if (!cv) return;
     const identity = cv.data.identity;
-    const contacts = identity.contact.find((entry) => entry.kind === 'email')?.value ?? identity.contact[0]?.value ?? '';
+    const safeHref = (raw: string) => {
+      try {
+        const url = new URL(raw);
+        return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : null;
+      } catch { return null; }
+    };
+    const socialKinds = new Set(['website', 'linkedin', 'github', 'mastodon', 'orcid', 'other']);
+    const socialIcons: Record<string, keyof typeof lucidePaths> = { website: 'globe', linkedin: 'briefcaseBusiness', github: 'codeXml', mastodon: 'atSign', orcid: 'badgeCheck', other: 'link2' };
+    const socialItems = [
+      ...identity.contact.filter((entry) => socialKinds.has(entry.kind)).map((entry) => ({
+        label: entry.label || (entry.kind === 'other' ? 'Profile' : entry.kind.charAt(0).toUpperCase() + entry.kind.slice(1)),
+        href: entry.value,
+        icon: socialIcons[entry.kind] ?? 'link2',
+      })),
+      ...(identity.links ?? []).map((entry) => ({
+        label: entry.title || entry.rel,
+        href: entry.href,
+        icon: socialIcons[entry.rel.toLowerCase()] ?? 'link2',
+      })),
+    ];
+    const seenSocial = new Set<string>();
+    const socialLinks = socialItems.flatMap((item) => {
+      const href = safeHref(item.href);
+      if (href === null || seenSocial.has(href)) return [];
+      seenSocial.add(href);
+      return [`<a class="cv-social-link" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(item.label)}: ${escapeHtml(href)}">${iconMarkup(item.icon, 'cv-social-icon')}<span>${escapeHtml(item.label)}</span></a>`];
+    }).join('');
+    const contacts = identity.contact.find((entry) => entry.kind === 'email')?.value ?? '';
     const experienceEntries = experienceIds().map((id) => {
       const item = cv!.data.entities.experience![id]!;
       const ongoing = Boolean(item.period.ongoing);
@@ -1791,6 +1833,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
       <input class="cv-name" aria-label="Name" data-field="identity.name.display" value="${escapeHtml(identity.name.display)}" placeholder="Your name">
       <input class="cv-headline" aria-label="Headline" data-field="identity.headline" value="${escapeHtml(identity.headline ?? '')}" placeholder="Professional headline">
       <input class="cv-contact" aria-label="Email" data-field="contact.email" value="${escapeHtml(contacts)}" placeholder="Email or contact details">
+      ${socialLinks ? `<nav class="cv-social-links" aria-label="Social links">${socialLinks}</nav>` : ''}
     </header>
       <section class="cv-section cv-summary" data-cv-section-type="summary" data-cv-section="${escapeHtml(sectionIdFor('summary'))}"><h2>Profile</h2>${inlineText('identity.summary', summary ?? '', 'Profile summary', 'cv-inline-text cv-summary-text')}</section>
       ${experiences}
@@ -2226,12 +2269,13 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
   function setPath(path: string, value: string) {
     if (!cv) return;
     const bits = path.split('.');
-    if (bits[0] === 'contact' && bits[1] === 'email') {
-      let email = cv.data.identity.contact.find((entry) => entry.kind === 'email');
-      if (!email) {
-        email = { kind: 'email', value, primary: true };
-        cv.data.identity.contact.push(email);
-      } else email.value = value;
+    if (bits[0] === 'contact' && bits.length === 2) {
+      const kind = bits[1]!;
+      const existing = cv.data.identity.contact.find((entry) => entry.kind === kind);
+      if (!value.trim()) {
+        if (existing) cv.data.identity.contact = cv.data.identity.contact.filter((entry) => entry !== existing);
+      } else if (existing) existing.value = value.trim();
+      else cv.data.identity.contact.push({ kind, value: value.trim(), ...(kind === 'email' ? { primary: true } : {}) });
       return;
     }
     if (['experience', 'education', 'projects'].includes(bits[0]!) && bits[2] === 'period' && (bits[3] === 'start' || bits[3] === 'end') && bits[4] === 'year') {

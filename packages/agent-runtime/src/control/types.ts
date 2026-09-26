@@ -125,6 +125,8 @@ export const promptAgentSchema = z.object({
   text: z.string().trim().min(1).max(32_000),
   /** Optional user-facing copy when `text` includes hidden application context. */
   displayText: z.string().trim().min(1).max(32_000).optional(),
+  /** Current editor preview, supplied privately by the active Studio page. */
+  documentView: z.string().max(32_000).optional(),
   delivery: z.enum(['auto', 'steer', 'queue']).default('auto'),
   /** Client-generated id so the optimistic bubble matches its stored copy. */
   promptId: z.string().min(1).max(64).optional(),
