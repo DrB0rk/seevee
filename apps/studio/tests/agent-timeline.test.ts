@@ -177,17 +177,15 @@ describe('agent timeline normalization', () => {
     expect(buildTimeline(events).find((item) => item.kind === 'tool')?.title).toBe('Running 2 commands');
   });
 
-  it('keeps a reasoning row with no text as a sign of life', () => {
+  it('omits empty reasoning frames from the transcript', () => {
     const events: AgentEvent[] = [
       event(1, 'reasoning.delta', { id: 'rs_1', text: [] }),
       event(2, 'reasoning.delta', { id: 'rs_1', text: [] }),
       event(3, 'message.delta', { delta: 'Done.' }),
     ];
-    // Codex streams an empty content array on every reasoning event. Dropping
-    // the row made a long run look frozen, so it is kept as a heartbeat.
-    const reasoning = buildTimeline(events).find((item) => item.kind === 'reasoning');
-    expect(reasoning).toBeDefined();
-    expect(reasoning?.text).toBe('');
+    const timeline = buildTimeline(events);
+    expect(timeline.find((item) => item.kind === 'reasoning')).toBeUndefined();
+    expect(timeline.find((item) => item.kind === 'assistant')?.text).toBe('Done.');
   });
 
   it('reads reasoning text from ACP content blocks', () => {
