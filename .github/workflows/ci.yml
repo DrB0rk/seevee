@@ -27,6 +27,12 @@ jobs:
           cache: 'pnpm'
       - name: Install
         run: pnpm install --frozen-lockfile --prefer-offline --config.ignore-scripts=false
+      # Template compilation measures real layout in Chromium and the export
+      # tests assert on that measurement. Without a browser those stages
+      # correctly report `skipped` and the measurement assertions fail, so CI
+      # installs Chromium explicitly rather than silently skipping coverage.
+      - name: Install Chromium for layout measurement
+        run: pnpm exec playwright install --with-deps chromium
       - name: Typecheck
         run: pnpm typecheck
       - name: Generate JSON Schemas
