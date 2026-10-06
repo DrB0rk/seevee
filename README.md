@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  <img alt="Release status" src="https://img.shields.io/badge/release-v0.3.2-4C8DFF?style=flat-square" />
+  <img alt="Release status" src="https://img.shields.io/badge/release-v0.3.3-4C8DFF?style=flat-square" />
   <img alt="CV data" src="https://img.shields.io/badge/CV%20data-modular%20JSON-22272E?style=flat-square" />
   <img alt="Templates" src="https://img.shields.io/badge/templates-Astro-BC52EE?style=flat-square&logo=astro&logoColor=white" />
   <img alt="Schema" src="https://img.shields.io/badge/schema-JSON%20Schema%202020--12-22272E?style=flat-square" />
@@ -80,7 +80,7 @@ seevee init
 
 <code>seevee init</code> is non-interactive. It will scaffold the directory, start the local dashboard server in the background, health-check it, open the browser, and return terminal control. The dashboard can then start a detected Claude Code, Codex, or OMP session from the agent chat.
 
-See the [v0.3.0 release](https://github.com/DrB0rk/seevee/releases/tag/v0.3.2) for platform bundles and checksums.
+See the [v0.3.0 release](https://github.com/DrB0rk/seevee/releases/tag/v0.3.3) for platform bundles and checksums.
 
 ## Workspace model
 
@@ -255,4 +255,4 @@ See [docs/workspace-agent/CV_GUIDANCE.md](docs/workspace-agent/CV_GUIDANCE.md).
 
 ---
 
-Seevee is currently at **0.3.2**. See [`.dev/IMPLEMENTATION_STATUS.md`](.dev/IMPLEMENTATION_STATUS.md) for the exact implemented-versus-specified status.
+Seevee is currently at **0.3.3**. See [`.dev/IMPLEMENTATION_STATUS.md`](.dev/IMPLEMENTATION_STATUS.md) for the exact implemented-versus-specified status.

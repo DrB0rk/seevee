@@ -81,7 +81,7 @@ async function waitForHealthy(hc: HealthCheck): Promise<RuntimeState> {
         host: hc.host,
         port: hc.port,
         startedAt: new Date().toISOString(),
-        serverVersion: process.env.SEEVEE_VERSION ?? '0.3.2',
+        serverVersion: process.env.SEEVEE_VERSION ?? '0.3.3',
       };
     }
     await new Promise<void>((resolve) => setTimeout(resolve, 200));
@@ -214,7 +214,7 @@ async function startLocked(opts: StartOptions): Promise<StartResult> {
     host,
     port,
     startedAt: new Date().toISOString(),
-    serverVersion: process.env.SEEVEE_VERSION ?? '0.3.2',
+    serverVersion: process.env.SEEVEE_VERSION ?? '0.3.3',
   };
   try {
     // Persist the child identity before waiting for HTTP health. If the CLI is
