@@ -283,7 +283,16 @@ async function createTemplateServer(templateRoot: string): Promise<TemplateServe
   );
   const settings = await config.createSettings(astroConfig, templateRoot);
 
-  const { createServer } = await import('vite');
+  // Load Vite without a statically analysable specifier. A literal
+  // `import('vite')` is hoisted into the Studio's Rollup graph, which inlines
+  // all of Vite plus its esbuild dependency into the server bundle. esbuild's
+  // `requireNative()` then runs at module load inside an ES module and throws
+  // `__dirname is not defined in ES module scope`, so every template render
+  // 500s in a release build. Resolving the specifier through a variable keeps
+  // the import genuinely runtime-only: Vite is then loaded from node_modules
+  // at request time by Node's own loader.
+  const VITE_SPECIFIER = 'vite';
+  const { createServer } = (await import(VITE_SPECIFIER)) as typeof import('vite');
 
   // The Astro Vite plugin is mandatory: without it Vite parses `.astro` as
   // raw JSX and the template fails to compile.

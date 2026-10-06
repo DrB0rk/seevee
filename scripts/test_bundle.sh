@@ -87,6 +87,19 @@ assert "runtime/cli/dist/cli.js present" test -f "$BUNDLE_DIR/runtime/cli/dist/c
 assert "Studio server entry present" test -f "$BUNDLE_DIR/runtime/studio/dist/server/entry.mjs"
 assert "Studio browser assets present" test -d "$BUNDLE_DIR/runtime/studio/dist/client/_astro"
 
+# The Vite/esbuild toolchain must NOT be inlined into the Studio server
+# bundle. esbuild resolves its platform binary through `requireNative()` on
+# import, which throws `__dirname is not defined in ES module scope` once
+# Rollup rewrites it into ESM — so every template render 500s in a release.
+# `rollupOptions.external` alone does not prevent this; the import in
+# @seevee/template-render must also be non-static.
+if grep -rl 'requireNative' "$BUNDLE_DIR/runtime/studio/dist/server/chunks/" >/dev/null 2>&1; then
+  echo "FAIL: esbuild's requireNative is inlined into the Studio server bundle"
+  fails=$((fails + 1))
+else
+  echo "PASS: Vite/esbuild toolchain is not inlined into the Studio bundle"
+fi
+
 # The @seevee/cli launcher JS must be at runtime/cli/dist/cli.js (matches
 # the package.json `main` field) so its relative imports of ./commands/*,
 # ./runtime/*, ./scaffold/* resolve correctly.

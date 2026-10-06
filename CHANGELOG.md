@@ -6,6 +6,13 @@ This project uses Semantic Versioning. See `.dev/VERSIONING.md` for the project 
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-06
+
+### Fixed
+
+- **Template rendering in a release build returned HTTP 500.** `@seevee/template-render` loaded Vite with a literal `import('vite')`, which the Studio's Rollup graph hoisted into a static import. That inlined all of Vite and its esbuild dependency into the ESM server bundle, where esbuild's `requireNative()` runs at module load and throws `__dirname is not defined in ES module scope`. Every preview and export failed with `The template could not be rendered` on a fresh `seevee init`. The import is now non-static, so Vite is loaded from `node_modules` at request time, and the toolchain is marked external in the Studio's Vite and Rollup configuration.
+- `scripts/test_bundle.sh` now fails the build if the Vite/esbuild toolchain is inlined into the Studio server bundle, since that is invisible to the test suite and only appears in a release.
+
 ## [0.3.0] - 2026-10-06
 
 ### Added

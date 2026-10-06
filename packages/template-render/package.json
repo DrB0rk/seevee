@@ -1,6 +1,6 @@
 {
   "name": "@seevee/template-render",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "description": "Executes a real Astro source template to HTML through Astro's server-rendering container — the path that makes template-driven rendering real instead of stubbed.",
   "type": "module",
