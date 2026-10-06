@@ -37,6 +37,15 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile --prefer-offline --config.ignore-scripts=false
 
+      # Template compilation measures real layout in Chromium and the export
+      # tests assert on that measurement, so the release build needs a
+      # browser too — otherwise the measurement stages report `skipped` and
+      # the build fails after the tag exists.
+      - name: Install Chromium for layout measurement
+        # `playwright` is a dependency of @seevee/export, not the workspace
+        # root, so `pnpm exec playwright` from the root cannot find it.
+        run: pnpm --filter @seevee/export exec playwright install --with-deps chromium
+
       - name: Run installer contract tests
         run: pnpm test:installer
 
