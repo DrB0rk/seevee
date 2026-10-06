@@ -1,20 +1,18 @@
 /**
- * Image adapter (stub).
+ * Image adapter — refuses the source instead of faking an extraction.
  *
- * Emits a single placeholder block. Vision-model integration is deferred to a
- * later pipeline stage (see DEVELOPMENT_PLAN §6 ingestion agents).
+ * Vision extraction is deliberately NOT implemented: it needs a provider API
+ * key, costs money per image, and cannot be exercised in CI. An earlier
+ * revision returned an `ExtractedDocument` whose single block was the literal
+ * text `[image]`, which read downstream as a successful ingest while carrying
+ * no content at all. This adapter therefore never returns a document; it
+ * throws {@link VisionExtractionUnavailableError} with a message that tells the
+ * user what to do instead.
  */
 
 import { extname } from 'node:path';
-import { readFile } from 'node:fs/promises';
 
-import type { ExtractedBlock, ExtractedDocument, SourceInput } from '../types.js';
-import {
-  nowIso,
-  sha256Prefixed,
-  stableBlockId,
-  stableSourceId,
-} from '../internal.js';
+import type { SourceInput } from '../types.js';
 
 const IMAGE_EXT_TO_MIME: Record<string, string> = {
   '.png': 'image/png',
@@ -33,33 +31,33 @@ function mimeFor(filePath: string): string {
   return IMAGE_EXT_TO_MIME[ext] ?? 'application/octet-stream';
 }
 
+/**
+ * Thrown when an image source reaches {@link extractImage}. The `code` is the
+ * machine-readable contract; the message is written for the end user and
+ * names a concrete alternative.
+ */
+export class VisionExtractionUnavailableError extends Error {
+  public override readonly name = 'VisionExtractionUnavailableError';
+  public readonly code = 'vision-extraction-unavailable';
+
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+/**
+ * Always throws {@link VisionExtractionUnavailableError}. No file is read and
+ * no `ExtractedDocument` is produced — callers must handle the rejection.
+ */
 export async function extractImage(
   input: SourceInput,
-): Promise<ExtractedDocument> {
+): Promise<never> {
   if (input.kind !== 'file') {
     throw new Error(`extractImage requires { kind: 'file' }, received '${input.kind}'`);
   }
-  const bytes = await readFile(input.path);
-  const hash = sha256Prefixed(bytes);
   const mime = mimeFor(input.path);
-  const block: ExtractedBlock = {
-    id: stableBlockId(hash, 'image:0'),
-    type: 'image',
-    text: '[image]',
-    sourceRef: 'image:0',
-    confidence: 0,
-  };
-  return {
-    sourceId: stableSourceId('image', hash),
-    mime,
-    hash,
-    retrievedAt: nowIso(),
-    fileName: input.path,
-    blocks: [block],
-    warnings: ['vision extraction deferred to downstream pipeline'],
-    metadata: {
-      byteSize: bytes.length,
-      visionStage: 'deferred',
-    },
-  };
+  throw new VisionExtractionUnavailableError(
+    `Image extraction is not available: Seevee cannot read text out of ${input.path} (${mime}) because this build ships no vision model. `
+    + 'Paste the text from the image into the agent chat, or point the agent at that file path and let it open the image with the vision tooling of your configured agent session.',
+  );
 }

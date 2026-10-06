@@ -10,7 +10,7 @@
 #     VERSION
 #     bin/seevee
 #     runtime/
-#       cli/  schema/  template-sdk/  renderer/  node_modules/
+#       cli/  schema/  template-sdk/  renderer/  export/  node_modules/
 
 set -eu
 
@@ -63,6 +63,18 @@ assert "renderer compiled entry present" test -f "$BUNDLE_DIR/runtime/renderer/d
 assert "runtime/template-compiler/" test -d "$BUNDLE_DIR/runtime/template-compiler"
 assert "template compiler compiled entry present" test -f "$BUNDLE_DIR/runtime/template-compiler/dist/index.js"
 assert "template compiler package linked" test -e "$BUNDLE_DIR/runtime/node_modules/@seevee/template-compiler"
+assert "runtime/export/" test -d "$BUNDLE_DIR/runtime/export"
+assert "export package linked" test -e "$BUNDLE_DIR/runtime/node_modules/@seevee/export"
+assert "export package manifest present" test -f "$BUNDLE_DIR/runtime/node_modules/@seevee/export/package.json"
+# The export package is always bundled; assert its declared entry point
+# resolves against what the bundle actually ships, whether that is compiled
+# JavaScript or the source fallback.
+assert "export package entry point present" node "$(dirname "$0")/check_package_entry.mjs" "$BUNDLE_DIR/runtime/node_modules/@seevee/export"
+# @seevee/export depends on these at runtime; a bundle missing any of them
+# only fails once an export is actually attempted.
+assert "export dependency renderer linked" test -e "$BUNDLE_DIR/runtime/node_modules/@seevee/renderer"
+assert "export dependency schema linked" test -e "$BUNDLE_DIR/runtime/node_modules/@seevee/schema"
+assert "export dependency template-sdk linked" test -e "$BUNDLE_DIR/runtime/node_modules/@seevee/template-sdk"
 assert "runtime/agent-runtime/" test -d "$BUNDLE_DIR/runtime/agent-runtime"
 assert "agent runtime compiled entry present" test -f "$BUNDLE_DIR/runtime/agent-runtime/dist/index.js"
 assert "runtime zod dependency linked" test -e "$BUNDLE_DIR/runtime/node_modules/zod"

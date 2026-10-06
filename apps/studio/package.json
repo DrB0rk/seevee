@@ -1,6 +1,6 @@
 {
   "name": "@seevee/studio",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Seevee local self-hosted studio dashboard — Astro app that owns /, /api/* and the SSE event bus for a workspace.",
   "type": "module",
@@ -20,7 +20,10 @@
     "@astrojs/node": "^9.4.0",
     "@astrojs/react": "^4.4.2",
     "@seevee/agent-runtime": "workspace:*",
+    "@seevee/export": "workspace:*",
+    "@seevee/renderer": "workspace:*",
     "@seevee/schema": "workspace:*",
+    "@seevee/template-render": "workspace:*",
     "astro": "^5.14.0",
     "gsap": "3.15.0",
     "lucide-react": "^1.48.0",

@@ -5,16 +5,21 @@
 // The exports are deliberately explicit rather than `export *`: we want
 // every published symbol to be a deliberate decision and we want the
 // surface readable as a list of contract terms.
+//
+// IMPORTANT — the four structural components (`Page`, `Section`, `Item`,
+// `Field`) are deliberately NOT re-exported here. They are `.astro` files,
+// so importing them requires a toolchain that can compile Astro; this entry
+// point stays importable by plain Node consumers (renderer, template-
+// compiler, export, cli) that only need the read model and diagnostics.
+// Templates get them from `@seevee/template-sdk/components`.
+//
+// The zero-cost value export is `components`, an object whose properties are
+// loaded through a getter, so merely importing this module never pulls an
+// `.astro` file into the consumer's module graph.
 
 import { assertSafeSdk } from './safety.js';
 import { bind } from './bindings.js';
 import { getField, getItem, getSection, deriveCv } from './cv-helpers.js';
-import {
-  Page,
-  Section,
-  Item,
-  Field,
-} from './page-helpers.js';
 import {
   evaluatePageLayout,
   aggregateDiagnostics,
@@ -25,6 +30,10 @@ import {
   parseFieldPath,
   formatFieldPath,
 } from './field-path.js';
+import {
+  resolveFieldText,
+  stringifyFieldValue,
+} from './field-text.js';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -67,11 +76,6 @@ export {
   getField,
   // Semantic bindings
   bind,
-  // Page helpers (Astro-compatible element factories)
-  Page,
-  Section,
-  Item,
-  Field,
   // Layout diagnostics
   evaluatePageLayout,
   aggregateDiagnostics,
@@ -80,7 +84,27 @@ export {
   // Field path helpers
   parseFieldPath,
   formatFieldPath,
+  // Field value resolution (used by the Field component)
+  resolveFieldText,
+  stringifyFieldValue,
 };
+
+// ─── Structural components ──────────────────────────────────────────────────
+
+/**
+ * Prop contracts for the four structural components. These are plain types,
+ * always available from this entry point.
+ *
+ * The component values themselves live at
+ * `@seevee/template-sdk/components` — see the note at the top of this file
+ * for why they are not exported here.
+ */
+export type {
+  PageProps,
+  SectionProps,
+  ItemProps,
+  FieldProps,
+} from './page-helpers.js';
 
 // ─── Safety ─────────────────────────────────────────────────────────────────
 

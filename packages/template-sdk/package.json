@@ -1,16 +1,19 @@
 {
   "name": "@seevee/template-sdk",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Public typed API exposed to Seevee source templates — CV/Presentation read models, semantic bindings, page/section component helpers, diagnostics.",
   "type": "module",
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./components": "./src/components.ts",
     "./types": "./src/types.ts",
     "./bindings": "./src/bindings.ts",
     "./cv-helpers": "./src/cv-helpers.ts",
     "./page-helpers": "./src/page-helpers.ts",
+    "./components/*": "./src/components/*",
+    "./field-text": "./src/field-text.ts",
     "./diagnostics": "./src/diagnostics.ts",
     "./field-path": "./src/field-path.ts",
     "./safety": "./src/safety.ts"

@@ -1,6 +1,6 @@
 {
   "name": "@seevee/cli",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Seevee command-line interface — install once, run `seevee init` to scaffold a workspace.",
   "type": "module",
@@ -24,8 +24,10 @@
     "test:unit": "vitest run"
   },
   "dependencies": {
+    "@seevee/export": "workspace:*",
     "@seevee/schema": "workspace:*",
-    "@seevee/template-compiler": "workspace:*"
+    "@seevee/template-compiler": "workspace:*",
+    "@seevee/template-render": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

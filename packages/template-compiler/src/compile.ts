@@ -57,8 +57,19 @@ export async function compileTemplate(
 
   const renderOutcome = await renderFixtures({
     fixtureDir: options.fixtureDir,
+    sourceRoot: options.sourceRoot,
+    manifest: options.manifest,
+    timeoutMs,
+    ...(options.playwright === undefined ? {} : { playwright: options.playwright }),
   });
   diagnostics.push(renderOutcome.diagnostic);
+
+  if (renderOutcome.diagnostic.level === 'fail') {
+    throw new RenderError('template failed to render its fixtures', {
+      cause: renderOutcome.diagnostic,
+      source: options.sourceRoot,
+    });
+  }
 
   if (renderOutcome.hasOverflow) {
     const diag: CompileDiagnostic = {

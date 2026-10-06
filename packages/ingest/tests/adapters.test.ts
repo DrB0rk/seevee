@@ -11,7 +11,8 @@ import { extractYaml } from '../src/adapters/yaml.js';
 import { extractPdf } from '../src/adapters/pdf.js';
 import { extractDocx } from '../src/adapters/docx.js';
 import { extractUrl } from '../src/adapters/url.js';
-import { extractImage } from '../src/adapters/image.js';
+import { extractImage, VisionExtractionUnavailableError } from '../src/adapters/image.js';
+import type { ExtractedDocument } from '../src/types.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FIXTURES = resolve(HERE, 'fixtures');
@@ -278,11 +279,41 @@ describe('extractImage', () => {
     writeFileSync(pngPath, png);
   });
 
-  it('emits a single image block', async () => {
-    const doc = await extractImage({ kind: 'file', path: pngPath });
-    expect(doc.blocks).toHaveLength(1);
-    expect(doc.blocks[0]?.type).toBe('image');
-    expect(doc.blocks[0]?.text).toBe('[image]');
-    expect(doc.warnings.some((w) => /vision/.test(w))).toBe(true);
+  it('rejects with a typed error instead of returning a placeholder document', async () => {
+    let caught: unknown;
+    let document: ExtractedDocument | undefined;
+    try {
+      document = await extractImage({ kind: 'file', path: pngPath });
+    } catch (err) {
+      caught = err;
+    }
+
+    // No document is produced — in particular no `[image]` placeholder block.
+    expect(document).toBeUndefined();
+
+    expect(caught).toBeInstanceOf(VisionExtractionUnavailableError);
+    const error = caught as VisionExtractionUnavailableError;
+    expect(error.name).toBe('VisionExtractionUnavailableError');
+    expect(error.code).toBe('vision-extraction-unavailable');
+    expect(error).toBeInstanceOf(Error);
+  });
+
+  it('states plainly that extraction is unavailable and names an alternative', async () => {
+    const error = await extractImage({ kind: 'file', path: pngPath }).catch((err: unknown) => err);
+
+    expect(error).toBeInstanceOf(VisionExtractionUnavailableError);
+    const message = (error as Error).message;
+    expect(message).toMatch(/image extraction is not available/i);
+    // Actionable guidance for the end user.
+    expect(message).toMatch(/paste the text/i);
+    expect(message).toMatch(/point the agent at that file/i);
+    expect(message).toContain(pngPath);
+    expect(message).toContain('image/png');
+  });
+
+  it('rejects a non-file input with the existing adapter guard', async () => {
+    await expect(extractImage({ kind: 'text', content: 'not an image' })).rejects.toThrow(
+      /extractImage requires \{ kind: 'file' \}/,
+    );
   });
 });

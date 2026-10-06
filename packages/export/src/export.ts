@@ -3,26 +3,31 @@
 //
 //   1. validate canonical resources (CV / workspace / presentation);
 //   2. load the compiled template artifact;
-//   3. render the active page profile via the renderer;
+//   3. render the presentation through the template's real Astro source
+//      (`template-document.ts` → `@seevee/template-render`) and wrap the
+//      fragment into a complete printable document;
 //   4. wait for fonts/images (Playwright `setContent({ waitUntil })`);
 //   5. run layout diagnostics;
 //   6. block on fatal clipping/overflow unless `allowForcedExport`;
 //   7. call Playwright `page.pdf(...)`;
-//   8. verify page count + physical dimensions via pdfinfo;
+//   8. verify the PDF's physical dimensions via pdfinfo;
 //   9. store export metadata at
 //      `<workspaceRoot>/.seevee/exports/<exportId>.json`;
 //  10. return `ExportResult`.
+//
+// Rendering and measurement are deliberately separate concerns. The template
+// decides what the document *looks like* and Chromium performs the real page
+// breaking; the renderer owns the read model and item-height estimates that
+// the overflow diagnostics are computed from. Wiring the template into step 3
+// therefore changes appearance without weakening the overflow gate.
 
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { isAbsolute, resolve } from 'node:path';
 
-import type { PageProfile } from '@seevee/schema';
+import type { PageProfile, Pagination } from '@seevee/schema';
 import type { RenderDiagnostics } from '@seevee/template-sdk';
-import {
-  renderPresentationToHtml,
-  type RendererOptions,
-} from '@seevee/renderer';
+import { renderPresentationToHtml } from '@seevee/renderer';
 
 import {
   ExportError,
@@ -32,6 +37,7 @@ import {
 } from './errors.js';
 import { loadValidatedResources } from './validate.js';
 import { loadCompiledArtifact } from './template-load.js';
+import { renderTemplateDocument } from './template-document.js';
 import {
   capturePdf,
   loadPlaywrightModule,
@@ -76,17 +82,30 @@ export async function exportToPdf(options: ExportOptions): Promise<ExportResult>
     templateArtifactPath: options.templateArtifactPath,
   });
 
-  // ───── 3. Render the active page profile via the renderer ─────────────
-  const rendererInput: RendererOptions = {
-    templateManifest: artifact.manifest,
-    templateSource: artifact.templateSource,
+  // ───── 3. Render the presentation through the real template ───────────
+  // The PDF's HTML comes from the user's template, executed for real by
+  // `@seevee/template-render`, wrapped into a printable document by
+  // `template-document.ts`. The generic paginator is no longer a rendering
+  // path — an export must look like the chosen template, not like a
+  // renderer default.
+  const html = await renderTemplateDocument({
+    templateRoot: artifact.artifactDir,
+    cv: resources.cv,
     presentation: resources.presentation,
-    pageProfile: schemaProfileToRendererProfile(options.pageProfile),
-  };
+    pageProfile: options.pageProfile,
+  });
+
+  // Layout diagnostics stay with the renderer: it owns the read model and the
+  // item-height model that overflow is measured against. That measurement is
+  // deliberately separate from which template renders the markup — a template
+  // can restyle the CV without changing whether the content fits the page.
   const rendered = renderPresentationToHtml(
     resources.presentation,
     resources.cv,
-    rendererInput,
+    {
+      templateManifest: artifact.manifest,
+      templateSource: artifact.templateSource,
+    },
   );
 
   // ───── 5. Run + analyse layout diagnostics ────────────────────────────
@@ -107,16 +126,22 @@ export async function exportToPdf(options: ExportOptions): Promise<ExportResult>
   const playwrightModule = await loadPlaywrightModule(options.playwright);
   const pdfOptions = buildPdfOptions(options.pageProfile, options.outputPath);
   await capturePdf({
-    html: rendered.html,
+    html,
     pdfOptions,
     playwrightModule,
   });
 
-  // ───── 8. Verify page count + physical dimensions ────────────────────
+  // ───── 8. Verify page count + physical dimensions ─────────────────────
+  // The page count comes from the PDF itself, because the template lays its
+  // own content out in Chromium and breaks pages where the content actually
+  // flows. The check that count against is the presentation's declared page
+  // policy — a real, checkable, consumer-visible invariant — rather than the
+  // renderer's estimate, which models the same document with different
+  // typography and would reject correct exports.
   const verification = await verifyPdf({
     pdfPath: options.outputPath,
-    expectedPages: rendered.diagnostics.pages.length,
     expectedPageProfile: options.pageProfile,
+    pagination: resources.presentation.data.pagination,
   });
 
   // ───── 9. Persist export metadata ─────────────────────────────────────
@@ -128,6 +153,7 @@ export async function exportToPdf(options: ExportOptions): Promise<ExportResult>
   const result: ExportResult = {
     outputPath: options.outputPath,
     pageCount: verification.pages,
+    estimatedPageCount: rendered.diagnostics.pages.length,
     pageProfile: options.pageProfile,
     bytes: bytes.byteLength,
     sha256,
@@ -182,33 +208,6 @@ function assertTemplateArtifactPath(value: string): void {
   // this call so identical inputs to `exportToPdf` normalise to the
   // same path string in observability pipelines.
   resolve(value);
-}
-
-function schemaProfileToRendererProfile(
-  schema: PageProfile,
-): RendererOptions['pageProfile'] {
-  if (schema.preset === 'A4' || schema.preset === 'Letter') {
-    return { preset: schema.preset, orientation: schema.orientation };
-  }
-  if (schema.preset === 'custom') {
-    if (schema.width === undefined || schema.height === undefined) {
-      throw new ExportError(
-        `custom page profile requires width and height; got ${JSON.stringify({
-          width: schema.width,
-          height: schema.height,
-        })}`,
-      );
-    }
-    return {
-      preset: 'Custom',
-      width: schema.width,
-      height: schema.height,
-      orientation: schema.orientation,
-    };
-  }
-  // 'Legal' is not a renderer preset; fall back to Letter so the
-  // pipeline still emits a PDF rather than aborting.
-  return { preset: 'Letter', orientation: schema.orientation };
 }
 
 function buildPdfOptions(
@@ -307,8 +306,9 @@ interface VerificationResult {
 
 async function verifyPdf(options: {
   pdfPath: string;
-  expectedPages: number;
   expectedPageProfile: PageProfile;
+  /** The presentation's declared page policy; both bounds are optional. */
+  pagination: Pagination;
 }): Promise<VerificationResult> {
   const info = await readPdfInfo(options.pdfPath);
   if (info.pages <= 0) {
@@ -316,10 +316,17 @@ async function verifyPdf(options: {
       `pdf validation: could not determine page count for '${options.pdfPath}'`,
     );
   }
-  if (info.pages !== options.expectedPages) {
+  // `targetMax` is the fatal bound and `targetMin` is advisory only: a CV
+  // legitimately lands near a target rather than exactly on it, but running
+  // past the declared maximum means the document no longer fits the shape the
+  // presentation was authored for. Both fields are optional by schema
+  // design, so an absent policy records the count and passes.
+  const { targetMax, targetMin } = options.pagination;
+  if (targetMax !== undefined && info.pages > targetMax) {
     throw new PdfValidationError(
-      `pdf page count mismatch: renderer reported ${options.expectedPages} pages, ` +
-        `pdf on disk reports ${info.pages} (source: ${info.source}).`,
+      `pdf page count ${info.pages} exceeds the presentation's declared maximum of ${targetMax}` +
+        (targetMin === undefined ? '' : ` (target ${targetMin})`) +
+        ` (source: ${info.source}).`,
     );
   }
   // Tolerate a 1mm drift between expected dimensions and the file

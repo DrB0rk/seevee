@@ -15,4 +15,17 @@ export default defineConfig({
   publicDir: './public',
   trailingSlash: 'never',
   devToolbar: { enabled: false },
+  vite: {
+    // The `@seevee/*` workspace packages publish raw TypeScript through their
+    // `exports` maps (`"./common": "./src/common/index.ts"`), and those
+    // sources import each other with `.js` specifiers. Vite's default SSR
+    // externalization hands such packages to Node's ESM loader, which cannot
+    // resolve either the `.ts` entry or its internal `.js` specifiers, so the
+    // dev server 500s on the first route that touches workspace code.
+    // Keeping them in Vite's transform pipeline is what makes `astro dev` and
+    // `astro build` work against an unbuilt workspace.
+    ssr: {
+      noExternal: [/^@seevee\//],
+    },
+  },
 });

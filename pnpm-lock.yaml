@@ -35,9 +35,18 @@ importers:
       '@seevee/agent-runtime':
         specifier: workspace:*
         version: link:../../packages/agent-runtime
+      '@seevee/export':
+        specifier: workspace:*
+        version: link:../../packages/export
+      '@seevee/renderer':
+        specifier: workspace:*
+        version: link:../../packages/renderer
       '@seevee/schema':
         specifier: workspace:*
         version: link:../../packages/schema
+      '@seevee/template-render':
+        specifier: workspace:*
+        version: link:../../packages/template-render
       astro:
         specifier: ^5.14.0
         version: 5.18.2(@types/node@22.20.4)(lightningcss@1.33.0)(rollup@4.63.4)(supports-color@7.2.0)(tsx@4.23.15)(typescript@5.9.3)(yaml@2.9.1)
@@ -103,12 +112,18 @@ importers:
 
   packages/cli:
     dependencies:
+      '@seevee/export':
+        specifier: workspace:*
+        version: link:../export
       '@seevee/schema':
         specifier: workspace:*
         version: link:../schema
       '@seevee/template-compiler':
         specifier: workspace:*
         version: link:../template-compiler
+      '@seevee/template-render':
+        specifier: workspace:*
+        version: link:../template-render
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -128,11 +143,14 @@ importers:
       '@seevee/schema':
         specifier: workspace:*
         version: link:../schema
+      '@seevee/template-render':
+        specifier: workspace:*
+        version: link:../template-render
       '@seevee/template-sdk':
         specifier: workspace:*
         version: link:../template-sdk
       playwright:
-        specifier: '*'
+        specifier: ^1.49.0
         version: 1.63.0
       zod:
         specifier: ^3.24.0
@@ -231,9 +249,46 @@ importers:
       '@seevee/schema':
         specifier: workspace:*
         version: link:../schema
+      '@seevee/template-render':
+        specifier: workspace:*
+        version: link:../template-render
       '@seevee/template-sdk':
         specifier: workspace:*
         version: link:../template-sdk
+      playwright:
+        specifier: ^1.49.0
+        version: 1.63.0
+      zod:
+        specifier: ^3.24.0
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.20.4
+      tsx:
+        specifier: ^4.19.0
+        version: 4.23.15
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.20.4)(lightningcss@1.33.0)(supports-color@7.2.0)
+
+  packages/template-render:
+    dependencies:
+      '@seevee/schema':
+        specifier: workspace:*
+        version: link:../schema
+      '@seevee/template-sdk':
+        specifier: workspace:*
+        version: link:../template-sdk
+      astro:
+        specifier: ^5.18.0
+        version: 5.18.2(@types/node@22.20.4)(lightningcss@1.33.0)(rollup@4.63.4)(supports-color@7.2.0)(tsx@4.23.15)(typescript@5.9.3)(yaml@2.9.1)
+      vite:
+        specifier: ^6.4.0
+        version: 6.4.3(@types/node@22.20.4)(lightningcss@1.33.0)(tsx@4.23.15)(yaml@2.9.1)
       zod:
         specifier: ^3.24.0
         version: 3.25.76

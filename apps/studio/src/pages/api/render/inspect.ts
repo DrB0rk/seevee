@@ -3,6 +3,7 @@
  */
 import type { APIRoute } from 'astro';
 import {
+  loadCv,
   loadPresentation,
   loadWorkspaceContext,
 } from '../../../lib/workspace.js';
@@ -24,7 +25,15 @@ export const GET: APIRoute = async ({ url }) => {
   if (!loaded.ok) {
     return jsonResponse({ ok: false, reason: loaded.reason, issues: loaded.issues }, loaded.status);
   }
-  const inspect = inspectPresentation({ presentation: loaded.document });
+  // Diagnostics are a measurement of the CV against the page box, so the CV the
+  // presentation targets has to be loaded — inspecting without it can only
+  // report "not measured".
+  const cvEntry = ctx.workspace.data.resources.cvs[loaded.document.data.cvId];
+  const cv = cvEntry === undefined
+    ? undefined
+    : await loadCv(ctx.root, cvEntry.relativePath);
+  const cvs = cv?.ok === true ? new Map([[cv.document.id, cv.document]]) : undefined;
+  const inspect = inspectPresentation({ presentation: loaded.document, cvs });
   return jsonResponse({ ok: true, presentationId, inspect }, 200);
 };
 

@@ -13,7 +13,7 @@ const relativePathSchema = z
   .string()
   .min(1)
   .regex(
-    /^(?!\/)(?![A-Za-z]:[\\/])(?!.*(?:^|\/)..(?:\/|$)).+$/,
+    /^(?!\/)(?![A-Za-z]:[\\/])(?!.*(?:^|\/)\.\.(?:\/|$)).+$/,
     'must be a relative path without parent traversal or absolute prefixes',
   );
 

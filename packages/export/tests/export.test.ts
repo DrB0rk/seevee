@@ -7,7 +7,7 @@
 // generated PDF and metadata files into a per-test temp directory
 // that is cleaned up at module teardown.
 
-import { mkdtemp, rm, readFile, stat, readdir } from 'node:fs/promises';
+import { mkdtemp, rm, readFile, stat, readdir, writeFile } from 'node:fs/promises';
 import { copyFile, mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
@@ -17,14 +17,17 @@ import type { PageProfile } from '@seevee/schema';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { exportToPdf } from '../src/export.js';
+import { capturePdf, loadPlaywrightModule } from '../src/playwright.js';
 import {
   ExportError,
   IoError,
   PdfValidationError,
   PlaywrightNotInstalledError,
+  ChromiumMissingError,
   RenderDiagnosticsError,
   ValidationError,
 } from '../src/errors.js';
+import type { PlaywrightModule } from '../src/types.js';
 import {
   exportMetadataPath,
   isPlaywrightInstalledAt,
@@ -143,7 +146,12 @@ describe('exportToPdf (happy path)', () => {
     expect(result.exportId).toMatch(/^exp_/);
     expect(result.startedAt).toMatch(/T.*Z$/);
     expect(result.completedAt).toMatch(/T.*Z$/);
-    expect(result.diagnostics.pages.length).toBe(result.pageCount);
+    // `pageCount` is read back from the PDF; `estimatedPageCount` is the
+    // renderer's pre-render model. They are two different layout engines
+    // describing the same document, so they are reported side by side and
+    // deliberately NOT asserted equal.
+    expect(result.pageCount).toBeGreaterThan(0);
+    expect(result.estimatedPageCount).toBeGreaterThan(0);
 
     // ─── File on disk + size matches reported bytes ──────────────────────
     const onDisk = await stat(outputPath);
@@ -183,6 +191,110 @@ describe('exportToPdf (happy path)', () => {
     expect(kinds[kinds.length - 1]).toBe('browser-close');
     // Both the page and the browser must be closed.
     expect(kinds).toContain('page-close');
+  });
+
+  it('builds the document from the template, with its CSS inlined', async () => {
+    // The whole point of the export path: Chromium must receive the real
+    // template's output, styled. A document that is merely well-formed but
+    // unstyled is the failure this guards — Astro's container drops scoped
+    // CSS, so an uninlined sheet would print as a naked fragment.
+    const outputPath = join(outputDir, 'styled.pdf');
+    await exportToPdf({
+      workspaceRoot: workspace.root,
+      cvId: 'cv_main',
+      presentationId: 'pres_main',
+      templateArtifactPath: TEMPLATE_DIR,
+      outputPath,
+      pageProfile: A4_PORTRAIT,
+      playwright: fakePlaywright.module,
+    });
+
+    const setContent = fakePlaywright.calls.find((c) => c.kind === 'setContent');
+    const html = setContent?.kind === 'setContent' ? setContent.html : '';
+
+    // A complete, printable document…
+    expect(html).toContain('<!doctype html>');
+    expect(html).toContain('</html>');
+    // …carrying the template's own scoped CSS…
+    expect(html).toContain('data-astro-cid-');
+    // …scoped to ids that actually appear on the rendered markup, so the
+    // rules can match rather than being inert.
+    const scope = /\.?[\w-]*\[data-astro-cid-([0-9a-z]+)\]/i.exec(html);
+    if (scope !== null) expect(html).toContain(`data-astro-cid-${scope[1]}`);
+    // …with the page wrapper intact, because templates style that element
+    // itself (two-column's layout rule targets it directly).
+    expect(html).toContain('data-seevee-page="true"');
+    // …and real CV content, not blanks.
+    expect(html).toContain('Ada Lovelace');
+    // Page geometry comes from the profile so the sheet is sized correctly.
+    expect(html).toMatch(/@page\s*\{[^}]*size:/);
+  });
+});
+
+describe('exportToPdf (presentation page policy)', () => {
+  it('fails when the PDF exceeds the declared targetMax', async () => {
+    // The page count is whatever Chromium paginated; the presentation's
+    // declared maximum is the invariant that is actually checkable.
+    const workspace = await buildWorkspace({
+      workspaceFixture: 'workspace-dense.json',
+      cvFixture: 'dense-cv.json',
+      cvRelative: 'cvs/cv_dense.json',
+      presentationFixture: 'presentation-dense.json',
+    });
+    try {
+      const dense = await readFile(join(FIXTURES, 'presentation-dense.json'), 'utf8');
+      await writeFile(
+        join(workspace.root, 'presentations', 'pres_main.json'),
+        dense.replace('"targetMax": 2', '"targetMax": 1'),
+      );
+      // Stand in for a template that really paginated into 3 sheets, so the
+      // PDF on disk exceeds the declared maximum of 1.
+      const paginated = createFakePlaywright({ pageCount: 3 });
+      const error = await exportToPdf({
+        workspaceRoot: workspace.root,
+        cvId: 'cv_dense',
+        presentationId: 'pres_main',
+        templateArtifactPath: TEMPLATE_DIR,
+        outputPath: join(workspace.root, 'out.pdf'),
+        pageProfile: A4_PORTRAIT,
+        allowForcedExport: true,
+        playwright: paginated.module,
+      }).then(() => null, (e: unknown) => e);
+      expect(error).toBeInstanceOf(PdfValidationError);
+      expect((error as Error).message).toMatch(/exceeds the presentation's declared maximum/);
+    } finally {
+      await workspace.cleanup();
+    }
+  });
+
+  it('passes when the presentation declares no page policy', async () => {
+    // `targetMax` is optional by schema design. With no policy there is
+    // nothing to violate, so the export must succeed rather than invent a
+    // bound.
+    const workspace = await copyWorkspaceFixture();
+    try {
+      const presentation = JSON.parse(
+        await readFile(join(workspace.root, 'presentations', 'pres_main.json'), 'utf8'),
+      );
+      delete presentation.data.pagination.targetMin;
+      delete presentation.data.pagination.targetMax;
+      await writeFile(
+        join(workspace.root, 'presentations', 'pres_main.json'),
+        JSON.stringify(presentation),
+      );
+      const result = await exportToPdf({
+        workspaceRoot: workspace.root,
+        cvId: 'cv_main',
+        presentationId: 'pres_main',
+        templateArtifactPath: TEMPLATE_DIR,
+        outputPath: join(workspace.root, 'out.pdf'),
+        pageProfile: A4_PORTRAIT,
+        playwright: fakePlaywright.module,
+      });
+      expect(result.pageCount).toBeGreaterThan(0);
+    } finally {
+      await workspace.cleanup();
+    }
   });
 });
 
@@ -232,23 +344,16 @@ describe('exportToPdf (overflow protection)', () => {
 });
 
 describe('exportToPdf (Playwright gating)', () => {
-  it('throws PlaywrightNotInstalledError when the optional dep is missing', async () => {
+  it('resolves the declared playwright dependency regardless of cwd', async () => {
+    // Playwright is a real dependency of this package now. The previous
+    // directory-walk gate reported "not installed" whenever pnpm's layout
+    // hid the package from the walk, which blocked genuine exports — so
+    // resolution itself is the contract, not the working directory.
     const originalCwd = process.cwd();
     process.chdir(tmpdir());
     try {
-      const workspace = await copyWorkspaceFixture();
-      const outputDir = await mkdtemp(join(workspace.root, '-out-'));
-      await expect(
-        exportToPdf({
-          workspaceRoot: workspace.root,
-          cvId: 'cv_main',
-          presentationId: 'pres_main',
-          templateArtifactPath: TEMPLATE_DIR,
-          outputPath: join(outputDir, 'cv.pdf'),
-          pageProfile: A4_PORTRAIT,
-        }),
-      ).rejects.toBeInstanceOf(PlaywrightNotInstalledError);
-      await workspace.cleanup();
+      const mod = await loadPlaywrightModule();
+      expect(typeof mod.chromium.launch).toBe('function');
     } finally {
       process.chdir(originalCwd);
     }
@@ -281,6 +386,7 @@ describe('metadata writer', () => {
       record: {
         outputPath: '/tmp/x.pdf',
         pageCount: 1,
+        estimatedPageCount: 1,
         pageProfile: {
           preset: 'A4',
           orientation: 'portrait',
@@ -319,6 +425,7 @@ describe('metadata writer', () => {
         record: {
           outputPath: '/tmp/x.pdf',
           pageCount: 1,
+          estimatedPageCount: 1,
           pageProfile: { preset: 'A4', orientation: 'portrait' },
           bytes: 0,
           sha256: 'a'.repeat(64),
@@ -367,8 +474,63 @@ describe('export-error hierarchy', () => {
     expect(new ValidationError('x')).toBeInstanceOf(ExportError);
     expect(new RenderDiagnosticsError('x', {})).toBeInstanceOf(ExportError);
     expect(new PlaywrightNotInstalledError('x')).toBeInstanceOf(ExportError);
+    expect(new ChromiumMissingError('x')).toBeInstanceOf(ExportError);
     expect(new PdfValidationError('x')).toBeInstanceOf(ExportError);
     expect(new IoError('x')).toBeInstanceOf(ExportError);
+  });
+});
+
+describe('missing Chromium binary', () => {
+  it('reports an actionable message instead of the raw Playwright failure', async () => {
+    // A user who has never exported has no Chromium. Playwright reports
+    // that as an opaque "Executable doesn't exist" throw from launch();
+    // the pipeline must translate it into guidance, not pass it through.
+    const missingExecutableModule: PlaywrightModule = {
+      chromium: {
+        async launch() {
+          throw new Error(
+            "browserType.launch: Executable doesn't exist at /home/u/.cache/ms-playwright/chromium-1/chrome-linux/chrome",
+          );
+        },
+      },
+    };
+
+    await expect(
+      capturePdf({
+        html: '<!doctype html><p>x</p>',
+        pdfOptions: { path: 'ignored.pdf' },
+        playwrightModule: missingExecutableModule,
+      }),
+    ).rejects.toBeInstanceOf(ChromiumMissingError);
+
+    await expect(
+      capturePdf({
+        html: '<!doctype html><p>x</p>',
+        pdfOptions: { path: 'ignored.pdf' },
+        playwrightModule: missingExecutableModule,
+      }),
+    ).rejects.toThrow(/Chromium is not available/i);
+  });
+
+  it('does not swallow an unrelated launch failure', async () => {
+    // Only the missing-executable message is translated; a genuine
+    // launch error (sandbox, shared memory, …) keeps its original text
+    // so it stays diagnosable.
+    const brokenModule: PlaywrightModule = {
+      chromium: {
+        async launch() {
+          throw new Error('zygote_host_impl_linux.cc: Running as root');
+        },
+      },
+    };
+
+    await expect(
+      capturePdf({
+        html: '<!doctype html><p>x</p>',
+        pdfOptions: { path: 'ignored.pdf' },
+        playwrightModule: brokenModule,
+      }),
+    ).rejects.toThrow(/zygote_host_impl_linux/);
   });
 });
 

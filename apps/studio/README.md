@@ -44,8 +44,8 @@ forwarded through `SEEVEE_WORKSPACE_ROOT`.
 | `/api/comments/:id`        | GET    | Single comments document                 |
 | `/api/sources`             | GET    | List source summaries                    |
 | `/api/events`              | GET    | SSE workspace-change stream              |
-| `/api/render/preview`      | POST   | Re-render CV canvas (stub)               |
-| `/api/render/inspect`      | GET    | Layout diagnostics                       |
+| `/api/render/preview`      | POST   | Render the active template against a CV; returns the real template HTML plus page surfaces and diagnostics |
+| `/api/render/inspect`      | GET    | Layout diagnostics for a presentation    |
 | `/api/export/pdf`          | POST   | Server-side PDF pipeline (stub → 501); use the dashboard's browser print-to-PDF control |
 | `/api/agents`                      | GET    | Local agent detection, live sessions, saved-session index |
 | `/api/agents/session`              | POST   | Start or resume a provider session |

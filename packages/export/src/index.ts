@@ -23,6 +23,7 @@ export {
   ValidationError,
   RenderDiagnosticsError,
   PlaywrightNotInstalledError,
+  ChromiumMissingError,
   PdfRenderError,
   PdfValidationError,
   TemplateArtifactError,
@@ -38,6 +39,10 @@ export {
   type LoadedTemplateArtifact,
   type LoadArtifactOptions,
 } from './template-load.js';
+export {
+  renderTemplateDocument,
+  type TemplateDocumentOptions,
+} from './template-document.js';
 export {
   writeExportMetadata,
   exportMetadataPath,

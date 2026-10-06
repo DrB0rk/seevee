@@ -75,13 +75,13 @@ printf '%s\n' "$VERSION" > "$STAGE/$ARCHIVE_BASE/VERSION"
 # ---------------------------------------------------------------------------
 # 3. Build workspace packages
 # ---------------------------------------------------------------------------
-# The list of @seevee/* packages we ship in the runtime. We auto-detect
-# @seevee/export only when SEEVEE_INCLUDE_EXPORT=1 is set; mid-implementation
-# breakage in that package must not break the bundle.
-RUNTIME_PKGS="cli schema template-sdk renderer template-compiler agent-runtime"
-if [ "${SEEVEE_INCLUDE_EXPORT:-0}" = "1" ] && [ -f "$ROOT_DIR/packages/export/package.json" ] && [ -d "$ROOT_DIR/packages/export/src" ]; then
-  RUNTIME_PKGS="$RUNTIME_PKGS export"
-fi
+# The @seevee/* packages the runtime is built around. Their transitive
+# workspace dependencies are discovered from each package's own
+# package.json (dependencies + optionalDependencies), so a package that
+# gains a new @seevee/* dependency — or a new runtime package appears,
+# such as @seevee/template-render — is bundled without editing this list.
+RUNTIME_ENTRY_PKGS="cli schema template-sdk renderer template-compiler agent-runtime export"
+RUNTIME_PKGS="$(node "$ROOT_DIR/scripts/runtime_packages.mjs" "$ROOT_DIR" $RUNTIME_ENTRY_PKGS)"
 
 # Use a full install first so devDependencies (typescript) are available
 # for the build step. Production-only resolution is done later when staging
@@ -184,32 +184,38 @@ for pkg in $RUNTIME_PKGS; do
   dest="$RUNTIME/$pkg"
   mkdir -p "$dest"
 
-  # Rewrite source TypeScript entry points to the compiled ESM files. Node's
-  # ESM resolver does not honor NODE_PATH and cannot load these TS exports on
-  # the minimum supported Node 20 runtime.
-  node - "$src/package.json" "$dest/package.json" <<'NODE'
-const fs = require('node:fs');
-const [source, destination] = process.argv.slice(2);
-const manifest = JSON.parse(fs.readFileSync(source, 'utf8'));
-const toRuntimePath = (value) => value
-  .replace(/^\.\/src\//, './dist/')
-  .replace(/\.ts$/, '.js');
-manifest.main = toRuntimePath(manifest.main ?? './src/index.ts');
-if (manifest.exports && typeof manifest.exports === 'object') {
-  for (const [key, value] of Object.entries(manifest.exports)) {
-    if (typeof value === 'string') manifest.exports[key] = toRuntimePath(value);
-  }
-}
-fs.writeFileSync(destination, `${JSON.stringify(manifest, null, 2)}\n`);
-NODE
-
-  # Copy the build output if it exists with at least one .js entry.
+  # Decide what gets staged before rewriting the manifest, so the manifest's
+  # entry points always name files this bundle actually ships.
   has_js=0
   if [ -d "$src/dist" ]; then
     if find "$src/dist" -maxdepth 2 -name '*.js' -print -quit | grep -q .; then
       has_js=1
     fi
   fi
+
+  # Rewrite source TypeScript entry points to the compiled ESM files. Node's
+  # ESM resolver does not honor NODE_PATH and cannot load these TS exports on
+  # the minimum supported Node 20 runtime. Packages whose build emits no
+  # JavaScript are shipped as source, so their entries are left pointing at
+  # the TypeScript sources the bundle actually carries.
+  node - "$src/package.json" "$dest/package.json" "$has_js" <<'NODE'
+const fs = require('node:fs');
+const [source, destination, hasJs] = process.argv.slice(2);
+const manifest = JSON.parse(fs.readFileSync(source, 'utf8'));
+if (hasJs === '1') {
+  const toRuntimePath = (value) => value
+    .replace(/^\.\/src\//, './dist/')
+    .replace(/\.ts$/, '.js');
+  manifest.main = toRuntimePath(manifest.main ?? './src/index.ts');
+  if (manifest.exports && typeof manifest.exports === 'object') {
+    for (const [key, value] of Object.entries(manifest.exports)) {
+      if (typeof value === 'string') manifest.exports[key] = toRuntimePath(value);
+    }
+  }
+}
+fs.writeFileSync(destination, `${JSON.stringify(manifest, null, 2)}\n`);
+NODE
+
   if [ "$has_js" = "1" ]; then
     mkdir -p "$dest/dist"
     cp -R "$src/dist/." "$dest/dist/"

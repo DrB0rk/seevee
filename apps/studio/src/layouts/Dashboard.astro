@@ -146,6 +146,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
         <span class="canvas-kicker">LIVE PREVIEW</span>
         <span id="preview-name">Untitled CV</span>
       </div>
+      <span class="template-state" id="template-state" role="status" aria-live="polite" data-state="idle" hidden></span>
       <div class="document-mode" role="group" aria-label="Document mode">
         <button class="mode-button" type="button" data-document-mode="preview" aria-pressed="true">Preview</button>
         <button class="mode-button" type="button" data-document-mode="edit" aria-pressed="false">Edit</button>
@@ -563,6 +564,28 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
   type AgentSettingsSnapshot = { providers: AgentProviderSetting[]; sessions: AgentSessionSetting[]; events: unknown[] };
   type AgentSettingsResponse = { ok: boolean; snapshot: AgentSettingsSnapshot; savedSessions: SavedAgentSetting[] };
 
+  /**
+   * The preview render's response shape. `pages[].html` is the template's own
+   * fragment for that page — the whole document on page 1, empty on later
+   * pages — and `html` is the full document with `@page` geometry and the
+   * template's scoped CSS inlined. A fault is `{ ok: false, reason }`, never
+   * a 500: a broken template is a document-state problem the canvas reports.
+   */
+  type RenderPreviewPage = { pageNumber: number; width: number; height: number; html: string };
+  type RenderPreviewBody = {
+    ok: boolean;
+    reason?: string;
+    templateCode?: string;
+    cvId?: string;
+    presentationId?: string;
+    template?: { templateId: string; versionId: string; entry: string };
+    result?: {
+      pages: RenderPreviewPage[];
+      html: string;
+      diagnostics: { overflow: boolean; clippedNodes: string[]; blankPages: number[]; warnings: string[] };
+    };
+  };
+
   const studio = document.querySelector<HTMLElement>('#studio')!;
   const agentResize = document.querySelector<HTMLElement>('#agent-resize')!;
   const editorResize = document.querySelector<HTMLElement>('#editor-resize')!;
@@ -670,9 +693,18 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
   });
   const picker = document.querySelector<HTMLSelectElement>('#cv-picker')!;
   const paper = document.querySelector<HTMLElement>('#cv-paper')!;
+  const templateState = document.querySelector<HTMLElement>('#template-state')!;
   const templatePreviewStyle = document.createElement('style');
   templatePreviewStyle.id = 'active-template-preview-style';
   document.head.append(templatePreviewStyle);
+  // The real render's own stylesheets. Kept separate from
+  // `templatePreviewStyle` because that one styles the dashboard's inline
+  // editable DOM (edit mode) and this one styles the template fragment
+  // (preview mode); sharing an element would make each mode's appearance
+  // depend on which ran last.
+  const renderedTemplateStyle = document.createElement('style');
+  renderedTemplateStyle.id = 'active-render-template-style';
+  document.head.append(renderedTemplateStyle);
   const editor = document.querySelector<HTMLElement>('#editor-content')!;
   const sectionList = document.querySelector<HTMLElement>('#section-list')!;
   const saveState = document.querySelector<HTMLElement>('#save-state')!;
@@ -745,6 +777,19 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
   let zoom = 1;
   let zoomMode: 'fit' | 'manual' = 'fit';
   let documentMode: 'preview' | 'edit' = 'preview';
+  /**
+   * Preview mode renders the real template; edit mode keeps the inline
+   * editable DOM. `renderedHtml` holds the last successful mount so flipping
+   * back to preview is instant and never flashes an empty paper while the
+   * (server-rendered, therefore slow) template compiles again.
+   */
+  let renderedHtml: string | null = null;
+  let renderedStyles = '';
+  let renderFailure: string | null = null;
+  let previewRenderSequence = 0;
+  let previewRenderInFlight = false;
+  let previewRenderQueued = false;
+  let previewRenderTimer: number | undefined;
   try {
     const savedZoom = Number(localStorage.getItem(zoomStorageKey));
     const savedZoomMode = localStorage.getItem(zoomModeStorageKey);
@@ -1490,6 +1535,184 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     return `<textarea rows="1" class="${className}" data-field="${escapeHtml(path)}" aria-label="${escapeHtml(label)}" placeholder="${escapeHtml(label)}">${escapeHtml(value)}</textarea>`;
   }
 
+  /**
+   * Pull the template's own stylesheets out of the rendered document.
+   *
+   * `/api/render/preview` returns `result.html` with one
+   * `<style data-seevee-template-style="…">` per sheet the Astro render
+   * collected. Those are the rules scoped to the fragment's `data-astro-cid-*`
+   * attributes, so they are the only styles that belong on the mounted page.
+   * The `@page` block is dropped: page geometry is already applied to the
+   * paper by `--page-*` custom properties, and a second `@page` rule would
+   * only fight them at print time.
+   */
+function extractTemplateStyles(document: string): string {
+    const styles: string[] = [];
+    const pattern = /<style data-seevee-template-style="[^"]*">([\s\S]*?)<\/style>/g;
+    for (const match of document.matchAll(pattern)) styles.push(match[1]!.trim());
+    return styles.join('\n');
+  }
+
+  function setTemplateState(state: 'idle' | 'loading' | 'error' | 'warning', message: string) {
+    templateState.dataset.state = state;
+    templateState.textContent = message;
+    templateState.hidden = message.length === 0;
+    templateState.title = message;
+  }
+
+  /**
+   * Re-render the workspace's real template for the active CV and mount it.
+   *
+   * Everything here is presentation-mode only: `renderPreview()` (the inline
+   * editable DOM) is untouched, and this function is the only thing that
+   * rewrites `.paper` children while `documentMode === 'preview'`.
+   *
+   * Requests are serialised by sequence number rather than cancelled. A render
+   * boots a real Astro/Vite server, so a user typing in the editor — where
+   * every keystroke calls `renderPreview()` — can produce a request per
+   * character; coalescing into one trailing render keeps the last edit's
+   * result without piling up server renders.
+   */
+  async function renderTemplatePreview() {
+    if (documentMode !== 'preview' || cv === null) return;
+    if (previewRenderInFlight) {
+      previewRenderQueued = true;
+      return;
+    }
+    previewRenderInFlight = true;
+    const sequence = ++previewRenderSequence;
+    const cvId = cv.id;
+    setTemplateState('loading', 'Rendering template…');
+    try {
+      const response = await fetch('/api/render/preview', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        // The server executes the presentation's template selection; the
+        // client must never be able to redirect it to another version.
+        body: JSON.stringify({ cvId, ...(presentationId ? { presentationId } : {}) }),
+      });
+      const payload = await response.json() as RenderPreviewBody;
+      // A stale response must not clobber a newer render's result.
+      if (sequence !== previewRenderSequence || cv === null || cv.id !== cvId) return;
+      if (!response.ok || !payload.ok || !payload.result) {
+        renderFailure = payload.templateCode
+          ? `Template ${payload.templateCode}: ${payload.reason ?? 'the template could not be rendered'}`
+          : payload.reason ?? `Preview failed with status ${response.status}`;
+        setTemplateState('error', renderFailure);
+        mountRenderedTemplate();
+        return;
+      }
+      const diagnostics = payload.result.diagnostics;
+      // The renderer's own words, not a reinterpretation of them.
+      const warnings = [...diagnostics.warnings];
+      if (diagnostics.clippedNodes.length > 0) {
+        warnings.push(`${diagnostics.clippedNodes.length} element(s) clipped by the page box`);
+      }
+      if (diagnostics.blankPages.length > 0) {
+        warnings.push(`blank page(s): ${diagnostics.blankPages.join(', ')}`);
+      }
+      renderedHtml = payload.result.pages.map((page) => page.html).find((html) => html.trim().length > 0) ?? '';
+      // The template's scoped CSS lives in the rendered document, not the
+      // fragment: Astro's partial render drops `<style>` blocks, so
+      // `pages[].html` arrives with `data-astro-cid-*` attributes but no rules
+      // that match them. Mounting the fragment without these is the silent
+      // failure mode — real content rendering as unstyled default text.
+      renderedStyles = extractTemplateStyles(payload.result.html);
+      renderFailure = null;
+      mountRenderedTemplate();
+      setTemplateState(
+        warnings.length > 0 ? 'warning' : 'idle',
+        warnings.join(' · '),
+      );
+    } catch (error) {
+      if (sequence !== previewRenderSequence) return;
+      renderFailure = error instanceof Error ? error.message : 'Could not render the template.';
+      setTemplateState('error', renderFailure);
+      mountRenderedTemplate();
+    } finally {
+      previewRenderInFlight = false;
+      if (previewRenderQueued) {
+        previewRenderQueued = false;
+        void renderTemplatePreview();
+      }
+    }
+  }
+
+  /**
+   * Put the last successful template render (or its failure) onto the paper.
+   *
+   * The mount keeps the `article.paper` wrapper so page geometry, zoom, and
+   * print rules still apply, and the fragment is injected as markup — that is
+   * what preserves `data-seevee-*` anchors (comment anchoring) and
+   * `data-astro-cid-*` (the template's scoped stylesheet). Later pages have
+   * no HTML of their own: the fragment is one continuous document and real
+   * pagination happens in the browser, so a page surface is only created when
+   * the fragment does not already fill page 1 or when a comment is pinned to a
+   * later page.
+   */
+  function mountRenderedTemplate() {
+    if (documentMode !== 'preview') return;
+    // Styles ship with the markup, atomically: a fragment and the rules that
+    // style it are never mounted apart, so the page cannot be observed
+    // rendered-but-unstyled between the two writes.
+    renderedTemplateStyle.textContent = renderFailure === null ? renderedStyles : '';
+    const pages: HTMLElement[] = [];
+    const makePage = (pageNumber: number) => {
+      const page = document.createElement('article');
+      page.className = 'paper';
+      page.dataset.mode = documentMode;
+      page.dataset.rendered = 'true';
+      page.dataset.pageNumber = String(pageNumber);
+      page.setAttribute('aria-label', `Page ${pageNumber}`);
+      const content = document.createElement('div');
+      content.className = 'cv-page-content';
+      page.append(content);
+      pages.push(page);
+      return content;
+    };
+    const failure = renderFailure;
+    if (failure !== null) {
+      const content = makePage(1);
+      const notice = document.createElement('div');
+      notice.className = 'cv-page-failure';
+      notice.innerHTML = `<p><strong>The template could not be rendered.</strong></p><p>${escapeHtml(failure)}</p><p>Switch to <strong>Edit</strong> mode to keep working on the CV data while this is unresolved.</p>`;
+      content.replaceChildren(notice);
+    } else {
+      const source = document.createElement('div');
+      source.innerHTML = renderedHtml ?? '';
+      const fragment = Array.from(source.childNodes);
+      const firstContent = makePage(1);
+      if (fragment.length === 0) firstContent.append(renderPlaceholder());
+      else firstContent.append(...fragment);
+      // Only page 1 can hold the fragment: it is one continuous document and
+      // real pagination happens in the browser against laid-out height. A
+      // later surface exists solely so a comment pinned to that page has
+      // somewhere to sit, and it stays visibly empty rather than showing
+      // invented content.
+      const pinnedPage = Math.max(0, ...orderedComments().map(([, thread]) => placementOf(thread)?.page ?? 0));
+      const pageCount = Math.min(pinnedPage, MAX_PINNED_PREVIEW_PAGES);
+      for (let pageNumber = 2; pageNumber <= pageCount; pageNumber += 1) {
+        makePage(pageNumber).append(renderPlaceholder(`Page ${pageNumber} — this page holds no template output.`));
+      }
+    }
+    paper.replaceChildren(...pages);
+    renderCommentMarkers();
+  }
+
+  function renderPlaceholder(note?: string) {
+    const placeholder = document.createElement('p');
+    placeholder.className = 'paper-loading';
+    placeholder.textContent = note ?? 'The template produced no content for this document.';
+    return placeholder;
+  }
+
+  /**
+   * Reflect the current mode onto the existing DOM.
+   *
+   * This only *describes* the mode — it never renders. `paginatePreviewContent`
+   * calls it at the end of every editable-DOM build, so a render dispatched
+   * from here would recurse into itself.
+   */
   function syncDocumentMode() {
     paper.dataset.mode = documentMode;
     try { localStorage.setItem(modeStorageKey, documentMode); } catch { /* Mode remains active for this session. */ }
@@ -1511,10 +1734,60 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     button.addEventListener('click', () => {
       const mode = button.dataset.documentMode;
       if (mode !== 'preview' && mode !== 'edit') return;
+      if (mode === documentMode) return;
       documentMode = mode;
+      // Leave any half-typed field before the canvas stops being editable,
+      // otherwise a switch to preview discards the character in flight.
+      const active = document.activeElement;
+      if (documentMode === 'preview' && active instanceof HTMLInputElement && paper.contains(active)) active.blur();
       syncDocumentMode();
+      renderPreview();
     });
   });
+
+  /**
+   * Upper bound on blank page surfaces materialised purely so a comment pinned
+   * to a far page has somewhere to sit. The template's own pagination is the
+   * authority on how many pages exist; this only stops a corrupt placement
+   * from turning into an unbounded DOM.
+   */
+  const MAX_PINNED_PREVIEW_PAGES = 20;
+
+  /**
+   * Preview re-render debounce, in milliseconds.
+   *
+   * Rendering the real template compiles Astro on the server, so preview mode
+   * waits for a pause in typing instead of firing a render per keystroke.
+   * Edit mode's inline DOM is synchronous and is not affected.
+   */
+  const PREVIEW_RENDER_DEBOUNCE_MS = 220;
+
+  /**
+   * Paint the canvas for the current mode.
+   *
+   * Every existing caller (`markChanged`, the workspace watcher refresh,
+   * settings changes, the mode switch) funnels through here, which is what
+   * gives a page surface exactly one owner: preview shows the real template
+   * render, edit shows the inline editable DOM.
+   */
+  function renderPreview() {
+    if (cv === null) return;
+    document.querySelector('#preview-name')!.textContent = cv.data.identity.name.display || 'Untitled CV';
+    if (documentMode === 'preview') {
+      scheduleTemplatePreview();
+      return;
+    }
+    window.clearTimeout(previewRenderTimer);
+    paginatePreviewContent(buildEditablePreviewContent());
+  }
+
+  function scheduleTemplatePreview() {
+    window.clearTimeout(previewRenderTimer);
+    previewRenderTimer = window.setTimeout(() => {
+      previewRenderTimer = undefined;
+      void renderTemplatePreview();
+    }, PREVIEW_RENDER_DEBOUNCE_MS);
+  }
 
   function paginatePreviewContent(content: string) {
     printPageStyle.textContent = `@page { size: ${pageProfile.width}mm ${pageProfile.height}mm; margin: 0; }`;
@@ -1620,6 +1893,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
       textarea.style.height = `${textarea.scrollHeight}px`;
     });
     syncDocumentMode();
+    renderCommentMarkers();
   }
 
   function renderEditor() {
@@ -1745,8 +2019,15 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     });
   }
 
-  function renderPreview() {
-    if (!cv) return;
+  /**
+   * Build the inline editable CV markup for the active CV.
+   *
+   * Edit mode only. Preview mode renders the workspace's real template
+   * instead — see `renderTemplatePreview()` — so this path never runs there.
+   * Returns markup; `renderPreview()` owns paginating and mounting it.
+   */
+  function buildEditablePreviewContent(): string {
+    if (!cv) return '';
     const identity = cv.data.identity;
     const safeHref = (raw: string) => {
       try {
@@ -1838,9 +2119,7 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
       <section class="cv-section cv-summary" data-cv-section-type="summary" data-cv-section="${escapeHtml(sectionIdFor('summary'))}"><h2>Profile</h2>${inlineText('identity.summary', summary ?? '', 'Profile summary', 'cv-inline-text cv-summary-text')}</section>
       ${experiences}
       ${education}${projects}${skills}${customSections}`;
-    paginatePreviewContent(content);
-    document.querySelector('#preview-name')!.textContent = identity.name.display || 'Untitled CV';
-    renderCommentMarkers();
+    return content;
   }
 
   function renderSections() {
@@ -2296,7 +2575,12 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
       if (dateKey === 'end' && 'ongoing' in period) period.ongoing = false;
       return;
     }
-    let target: Record<string, unknown> = cv as unknown as Record<string, unknown>;
+    // Every `data-field` path is relative to the CV *data* root (`identity.*`,
+    // `sections.*`, `experience.<id>.*`), not the envelope, so the walk starts at
+    // `cv.data`. Starting at `cv` made `cv['identity']` undefined and the
+    // function returned early, which silently discarded every non-special-cased
+    // edit while the save still reported success.
+    let target: Record<string, unknown> = cv.data as unknown as Record<string, unknown>;
     for (const key of bits.slice(0, -1)) {
       const next = target[key];
       if (!next || typeof next !== 'object') return;
@@ -2342,6 +2626,13 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
     presentationTokens = {};
     templateStyleSequence += 1;
     templatePreviewStyle.textContent = '';
+    // The previous document's render belongs to a different CV; drop it so the
+    // new one never shows stale content while its own template compiles.
+    renderedHtml = null;
+    renderedStyles = '';
+    renderFailure = null;
+    previewRenderSequence += 1;
+    renderedTemplateStyle.textContent = '';
     pagePreset = 'A4';
     pageOrientation = 'portrait';
     pageProfile = { width: 210, height: 297, edges: { top: 18, right: 18, bottom: 18, left: 18 } };
@@ -2476,9 +2767,25 @@ const { workspaceName, workspaceId, serverVersion } = Astro.props as Props;
   const workspaceEvents = new EventSource('/api/events');
   workspaceEvents.addEventListener('message', (message) => {
     try {
-      const event = JSON.parse((message as MessageEvent<string>).data) as Partial<WorkspaceCvEvent>;
-      if (event.type !== 'cv.updated' || typeof event.cvId !== 'string' || typeof event.revision !== 'number') return;
-      queueWorkspaceCvRefresh(event as WorkspaceCvEvent);
+      // `Omit` on `type` is load-bearing: intersecting two unions of literals would
+      // narrow `type` to `'cv.updated'` and make the template branches below
+      // unreachable to the type checker.
+      const event = JSON.parse((message as MessageEvent<string>).data) as Omit<Partial<WorkspaceCvEvent>, 'type'> & Partial<{
+        type: 'cv.updated' | 'presentation.updated' | 'template.updated' | 'template.activated';
+        presentationId: string;
+        templateId: string;
+      }>;
+      if (event.type === 'cv.updated' && typeof event.cvId === 'string' && typeof event.revision === 'number') {
+        queueWorkspaceCvRefresh(event as WorkspaceCvEvent);
+        return;
+      }
+      // A template source edit invalidates the server's cached compile, and a
+      // presentation edit changes what the active CV should render as. Both
+      // mean the preview surface is now stale.
+      if (event.type === 'template.updated' || event.type === 'template.activated' || event.type === 'presentation.updated') {
+        if (event.type === 'presentation.updated' && presentationId !== null && event.presentationId !== presentationId) return;
+        scheduleTemplatePreview();
+      }
     } catch { /* Ignore unrelated or malformed workspace events. */ }
   });
 

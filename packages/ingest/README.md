@@ -61,7 +61,7 @@ Each `ExtractedBlock` carries:
 | `extractPdf`       | `{ kind: 'file' }` | Spawns `pdftotext -layout -q` (poppler). Falls back to a warning block if the binary is missing, the file is unreadable, or extraction times out. |
 | `extractDocx`      | `{ kind: 'file' }` | Zero-dependency ZIP reader using the native `DecompressionStream('deflate-raw')`. Extracts `<w:p>` text from `word/document.xml`. |
 | `extractUrl`       | `{ kind: 'url' }`  | Fetches with a 10-second `AbortController` timeout, validates destination via the SSRF policy, routes to `extractHtml` or `extractText` based on `Content-Type`. |
-| `extractImage`     | `{ kind: 'file' }` | Stub: emits a single `[image]` block. Vision-model extraction is deferred to a later pipeline stage. |
+| `extractImage`     | `{ kind: 'file' }` | Unsupported: always rejects with `VisionExtractionUnavailableError` (`code: 'vision-extraction-unavailable'`). No vision model ships in this build, so it returns no document at all. |
 
 ## SSRF policy
 
@@ -129,3 +129,8 @@ const urlDoc = await extractUrl({ kind: 'url', url: 'https://example.com/cv' });
 This package is **adapters only**. It does not perform LLM/vision
 extraction, semantic normalization, or template rendering. Those live in
 upstream / downstream stages of the Seevee pipeline.
+
+Image sources are rejected rather than silently degraded: `extractImage`
+throws `VisionExtractionUnavailableError` because this build contains no
+vision model. Callers must handle the rejection — it is a capability gap, not
+a transient failure, so retrying the same call cannot succeed.

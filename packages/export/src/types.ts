@@ -89,7 +89,19 @@ export interface ExportOptions {
  */
 export interface ExportResult {
   readonly outputPath: string;
+  /** Pages in the PDF on disk, read back from the file. */
   readonly pageCount: number;
+  /**
+   * Pages the renderer's estimate predicted from item-height models, before
+   * the template was laid out in Chromium.
+   *
+   * Reported rather than enforced: the template paginates using its own
+   * typography, so the two models legitimately disagree and the PDF is
+   * authoritative. Kept because the gap between the two is a real signal —
+   * a large divergence means the renderer's height estimates have drifted
+   * from the template's actual layout, which is worth seeing in the metadata.
+   */
+  readonly estimatedPageCount: number;
   readonly pageProfile: PageProfile;
   readonly bytes: number;
   readonly sha256: string;

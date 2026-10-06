@@ -65,9 +65,15 @@ const forbiddenGlobals: readonly string[] = Object.freeze([
  * a relative path is rejected. `astro/components` and `astro/jsx-runtime` are
  * the standard Astro component-runtime entry points; `zod` is allowed because
  * templates do boundary validation.
+ *
+ * `@seevee/template-sdk/components` is the entry point for the SDK's four
+ * structural Astro components (`Page`, `Section`, `Item`, `Field`). It is a
+ * separate specifier from the package root because it is a subpath export —
+ * a template must name it explicitly to import the components.
  */
 const allowedSpecifiers: ReadonlySet<string> = new Set([
   '@seevee/template-sdk',
+  '@seevee/template-sdk/components',
   '@seevee/schema',
   'astro',
   'astro/components',

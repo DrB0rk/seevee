@@ -1,0 +1,28 @@
+---
+// Field — renders one resolved field value inside the `data-seevee-field*`
+// anchors the dashboard anchors field-level comments on.
+//
+// IMPORTANT: part of the SDK safety boundary — see ../safety.ts.
+//
+// Unlike the old descriptor implementation, this component actually resolves
+// its value: `getField` reads the slot out of the CV read model and the
+// result becomes the element's text content. `fallback` is rendered as
+// content (never stringified into an attribute) and is used only when the
+// resolved value is missing or nullish.
+import { bind } from '../bindings.js';
+import { resolveFieldText } from '../field-text.js';
+import type { CvReadModel, ItemId, SectionId } from '../types.js';
+
+interface Props {
+  readonly cv: CvReadModel;
+  readonly itemId: ItemId;
+  readonly sectionId: SectionId;
+  readonly fieldPath: string;
+  readonly fallback?: unknown;
+}
+
+const { cv, itemId, sectionId, fieldPath, fallback } = Astro.props;
+const value = resolveFieldText(cv, itemId, fieldPath, fallback);
+---
+
+<span {...bind.field(itemId, sectionId, fieldPath)}>{value}</span>

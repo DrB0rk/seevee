@@ -217,6 +217,47 @@ describe('Studio API', () => {
     const res = await settle(mod.POST({ request } as Parameters<typeof mod.POST>[0]));
     expect(res.status).toBe(403);
   });
+
+  it('renders the fixture CV through the real template at /api/render/preview', async () => {
+    // Deferred import keeps workspace discovery bound to the test fixture.
+    const mod = await import('../src/pages/api/render/preview.js');
+    const request = new Request('http://127.0.0.1:43129/api/render/preview', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ cvId: 'cv_test' }),
+    });
+    const res = await settle(mod.POST({ request } as Parameters<typeof mod.POST>[0]));
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      ok: boolean;
+      template?: { templateId: string; versionId: string; entry: string };
+      result?: { pages: Array<{ html: string }>; html: string };
+    };
+    expect(body.ok).toBe(true);
+    expect(body.template).toEqual({
+      templateId: 'tpl_minimal',
+      versionId: 'tpl_minimal_v1',
+      entry: 'source.astro',
+    });
+
+    // Content assertions, not just a status: this route used to answer 200
+    // with an empty page and a "renderer stub" warning, so the proof that the
+    // template really executed is the CV's own text coming back.
+    // The name is read from the live document because an earlier case in this
+    // file saves the CV under a different display name.
+    const cvRoute = await import('../src/pages/api/cv/[id].js');
+    const current = (await settle(
+      cvRoute.GET({ params: { id: 'cv_test' } } as Parameters<typeof cvRoute.GET>[0]),
+    )).json() as Promise<{ document: { data: { identity: { name: { display: string } } } } }>;
+    const fragment = body.result?.pages[0]?.html ?? '';
+    expect(fragment).toContain((await current).document.data.identity.name.display);
+    expect(fragment).toContain('ada@example.com');
+    expect(fragment).toContain('Senior Engineer');
+    expect(fragment).toContain('Acme');
+    // A full document, so the page surfaces get real page geometry.
+    expect(body.result?.html).toContain('<!doctype html>');
+    expect(body.result?.html).toContain('@page');
+  }, 60_000);
 });
 
 describe('fixture workspace', () => {
