@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import fs from 'node:fs/promises';
+import pathModule from 'node:path';
 import { z } from 'zod';
 import type {
   AdapterApprovalResolution,
@@ -7,8 +9,11 @@ import type {
   AgentAdapter,
   CreateAdapterSessionOptions,
 } from '../control/adapter.js';
+import { CANCEL_CONFIRMATION_TIMEOUT_MS } from '../control/adapter.js';
 import {
   JsonRpcProcessClient,
+  JsonRpcProcessError,
+  jsonRpcErrorDetail,
   type JsonRpcNotificationMessage,
   type JsonRpcRequestMessage,
 } from '../control/json-rpc.js';
@@ -45,10 +50,59 @@ const OMP_CAPABILITIES: AgentCapabilities = {
   steering: false,
   subagents: false,
 };
+
+/**
+ * ACP methods OMP addresses to the client during a session.
+ *
+ * `fs/read_text_file` and `fs/write_text_file` are only sent when the client
+ * advertises the matching `clientCapabilities.fs` flag; `terminal/create`
+ * only when `terminal: true` is advertised (we never advertise it).
+ */
 const SUPPORTED_ACP_REQUESTS: Record<string, true> = {
   'session/request_permission': true,
   'elicitation/create': true,
+  'fs/read_text_file': true,
+  'fs/write_text_file': true,
 };
+
+/** Seevee permission vocabulary for OMP. Provider-specific by design. */
+export const OMP_PERMISSION_MODES = ['ask', 'plan', 'full'] as const;
+export type OmpPermissionMode = (typeof OMP_PERMISSION_MODES)[number];
+
+/**
+ * The only ACP modes OMP 18.6.1 accepts in `session/set_mode`.
+ * Verified live against the binary: every other id (including `full`,
+ * `yolo`, `bypass`, `acceptEdits`) is rejected with
+ * `-32603 Unsupported ACP mode: <id>`.
+ */
+export const OMP_ACP_MODES = ['default', 'plan'] as const;
+export type OmpAcpMode = (typeof OMP_ACP_MODES)[number];
+
+/**
+ * Raised when OMP rejects a call because the requested capability does not
+ * exist in its ACP surface (unknown mode id, unknown config option id).
+ * Carries the provider's own wording so the UI can explain the failure
+ * instead of surfacing a bare "Internal error".
+ */
+export class OmpProtocolError extends Error {
+  readonly method: string;
+  readonly provider = 'omp' as const;
+
+  constructor(method: string, requested: string, detail: string) {
+    super(`OMP rejected ${method} "${requested}": ${detail}`);
+    this.name = 'OmpProtocolError';
+    this.method = method;
+  }
+}
+
+export function ompPermissionMode(value: string): OmpPermissionMode | null {
+  return (OMP_PERMISSION_MODES as readonly string[]).includes(value) ? (value as OmpPermissionMode) : null;
+}
+
+/** Seevee permission mode -> the ACP mode id OMP must be switched into. */
+export function ompAcpModeForPermission(permissionMode: OmpPermissionMode): OmpAcpMode {
+  return permissionMode === 'plan' ? 'plan' : 'default';
+}
 
 
 interface PendingApproval {
@@ -72,6 +126,25 @@ export function ompPermissionOptionId(
     if (option['kind'] === expectedKind && typeof option['optionId'] === 'string') return option['optionId'];
   }
   return null;
+}
+
+/**
+ * Writes a file OMP routed to the client via `fs/write_text_file`.
+ *
+ * Relative paths resolve against the session workspace root. OMP sends
+ * absolute paths rooted at the session cwd, so this also serves as the
+ * containment check: a write escaping the workspace root is refused rather
+ * than silently redirected.
+ */
+async function writeWorkspaceFile(workspaceRoot: string, path: string, content: string): Promise<void> {
+  const root = pathModule.resolve(workspaceRoot);
+  const target = pathModule.resolve(root, path);
+  const relative = pathModule.relative(root, target);
+  if (relative.startsWith('..') || pathModule.isAbsolute(relative)) {
+    throw new Error(`Refusing to write outside the workspace: ${path}`);
+  }
+  await fs.mkdir(pathModule.dirname(target), { recursive: true });
+  await fs.writeFile(target, content, 'utf8');
 }
 
 export class OmpAdapter implements AgentAdapter {
@@ -115,10 +188,13 @@ class OmpAdapterSession implements AdapterSession {
   private activeTurnId: string | null = null;
   private model: string | null = null;
   private modeId = 'default';
-  private permissionMode = 'ask';
+  private permissionMode: OmpPermissionMode = 'ask';
   private modelOptions: AgentSelectOption[] = [];
   private closed = false;
   private supportsClose = false;
+  /** Resolves once the in-flight turn ends, however it ends. */
+  private activeTurnSettled: Promise<void> | null = null;
+  private releaseActiveTurn: (() => void) | null = null;
   private readonly requestedResumeSessionId: string | undefined;
 
   constructor(options: CreateAdapterSessionOptions) {
@@ -128,10 +204,18 @@ class OmpAdapterSession implements AdapterSession {
     this.requestedResumeSessionId = options.resumeSessionId;
     this.rpc = new JsonRpcProcessClient({
       command: options.executablePath,
-      args: ['acp', '--approval-mode', 'always-ask', '--append-system-prompt', options.instructions],
+      // `write` (not `always-ask`): with `always-ask` OMP *denies* every
+      // write/edit outright without ever asking the client, which would make
+      // the ask and plan permission modes unable to write at all. `write`
+      // auto-approves reads and workspace writes, and still raises
+      // `session/request_permission` for `execute` tool calls. Combined with
+      // `fs.writeTextFile: true` below it leaves Seevee as the gate for every
+      // workspace mutation. Verified against omp 18.6.1.
+      args: ['acp', '--approval-mode', 'write', '--append-system-prompt', options.instructions],
       cwd: options.workspaceRoot,
       includeJsonRpcVersion: true,
       requestTimeoutMs: 60_000,
+      env: options.env ?? process.env,
     });
     this.rpc.onNotification = (message) => this.handleNotification(message);
     this.rpc.onRequest = (message) => void this.handleServerRequest(message);
@@ -151,7 +235,13 @@ class OmpAdapterSession implements AdapterSession {
     const initialized = initializeResultSchema.parse(await this.rpc.request('initialize', {
       protocolVersion: 1,
       clientCapabilities: {
-        fs: { readTextFile: false, writeTextFile: false },
+        // Advertising `writeTextFile` is what makes OMP route every workspace
+        // write/edit through `fs/write_text_file` instead of writing the file
+        // itself. That request is the client-side permission gate OMP exposes;
+        // it is the only permission lever in OMP's ACP surface. Reads stay
+        // provider-side (`readTextFile: false`) so the agent keeps full read
+        // access without a round trip per file.
+        fs: { readTextFile: false, writeTextFile: true },
         terminal: false,
         elicitation: { form: {}, url: {} },
       },
@@ -198,22 +288,49 @@ class OmpAdapterSession implements AdapterSession {
     return { turnId, queued, mode: queued ? 'queued' : 'new-turn' };
   }
 
+  /**
+ * Stops the running turn and resolves once OMP confirms it.
+ *
+ * `session/cancel` is a notification, so it carries no acknowledgement by
+ * itself. The authoritative confirmation is the in-flight `session/prompt`
+ * request resolving with `stopReason: "cancelled"` (verified against omp
+ * 18.6.1, including while a `session/request_permission` is outstanding).
+ * `runPrompt` emits the terminal event from that result, so `interrupt` never
+ * announces a cancellation the provider has not made.
+ *
+ * The wait is bounded by {@link CANCEL_CONFIRMATION_TIMEOUT_MS} so a provider
+ * that accepts the cancel and then goes quiet fails loudly instead of leaving
+ * the UI's Stop button spinning forever.
+ */
   async interrupt(): Promise<void> {
-    if (this.externalSessionId === null || this.activeTurnId === null) return;
+    if (this.externalSessionId === null) return;
     const turnId = this.activeTurnId;
+    if (turnId === null) return;
     this.rpc.notify('session/cancel', { sessionId: this.externalSessionId });
-    this.activeTurnId = null;
-    this.emit({
-      type: 'turn.cancelled',
-      turnId,
-      approvalId: null,
-      data: { message: 'OMP turn cancelled by the user.' },
-    });
+    await Promise.race([
+      this.activeTurnSettled,
+      new Promise<void>((resolve) => { setTimeout(resolve, CANCEL_CONFIRMATION_TIMEOUT_MS).unref?.(); }),
+    ]);
+    if (this.activeTurnId === turnId) {
+      throw new Error(`OMP did not confirm cancellation of turn ${turnId} within ${CANCEL_CONFIRMATION_TIMEOUT_MS}ms.`);
+    }
   }
 
   async resolveApproval(approvalId: string, resolution: AdapterApprovalResolution): Promise<void> {
     const pending = this.pendingApprovals.get(approvalId);
     if (pending === undefined) throw new Error(`Unknown or resolved OMP approval ${approvalId}.`);
+    if (pending.method === 'fs/write_text_file') {
+      const path = optionalString(pending.params['path']) ?? '(unknown path)';
+      const content = optionalString(pending.params['content']) ?? '';
+      if (resolution.decision === 'deny' || resolution.decision === 'cancel') {
+        this.rpc.respondError(pending.requestId, -32603, 'Write denied by the user.');
+        this.pendingApprovals.delete(approvalId);
+        return;
+      }
+      await this.applyApprovedWrite(pending.requestId, path, content);
+      this.pendingApprovals.delete(approvalId);
+      return;
+    }
     if (pending.method === 'session/request_permission') {
       if (resolution.decision === 'cancel') {
         this.rpc.respond(pending.requestId, { outcome: { outcome: 'cancelled' } });
@@ -235,20 +352,51 @@ class OmpAdapterSession implements AdapterSession {
     this.pendingApprovals.delete(approvalId);
   }
 
+  /**
+   * Applies the requested permission mode.
+   *
+   * OMP has no server-side permission mode: `session/set_mode` accepts only
+   * `default` and `plan`, and the only ACP config options are `mode`, `model`
+   * and `thinking` (verified against omp 18.6.1). So `ask`, `plan` and `full`
+   * are enforced **client-side** by this adapter — see `handleServerRequest` —
+   * and the ACP mode id is derived from the Seevee mode rather than being one.
+   *
+   * A provider rejection is surfaced as {@link OmpProtocolError} instead of
+   * being swallowed, and the local state is only advanced once the provider
+   * has accepted the call.
+   */
   async updateConfig(options: { model?: string; permissionMode?: string }): Promise<void> {
     if (this.externalSessionId === null) return;
     if (options.permissionMode !== undefined) {
-      const modeId = options.permissionMode === 'plan' ? 'plan' : 'default';
-      await this.rpc.request('session/set_mode', { sessionId: this.externalSessionId, modeId });
-      this.modeId = modeId;
-      this.permissionMode = options.permissionMode === 'full' ? 'full' : modeId === 'plan' ? 'plan' : 'ask';
+      const requested = ompPermissionMode(options.permissionMode);
+      if (requested === null) {
+        throw new OmpProtocolError(
+          'session/set_mode',
+          options.permissionMode,
+          `known permission modes are ${OMP_PERMISSION_MODES.join(', ')}`,
+        );
+      }
+      const modeId = ompAcpModeForPermission(requested);
+      if (modeId !== this.modeId) {
+        try {
+          await this.rpc.request('session/set_mode', { sessionId: this.externalSessionId, modeId });
+        } catch (error) {
+          throw this.protocolError('session/set_mode', modeId, error);
+        }
+        this.modeId = modeId;
+      }
+      this.permissionMode = requested;
     }
     if (options.model !== undefined) {
-      await this.rpc.request('session/set_config_option', {
-        sessionId: this.externalSessionId,
-        configId: 'model',
-        value: options.model,
-      });
+      try {
+        await this.rpc.request('session/set_config_option', {
+          sessionId: this.externalSessionId,
+          configId: 'model',
+          value: options.model,
+        });
+      } catch (error) {
+        throw this.protocolError('session/set_config_option', 'model', error);
+      }
       this.model = options.model;
     }
     this.emit({
@@ -265,9 +413,9 @@ class OmpAdapterSession implements AdapterSession {
       permissionMode: this.permissionMode,
       models: this.modelOptions,
       permissions: [
-        { id: 'ask', label: 'Ask before tools', description: 'Review OMP permission requests.' },
-        { id: 'plan', label: 'Plan only', description: 'Use OMP plan mode without workspace edits.' },
-        { id: 'full', label: 'Full access', description: 'Automatically allow OMP tool requests without asking.' },
+        { id: 'ask', label: 'Ask before tools', description: 'Review each tool call and workspace write before it runs.' },
+        { id: 'plan', label: 'Plan only', description: 'Read-only OMP plan mode; workspace writes stay blocked.' },
+        { id: 'full', label: 'Full access', description: 'Approve every OMP tool call and workspace write without asking.' },
       ],
     };
   }
@@ -296,12 +444,15 @@ class OmpAdapterSession implements AdapterSession {
 
   private async runPrompt(turnId: string, text: string): Promise<void> {
     if (this.externalSessionId === null) return;
+    this.activeTurnSettled = new Promise<void>((resolve) => { this.releaseActiveTurn = resolve; });
     try {
       const result = asRecord(await this.rpc.request('session/prompt', {
         sessionId: this.externalSessionId,
         prompt: [{ type: 'text', text }],
       }));
       const stopReason = optionalString(result['stopReason']) ?? 'end_turn';
+      // The single source of truth for a turn's terminal event. `interrupt`
+      // deliberately does not emit one: it awaits this result instead.
       this.emit({
         type: stopReason === 'cancelled' ? 'turn.cancelled' : 'turn.completed',
         turnId,
@@ -317,16 +468,47 @@ class OmpAdapterSession implements AdapterSession {
       });
     } finally {
       if (this.activeTurnId === turnId) this.activeTurnId = null;
+      // Releases `interrupt()`, which waits here rather than assuming the
+      // notification it sent actually stopped anything.
+      this.releaseActiveTurn?.();
+      this.releaseActiveTurn = null;
+      this.activeTurnSettled = null;
     }
   }
 
+  /**
+   * Enforces Seevee's permission mode for OMP.
+   *
+   * OMP exposes no server-side permission setting, so this client is the gate.
+   * Two request kinds are permission-bearing:
+   *
+   * - `session/request_permission` — OMP asks before an `execute` tool call.
+   *   `full` answers it immediately with an allow option; `ask`/`plan` raise
+   *   an approval in the UI.
+   * - `fs/write_text_file` — reached because `initialize` advertises
+   *   `fs.writeTextFile`, which makes OMP route *every* workspace write/edit
+   *   through the client. `full` performs the write; `ask`/`plan` raise an
+   *   approval and deny with a JSON-RPC error, which OMP surfaces to the model
+   *   as "Write denied by the user."
+   *
+   * `plan` additionally runs the session in OMP's `plan` ACP mode (read-only),
+   * so plan mode blocks on both layers.
+   */
   private async handleServerRequest(message: JsonRpcRequestMessage): Promise<void> {
     if (SUPPORTED_ACP_REQUESTS[message.method] !== true) {
       this.rpc.respondError(message.id, -32601, `Seevee does not implement ${message.method}.`);
       return;
     }
-    if (message.method === 'session/request_permission' && this.permissionMode === 'full') {
-      const params = asRecord(message.params);
+    const params = asRecord(message.params);
+    const unattended = this.permissionMode === 'full';
+    if (message.method === 'fs/read_text_file') {
+      // Reads stay provider-side: `readTextFile` is advertised as false, so
+      // OMP should never send this. Answering it rather than erroring keeps a
+      // future OMP release from wedging the session on an unexpected read.
+      this.rpc.respondError(message.id, -32601, 'Seevee does not serve ACP file reads.');
+      return;
+    }
+    if (unattended && message.method === 'session/request_permission') {
       const optionId = ompPermissionOptionId(params, { decision: 'allow-session' })
         ?? ompPermissionOptionId(params, { decision: 'allow-once' });
       if (optionId !== null) {
@@ -334,20 +516,70 @@ class OmpAdapterSession implements AdapterSession {
         return;
       }
     }
+    if (message.method === 'fs/write_text_file') {
+      const path = optionalString(params['path']) ?? '(unknown path)';
+      const content = optionalString(params['content']) ?? '';
+      if (unattended) {
+        await this.applyApprovedWrite(message.id, path, content);
+        return;
+      }
+      this.raiseApproval(message.id, 'fs/write_text_file', params, {
+        provider: 'omp',
+        kind: 'fs/write_text_file',
+        title: `Write ${path}`,
+        request: sanitizeAgentValue(params),
+      });
+      return;
+    }
+    this.raiseApproval(message.id, message.method, params, {
+      provider: 'omp',
+      kind: message.method,
+      title: optionalString(params['message']) ?? message.method,
+      request: sanitizeAgentValue(params),
+    });
+  }
+
+  private raiseApproval(
+    requestId: string | number,
+    method: string,
+    params: Record<string, unknown>,
+    data: Record<string, unknown>,
+  ): void {
     const approvalId = `approval_${randomUUID()}`;
-    const params = asRecord(message.params);
-    this.pendingApprovals.set(approvalId, { requestId: message.id, method: message.method, params });
+    this.pendingApprovals.set(approvalId, { requestId, method, params });
     this.emit({
       type: 'approval.requested',
       turnId: this.activeTurnId,
       approvalId,
-      data: {
-        provider: 'omp',
-        kind: message.method,
-        title: optionalString(params['message']) ?? message.method,
-        request: sanitizeAgentValue(params),
-      },
+      data,
     });
+  }
+
+  /**
+ * Performs a write OMP routed to the client via `fs/write_text_file`, replying
+ * with a JSON-RPC error when it fails so OMP reports the refusal to the model
+ * rather than treating the write as done.
+ */
+  private async applyApprovedWrite(requestId: string | number, path: string, content: string): Promise<void> {
+    try {
+      await writeWorkspaceFile(this.workspaceRoot, path, content);
+      this.rpc.respond(requestId, {});
+    } catch (error) {
+      this.rpc.respondError(
+        requestId,
+        -32603,
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  }
+
+  private protocolError(method: string, requested: string, error: unknown): Error {
+    if (error instanceof JsonRpcProcessError) {
+      const detail = jsonRpcErrorDetail({ code: error.code, message: error.message, data: error.data });
+      if (detail !== null) return new OmpProtocolError(method, requested, detail);
+      return new OmpProtocolError(method, requested, `provider error ${error.code}`);
+    }
+    return error instanceof Error ? error : new Error(String(error));
   }
 
   private handleNotification(message: JsonRpcNotificationMessage): void {

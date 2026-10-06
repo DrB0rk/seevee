@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { parseArgs, renderHelp, renderVersion, EXIT } from '../src/cli.js';
+import { AGENT_GUIDE, AGENT_README_HEADER, AGENT_SKILL_DIR } from '../src/scaffold/agent-files.js';
 
 describe('parseArgs', () => {
   it('returns null command and default flags for empty argv', () => {
@@ -119,5 +120,36 @@ describe('EXIT codes', () => {
     expect(EXIT.LIFECYCLE).toBe(5);
     expect(EXIT.EXPORT).toBe(6);
     expect(EXIT.MIGRATION).toBe(7);
+  });
+});
+
+describe('generated agent files', () => {
+  it('names the skill entry point and its references in AGENTS.md', () => {
+    expect(AGENT_GUIDE).toContain('.seevee/agent/seevee-workspace-agent/SKILL.md');
+    expect(AGENT_GUIDE).toContain('references/data-contract.md');
+    expect(AGENT_GUIDE).toContain('references/comments.md');
+    expect(AGENT_GUIDE).toContain('references/templates-and-rendering.md');
+    expect(AGENT_GUIDE).toContain('references/workflows.md');
+    expect(AGENT_GUIDE).toContain('references/cli-and-workspace.md');
+    expect(AGENT_GUIDE).toContain('references/cv-guidance.md');
+  });
+
+  it('tells an agent what to do when an edited AGENTS.md conflicts with the skill', () => {
+    expect(AGENT_GUIDE).toContain('edits here contradict the');
+    expect(AGENT_GUIDE).toContain('the skill wins');
+    expect(AGENT_GUIDE).toContain('never overwrites this');
+  });
+
+  it('points the agent-dir README at SKILL.md by the directory name init installs', () => {
+    expect(AGENT_README_HEADER).toContain(`${AGENT_SKILL_DIR}/SKILL.md`);
+    expect(AGENT_README_HEADER).toContain('AGENTS.md');
+  });
+
+  it('keeps the documented commands in step with the shipped CLI help text', () => {
+    const help = renderHelp();
+    for (const command of ['status', 'validate', 'doctor', 'export', 'comments list', 'template']) {
+      expect(help).toContain(command);
+      expect(AGENT_GUIDE).toContain(command);
+    }
   });
 });
