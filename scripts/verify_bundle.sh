@@ -195,17 +195,21 @@ run_json_command template-validate template validate --template classic --draft 
 run_json_command template-compile template compile --template classic --draft "$DRAFT_ID"
 run_json_command template-activate template activate --template classic --draft "$DRAFT_ID"
 
-if (cd "$SMOKE_WORKSPACE" && "$LAUNCHER" export --json > "$WORK/export.json" 2>/dev/null); then
-  echo 'verify_bundle.sh: export unexpectedly reported success' >&2
-  exit 1
-else
-  EXPORT_CODE=$?
-fi
-if [ "$EXPORT_CODE" -ne 6 ] || ! grep -q 'Print to PDF' "$WORK/export.json"; then
-  echo 'verify_bundle.sh: export did not return its documented actionable status' >&2
+# Export is a real capability now: the bundled runtime renders the active
+# template and captures it to PDF. This is the end-to-end proof that the
+# bundle actually ships a working template renderer (it needs Astro, Vite,
+# and Rollup's native binary at runtime), so it must produce a PDF.
+if ! (cd "$SMOKE_WORKSPACE" && "$LAUNCHER" export --json > "$WORK/export.json" 2>/dev/null); then
+  echo 'verify_bundle.sh: export failed in the bundled runtime' >&2
   cat "$WORK/export.json" >&2
   exit 1
 fi
+EXPORTED_PDF="$(cd "$SMOKE_WORKSPACE" && find exports -name '*.pdf' -print -quit 2>/dev/null || true)"
+if [ -z "$EXPORTED_PDF" ] || [ ! -s "$SMOKE_WORKSPACE/$EXPORTED_PDF" ]; then
+  echo 'verify_bundle.sh: export reported success but wrote no PDF' >&2
+  exit 1
+fi
+echo 'PASS: bundled runtime exports a real PDF through the template renderer'
 
 (cd "$SMOKE_WORKSPACE" && "$LAUNCHER" stop)
 

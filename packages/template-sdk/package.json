@@ -22,7 +22,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && node scripts/copy-astro.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "echo \"lint skipped\"",
     "test": "vitest run",

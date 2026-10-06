@@ -27,5 +27,23 @@ export default defineConfig({
     ssr: {
       noExternal: [/^@seevee\//],
     },
+    build: {
+      rollupOptions: {
+        external: [
+          // `@seevee/export` depends on Playwright, which ships platform
+          // binaries and optional native bindings that Rollup cannot bundle
+          // (playwright-core imports `kerberos`). The bundle ships Playwright
+          // as a real runtime dependency, so leave it to Node's loader rather
+          // than inlining it into the server build.
+          'playwright',
+          'playwright-core',
+          // macOS-only optional peers of the Vite/Rollup toolchain. They are
+          // genuinely absent on Linux and Windows, where the modules fall
+          // back to polling.
+          'fsevents',
+          'kerberos',
+        ],
+      },
+    },
   },
 });

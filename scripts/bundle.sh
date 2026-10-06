@@ -276,10 +276,22 @@ for pkg in $RUNTIME_PKGS; do
 done
 cp "$ROOT_DIR/apps/studio/package.json" "$WORK/apps/studio/package.json"
 cp -R "$ROOT_DIR/apps/studio/dist" "$WORK/apps/studio/"
-# Optional platform binaries (Claude SDK, Sharp, esbuild, Rollup, Lightning CSS)
-# are build-time or user-agent-provided; Seevee launches the user's installed
-# agent executables and does not need those native packages in the runtime.
+# Optional platform binaries (Claude SDK, Sharp, esbuild, Lightning CSS) are
+# build-time or user-provided; Seevee launches the user's installed agent
+# executables and does not need those native packages in the runtime.
 (cd "$WORK" && pnpm install --prod --frozen-lockfile --no-optional --prefer-offline --config.ignore-scripts=false)
+
+# Rollup is the exception: template rendering executes the template's own Astro
+# source through Vite at runtime, and Vite delegates to Rollup, which loads a
+# platform-specific native binary as an OPTIONAL dependency. --no-optional
+# strips it, and every render then fails with "Cannot find module
+# @rollup/rollup-<platform>". The build already installed the right binary for
+# this host, so copy it in rather than re-resolving the dependency tree.
+for native_pkg in "$ROOT_DIR"/node_modules/.pnpm/@rollup+rollup-*/node_modules/@rollup/rollup-*; do
+  [ -d "$native_pkg" ] || continue
+  mkdir -p "$WORK/node_modules/@rollup"
+  cp -R "$native_pkg" "$WORK/node_modules/@rollup/"
+done
 if [ -d "$WORK/node_modules" ]; then
   cp -R "$WORK/node_modules/." "$RUNTIME/node_modules/"
 fi
