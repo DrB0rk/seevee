@@ -32,7 +32,9 @@ jobs:
       # correctly report `skipped` and the measurement assertions fail, so CI
       # installs Chromium explicitly rather than silently skipping coverage.
       - name: Install Chromium for layout measurement
-        run: pnpm exec playwright install --with-deps chromium
+        # `playwright` is a dependency of @seevee/export, not the workspace
+        # root, so `pnpm exec playwright` from the root cannot find it.
+        run: pnpm --filter @seevee/export exec playwright install --with-deps chromium
       - name: Typecheck
         run: pnpm typecheck
       - name: Generate JSON Schemas
