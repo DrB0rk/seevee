@@ -6,6 +6,13 @@ This project uses Semantic Versioning. See `.dev/VERSIONING.md` for the project 
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-06
+
+### Fixed
+
+- **Template rendering in a release build returned HTTP 500.** `@seevee/template-render` loaded Vite with a literal `import('vite')`, which the Studio's Rollup graph hoisted into a static import. That inlined all of Vite and its esbuild dependency into the ESM server bundle, where esbuild's `requireNative()` runs at module load and throws `__dirname is not defined in ES module scope`. Every preview and export failed with `The template could not be rendered` on a fresh `seevee init`. The import is now non-static, so Vite is loaded from `node_modules` at request time, and the toolchain is marked external in the Studio's Vite and Rollup configuration.
+- `scripts/test_bundle.sh` now fails the build if the Vite/esbuild toolchain is inlined into the Studio server bundle, since that is invisible to the test suite and only appears in a release.
+
 ## [0.3.0] - 2026-10-06
 
 ### Added
@@ -24,8 +31,6 @@ This project uses Semantic Versioning. See `.dev/VERSIONING.md` for the project 
 - Template compilation measures real layout. The fixture renderer no longer invents page heights (`entities * 12mm`); it renders the template, collects its compiled CSS, and measures the result in Chromium. When no browser is available the stage records `skipped` with a reason — never a pass, and never invented numbers.
 - A missing Chromium binary during export is reported as an actionable message naming the automatic first-download and the offline fallback, instead of Playwright's opaque "Executable doesn't exist".
 - `seevee validate` and the exporter resolve the template root correctly, so a template version directory such as `templates/classic/v1` validates instead of being rejected.
-- **Template rendering in a release build returned HTTP 500.** `@seevee/template-render` loaded Vite with a literal `import('vite')`, which the Studio's Rollup graph hoisted into a static import. That inlined all of Vite and its esbuild dependency into the ESM server bundle, where esbuild's `requireNative()` runs at module load and throws `__dirname is not defined in ES module scope`. Every preview and export failed with `The template could not be rendered` on a fresh `seevee init`. The import is now non-static, so Vite is loaded from `node_modules` at request time, and the toolchain is marked external in the Studio's Vite and Rollup configuration.
-- `scripts/test_bundle.sh` now fails the build if the Vite/esbuild toolchain is inlined into the Studio server bundle, since that is invisible to the test suite and only appears in a release.
 
 ### Changed
 
