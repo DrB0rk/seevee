@@ -72,7 +72,7 @@ When editing copy:
 
 A comment can target content, a field, text, a section, template region, or rendered page region. Resolve the strongest selector first and use fallbacks only when necessary.
 
-Start with `seevee comments list --json`. It returns the latest message and the semantic and page-placement context for every open comment on the active CV. Use `seevee comments list --all` to inspect resolved history. For general workspace tasks, use `seevee status --json`, `seevee validate --json`, and `seevee doctor --json` instead of manually locating runtime state. To save a PDF, open the dashboard and use the browser's Print to PDF flow; CLI PDF export is not available yet. Run `seevee validate --json` after changes.
+Start with `seevee comments list --json`. It returns the latest message and the semantic and page-placement context for every open comment on the active CV. Use `seevee comments list --all` to inspect resolved history. For general workspace tasks, use `seevee status --json`, `seevee validate --json`, and `seevee doctor --json` instead of manually locating runtime state. To save a PDF, run `seevee export` — it renders the active template and writes to `exports/`; pass `--output <path>` to choose the destination and `--json` for structured output. The first export downloads a Chromium binary (~150MB) and caches it, so later exports are offline. Run `seevee validate --json` after changes.
 
 Before applying a comment, classify it as one of:
 

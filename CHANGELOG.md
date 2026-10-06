@@ -6,6 +6,31 @@ This project uses Semantic Versioning. See `.dev/VERSIONING.md` for the project 
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-06
+
+### Added
+
+- Templates are executed for real. `@seevee/template-render` compiles a template's own Astro entry and renders it with Astro's server container, so the dashboard and PDF export show the template you actually chose. The new package caches one Vite server per template root and is invalidated by the workspace watcher when template source changes.
+- `seevee export [path]` writes a PDF. It resolves the active CV, presentation and template from `seevee.json`, renders the real template, captures it with Chromium, and verifies the PDF's physical page size against the presentation profile. Supports `--json` and `--output`.
+- The dashboard's `POST /api/export/pdf` endpoint produces a real PDF and returns metadata, the artifact path, or the file itself with `download: true`.
+- `Page`, `Section`, `Item` and `Field` from `@seevee/template-sdk/components` are real Astro components. `Field` resolves its value through `getField` and renders it as the element's text, falling back to `fallback` when the value is absent.
+- `@seevee/export` is included in release bundles. The bundle package list is derived from each package's own dependencies instead of a hardcoded string, so a new runtime package is picked up automatically.
+
+### Fixed
+
+- Template sections rendered empty. `deriveCv` indexed sections only by document id (`sec_experience`) while every template addresses them by canonical type (`experience`), matching the manifest's own selectors. Sections are now indexed by both, with real document ids winning collisions.
+- Workspace `relativePath` validation rejected legitimate paths. The traversal guard used an unescaped `..`, which is a two-character wildcard, so any path containing a two-character segment (`templates/classic/v1`, `cv`) failed validation. It now rejects only actual `..` segments and still rejects absolute paths and traversal.
+- Playwright resolution no longer depends on the working directory. The availability gate walked parent directories for `node_modules/playwright`, which reported "not installed" under pnpm's layout and blocked genuine exports. Playwright is now a declared dependency and resolution itself is the test.
+- Template compilation measures real layout. The fixture renderer no longer invents page heights (`entities * 12mm`); it renders the template, collects its compiled CSS, and measures the result in Chromium. When no browser is available the stage records `skipped` with a reason — never a pass, and never invented numbers.
+- A missing Chromium binary during export is reported as an actionable message naming the automatic first-download and the offline fallback, instead of Playwright's opaque "Executable doesn't exist".
+- `seevee validate` and the exporter resolve the template root correctly, so a template version directory such as `templates/classic/v1` validates instead of being rejected.
+
+### Changed
+
+- Export no longer compares the PDF's page count against the renderer's estimated count. The renderer paginates from estimated heights while Chromium paginates the real template, so the comparison rejected correct exports. Page count is now checked against the presentation's declared `pagination.targetMax` (absent by schema design, in which case the count is recorded and not enforced), and the renderer's estimate is retained in export metadata as an estimate.
+- Image ingestion now fails loudly instead of returning a document containing only a placeholder `[image]` block. The image adapter rejects every source with a typed `VisionExtractionUnavailableError` (`code: vision-extraction-unavailable`) whose message states that this build has no vision model and tells you to paste the text or point the agent at the file. A failed image ingest can no longer be mistaken for a successful one that happened to contain no text.
+- Chromium is not bundled. The first export downloads the browser (~150MB) into Playwright's cache; later exports are offline. This keeps release bundles small.
+
 ## [0.2.0] - 2026-09-26
 
 ### Added

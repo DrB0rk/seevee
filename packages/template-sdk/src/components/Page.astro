@@ -1,0 +1,31 @@
+---
+// Page — the root element of a rendered template.
+//
+// IMPORTANT: this module is part of the SDK's safety boundary. It must
+// never reach for filesystem, process, network, or eval APIs — see
+// ../safety.ts for the allowlist that tooling enforces.
+//
+// The rendered element carries the `data-seevee-page*` anchors the studio
+// dashboard binds to. Attribute names are load-bearing: renaming one breaks
+// the dashboard's page-level comments. `packages/renderer/src/html.ts`
+// documents the same contract for the non-Astro render path.
+import type { PageProfile, PresentationReadModel } from '../types.js';
+
+interface Props {
+  readonly profile: PageProfile;
+  readonly presentation?: PresentationReadModel;
+}
+
+const { profile } = Astro.props;
+---
+
+{/*
+  A `div` (not `main`): templates routinely place their own column
+  wrappers — `<aside>` plus `<main>` — inside the page element, and nested
+  `<main>` elements are invalid HTML.
+*/}
+<div
+  data-seevee-page="true"
+  data-seevee-page-preset={profile.preset}
+  data-seevee-page-orientation={profile.orientation}
+><slot /></div>

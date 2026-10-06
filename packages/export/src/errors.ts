@@ -87,6 +87,21 @@ export class PlaywrightNotInstalledError extends ExportError {
 }
 
 /**
+ * The `playwright` package is installed, but its Chromium binary has
+ * not been downloaded yet and could not be fetched automatically.
+ *
+ * Seevee downloads Chromium on first export rather than shipping it in
+ * the release bundle, so this is a one-time cost the user is told about
+ * explicitly rather than a silent failure inside `chromium.launch()`.
+ */
+export class ChromiumMissingError extends ExportError {
+  public override readonly name: string = 'ChromiumMissingError';
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+/**
  * The compiled template artifact could not be loaded or its on-disk
  * payload did not match the expected compiled-artifact envelope.
  */

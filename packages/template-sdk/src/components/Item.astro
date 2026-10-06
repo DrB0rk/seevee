@@ -1,0 +1,27 @@
+---
+// Item — wraps one CV entity and emits the `data-seevee-item*` anchors the
+// dashboard uses for item-level comments and narrow-slot rerenders.
+//
+// IMPORTANT: part of the SDK safety boundary — see ../safety.ts.
+//
+// An unknown item id renders as an empty marker rather than throwing, so a
+// template can map over a `nodeOrder` that references a deleted entity.
+import { bind } from '../bindings.js';
+import { getItem } from '../cv-helpers.js';
+import type { CvReadModel, ItemId, SectionId } from '../types.js';
+
+interface Props {
+  readonly cv: CvReadModel;
+  readonly itemId: ItemId;
+  readonly sectionId?: SectionId;
+}
+
+const { cv, itemId, sectionId } = Astro.props;
+const item = getItem(cv, itemId, sectionId);
+---
+
+<div
+  {...bind.item(itemId, sectionId)}
+  data-seevee-item-type={item === null ? undefined : item.type}
+  data-seevee-empty={item === null ? 'true' : undefined}
+><slot /></div>

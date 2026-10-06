@@ -6,7 +6,9 @@
  * a single watcher alive across HMR reloads and to avoid re-watching the
  * filesystem on every request to /api/events.
  */
+import path from 'node:path';
 import { loadWorkspaceContext } from './workspace.js';
+import { invalidateTemplateVersion } from './renderer.js';
 import { WorkspaceWatcher } from './watcher.js';
 
 interface RuntimeSlot {
@@ -35,6 +37,17 @@ export async function workspaceWatcher(): Promise<WorkspaceWatcher> {
     slot.initPromise = (async () => {
       const ctx = await loadWorkspaceContext();
       const watcher = new WorkspaceWatcher(ctx.root);
+      // Template renders are cached per version root. A source edit has to drop
+      // that cache or the next preview request keeps serving the stale compile,
+      // so the watcher event is what makes live editing of a template real.
+      watcher.subscribe((event) => {
+        if (event.type !== 'template.updated') return;
+        const root = path.resolve(ctx.root, event.relativePath);
+        void invalidateTemplateVersion(root).catch(() => {
+          // Cache invalidation is best-effort: a failure here must not take
+          // down the event stream. The next render retries a fresh boot.
+        });
+      });
       watcher.start();
       slot.watcher = watcher;
       return watcher;

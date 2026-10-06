@@ -10,11 +10,26 @@ import { parseFieldPath } from './field-path.js';
  * Build a CvReadModel from a parsed CV document. The model is intentionally
  * immutable: every nested record is frozen with Object.freeze so template
  * code cannot mutate the underlying data and break the safety contract.
+ *
+ * Sections are indexed twice: once by their document id (`sec_experience`)
+ * and once by their canonical type (`experience`). Templates address the
+ * canonical ATS sections by type — that is what a template's manifest binds
+ * its selectors to (`[data-seevee-section="experience"]`) — while comments
+ * and diffs address them by document id. A real document id always wins a
+ * collision, so a CV that happens to use a document id of `summary` still
+ * resolves `summary` to that section rather than to the aliased type.
  */
 export function deriveCv(document: CvDocument): CvReadModel {
   const sections: Record<SectionId, CvSection> = {};
+  const byType: Record<string, SectionId> = {};
   for (const [rawId, section] of Object.entries(document.data.sections)) {
     sections[rawId as SectionId] = Object.freeze({ ...section });
+    const canonical = section.type;
+    if (byType[canonical] === undefined) byType[canonical] = rawId as SectionId;
+  }
+  for (const [canonical, rawId] of Object.entries(byType)) {
+    const id = canonical as SectionId;
+    if (sections[id] === undefined) sections[id] = sections[rawId];
   }
 
   const items: Record<ItemId, CvItem> = {};

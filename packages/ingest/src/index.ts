@@ -22,4 +22,4 @@ export { extractYaml } from './adapters/yaml.js';
 export { extractPdf } from './adapters/pdf.js';
 export { extractDocx } from './adapters/docx.js';
 export { extractUrl } from './adapters/url.js';
-export { extractImage } from './adapters/image.js';
+export { extractImage, VisionExtractionUnavailableError } from './adapters/image.js';

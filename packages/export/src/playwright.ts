@@ -19,9 +19,11 @@ import { fileURLToPath } from 'node:url';
 import {
   PdfRenderError,
   PlaywrightNotInstalledError,
+  ChromiumMissingError,
 } from './errors.js';
 import type {
   PlaywrightModule,
+  PlaywrightBrowser,
   PlaywrightPage,
   PlaywrightPdfOptions,
 } from './types.js';
@@ -92,16 +94,14 @@ export async function loadPlaywrightModule(
 ): Promise<PlaywrightModule> {
   if (override !== undefined) return override;
 
-  if (!(await isPlaywrightAvailable())) {
-    throw new PlaywrightNotInstalledError(
-      'Playwright is not installed. Run: pnpm add -D playwright && pnpm exec playwright install chromium',
-    );
-  }
-
+  // Playwright is a declared dependency, so the only real question is
+  // whether it resolves from this module. Resolving is the honest test:
+  // a directory-walk probe reported "not installed" on hosts where pnpm's
+  // layout hid the package from the walk, which blocked real exports.
   const mod = await dynamicImportPlaywright();
   if (mod === null) {
     throw new PlaywrightNotInstalledError(
-      'Playwright is not installed. Run: pnpm add -D playwright && pnpm exec playwright install chromium',
+      'Playwright is not installed. Run: pnpm install && pnpm exec playwright install chromium',
     );
   }
   return mod;
@@ -147,9 +147,7 @@ export interface CapturePdfOptions {
 }
 
 export async function capturePdf(options: CapturePdfOptions): Promise<void> {
-  const browser = await options.playwrightModule.chromium.launch({
-    headless: true,
-  });
+  const browser = await launchChromium(options.playwrightModule);
   try {
     const page = await browser.newPage();
     try {
@@ -171,6 +169,41 @@ export async function capturePdf(options: CapturePdfOptions): Promise<void> {
       // Same reasoning as page.close().
     });
   }
+}
+
+/**
+ * Launch Chromium, downloading the browser binary on first use.
+ *
+ * Seevee does not bundle Chromium (~150MB) into the release archive.
+ * Instead the first export fetches it into Playwright's standard cache
+ * so every later export is offline and fast. A failure here is almost
+ * always "the download did not happen", which `chromium.launch()`
+ * reports as an opaque "Executable doesn't exist" — so we translate it
+ * into one actionable message.
+ */
+async function launchChromium(
+  playwrightModule: PlaywrightModule,
+): Promise<PlaywrightBrowser> {
+  try {
+    return await playwrightModule.chromium.launch({ headless: true });
+  } catch (error) {
+    if (!isMissingExecutableError(error)) throw error;
+    throw new ChromiumMissingError(
+      'Chromium is not available yet. It downloads automatically on the ' +
+        'first export (~150MB, then cached). If you are offline, install ' +
+        'it once with: pnpm exec playwright install chromium',
+    );
+  }
+}
+
+function isMissingExecutableError(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) return false;
+  if (!('message' in error)) return false;
+  const message: unknown = error.message;
+  if (typeof message !== 'string') return false;
+  return /Executable doesn't exist|please run the following command/i.test(
+    message,
+  );
 }
 
 async function assertFontsReady(page: PlaywrightPage): Promise<void> {

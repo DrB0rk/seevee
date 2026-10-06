@@ -29,6 +29,16 @@ import type {
 export interface FakePlaywrightOptions {
   /** When true, `loadPlaywrightModule()` will throw. */
   readonly reportMissing?: boolean;
+  /**
+   * Force the page count written into the fake PDF, ignoring the HTML.
+   *
+   * The export pipeline's HTML now comes from a template, which emits its own
+   * page wrapper rather than the renderer's `<article class="seevee-page">`
+   * elements, so counting markup can only ever report one page. Tests that
+   * care about page-count policy set this to stand in for a template that
+   * really paginated into N sheets.
+   */
+  readonly pageCount?: number;
 }
 
 export interface FakePlaywrightHandle {
@@ -82,10 +92,10 @@ export function createFakePlaywright(
       });
     },
     async pdf(pdfOptions: PlaywrightPdfOptions): Promise<Uint8Array> {
-      // Mirror the renderer's reported page count by counting
-      // `<article class="seevee-page">` elements in the HTML we were
-      // asked to render. Fall back to 1 when none are present.
-      const pageCount = countPages(lastHtml);
+      // Count the renderer's own page articles in the HTML we were asked to
+      // render, unless the caller pinned a count. Falls back to 1 when the
+      // markup contains none (which is the case for template-driven HTML).
+      const pageCount = options.pageCount ?? countPages(lastHtml);
       const buffer = buildMinimalPdf(pdfOptions, pageCount);
       await mkdir(dirname(pdfOptions.path), { recursive: true });
       await writeFile(pdfOptions.path, Buffer.from(buffer));

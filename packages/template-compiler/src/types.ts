@@ -1,7 +1,9 @@
 // Public compile types. These are the shape of `compileTemplate()`'s input
 // and output, plus the diagnostic record every stage emits.
 
-import type { TemplateManifestDocument } from '@seevee/schema';
+import type { PageProfile, TemplateManifestDocument } from '@seevee/schema';
+
+import type { MeasuringPlaywright } from './layout-measure.js';
 
 /** Diagnostic stage identifiers — used both as labels and as a discriminator. */
 export type CompileStage =
@@ -44,6 +46,17 @@ export interface CompileOptions {
   readonly timeoutMs?: number;
   /** Override the default 512 MiB child-process memory limit. */
   readonly memoryMb?: number;
+  /**
+   * Browser used by the fixture-render stage to measure real laid-out
+   * heights. Injected by tests; resolved from the host tree when omitted,
+   * and the stage records `skipped` when no browser is available.
+   */
+  readonly playwright?: MeasuringPlaywright;
+  /**
+   * Page profile the fixtures are measured against. Defaults to A4
+   * portrait with 20 mm edges when omitted.
+   */
+  readonly pageProfile?: PageProfile;
 }
 
 /**

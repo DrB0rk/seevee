@@ -1,0 +1,58 @@
+---
+// Minimal renderable template used by the export pipeline's tests.
+//
+// The pipeline now executes the template's real Astro source (that is the
+// whole point of the export path), so this fixture must be a template Astro can
+// actually compile — not a placeholder. It deliberately carries a scoped
+// `<style>` block so tests can assert that the template's CSS reached the
+// exported document.
+import {
+  Page,
+  Section,
+  Item,
+  Field,
+} from '@seevee/template-sdk/components';
+import { deriveCv, getField } from '@seevee/template-sdk';
+import type { CvDocument } from '@seevee/schema';
+
+interface Props {
+  cv: CvDocument;
+}
+
+const { cv } = Astro.props as Props;
+const model = deriveCv(cv);
+// `sectionOrder` carries document ids while the read model also keys sections
+// by canonical type; resolve to the canonical id the components expect.
+const sections = model.sectionOrder
+  .map((id) => model.document.data.sections[id]?.type ?? id)
+  .filter((id) => model.sections[id] !== undefined);
+---
+
+<Page profile={{ preset: 'A4', orientation: 'portrait' }}>
+  {
+    sections.map((sectionId) => (
+      <Section cv={model} sectionId={sectionId}>
+        {(model.sections[sectionId]?.nodeOrder ?? []).map((itemId) => {
+          const item = model.items[itemId];
+          const paths = item === undefined ? [] : Object.keys(item.fields ?? {});
+          return (
+            <Item cv={model} itemId={itemId} sectionId={sectionId}>
+              {paths.map((path) => (
+                <Field path={path} value={getField(model, itemId, path)} />
+              ))}
+            </Item>
+          );
+        })}
+      </Section>
+    ))
+  }
+</Page>
+
+<style>
+  [data-seevee-page] {
+    border-top: 0.4mm solid #1f2937;
+  }
+  [data-seevee-section] {
+    margin-bottom: 4mm;
+  }
+</style>

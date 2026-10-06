@@ -59,13 +59,10 @@ export async function loadCompiledArtifact(
   }
   if (stats.isDirectory()) {
     artifactDir = input;
-    manifestPath = resolve(input, 'manifest.json');
-    const manifestStat = await stat(manifestPath).catch(() => null);
-    if (manifestStat === null || !manifestStat.isFile()) {
-      throw new TemplateArtifactError(
-        `templateArtifactPath='${input}' is a directory but does not contain manifest.json`,
-      );
-    }
+    // A template root declares itself in `template.json`; a compiler-emitted
+    // artifact carries the same document renamed to `manifest.json`. Both are
+    // the canonical manifest envelope, so either name is accepted.
+    manifestPath = await findManifestFile(input);
     const sourceCandidate = resolve(input, 'source.astro');
     const sourceStat = await stat(sourceCandidate).catch(() => null);
     templateSourcePath = sourceStat !== null && sourceStat.isFile()
@@ -114,4 +111,22 @@ export async function loadCompiledArtifact(
 
 async function defaultRead(absPath: string): Promise<string> {
   return readFile(absPath, 'utf8');
+}
+
+/** Manifest filenames a template directory may declare, in precedence order. */
+const MANIFEST_FILENAMES: readonly string[] = ['template.json', 'manifest.json'];
+
+/**
+ * Resolve the manifest inside a template directory. A directory holding
+ * neither name is not a template root and gets a message naming both.
+ */
+async function findManifestFile(dir: string): Promise<string> {
+  for (const filename of MANIFEST_FILENAMES) {
+    const candidate = resolve(dir, filename);
+    const found = await stat(candidate).catch(() => null);
+    if (found !== null && found.isFile()) return candidate;
+  }
+  throw new TemplateArtifactError(
+    `templateArtifactPath='${dir}' is a directory but does not contain ${MANIFEST_FILENAMES.join(' or ')}`,
+  );
 }

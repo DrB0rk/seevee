@@ -1,6 +1,38 @@
 ---
-import { Page, Section, Field } from '@seevee/template-sdk';
+// Minimal template used by the compiler's own tests.
+//
+// It exercises the REAL render path — `@seevee/template-render` executes
+// this file through Astro — so it must import the structural components from
+// the subpath that exports them (`@seevee/template-sdk` deliberately does
+// not, to keep that entry point importable by plain Node) and pass the props
+// the components declare.
+//
+// It lays out one block per CV entity. That matters for the compiler's
+// overflow test: a fixture with many entities must genuinely produce a tall
+// page in THIS template for the layout stage to have anything real to
+// measure. A template that rendered an empty section would fit any fixture
+// no matter how large, which would make an overflow test vacuous.
+import { deriveCv } from '@seevee/template-sdk';
+import { Page, Section, Item } from '@seevee/template-sdk/components';
+import type { CvReadModel, ItemId, SectionId } from '@seevee/template-sdk';
+import type { CvDocument, PageProfile } from '@seevee/schema';
+
+interface Props {
+  readonly cv: CvDocument;
+  readonly profile: PageProfile;
+}
+
+const { cv: document, profile } = Astro.props as Props;
+const cv: CvReadModel = deriveCv(document);
+const entities: readonly ItemId[] = Object.keys(cv.items) as readonly ItemId[];
 ---
-<Page>
-  <Section sectionId="summary-main" />
+
+<Page profile={profile}>
+  <Section cv={cv} sectionId={'minimal' as SectionId}>
+    {entities.map((itemId) => (
+      <Item cv={cv} itemId={itemId}>
+        {itemId}
+      </Item>
+    ))}
+  </Section>
 </Page>

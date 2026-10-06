@@ -27,6 +27,16 @@ export type WorkspaceEvent =
   | { type: 'template.build.started'; templateId: string }
   | { type: 'template.build.completed'; templateId: string }
   | { type: 'template.activated'; templateId: string }
+  | {
+      /**
+       * A template version's source changed on disk. `relativePath` is the
+       * version root relative to the workspace, which is what the render cache
+       * keys on, so a subscriber can invalidate exactly that root.
+       */
+      readonly type: 'template.updated';
+      readonly templateId: string;
+      readonly relativePath: string;
+    }
   | { type: 'diagnostics.updated'; presentationId: string }
   | { type: 'agent.event'; event: AgentEvent }
   | { type: 'export.completed'; exportId: string };
@@ -78,6 +88,24 @@ interface Subscriber {
   send: (event: WorkspaceEvent) => void;
 }
 
+/** Source files whose change invalidates a template's compiled render. */
+const TEMPLATE_SOURCE_EXTENSION = /\.(astro|css|ts|js|mjs|json)$/u;
+
+/**
+ * Directory to watch for a registered template `relativePath`.
+ *
+ * The registration may point at the version directory (`templates/classic/v1`)
+ * or at its manifest (`templates/local/classic/template.json`); the source tree
+ * is the directory either way. Returns null when nothing exists there.
+ */
+function templateWatchRoot(workspaceRoot: string, relativePath: string): string | null {
+  const registered = path.resolve(workspaceRoot, relativePath);
+  const stat = fs.statSync(registered, { throwIfNoEntry: false });
+  if (stat === undefined) return null;
+  const dir = stat.isDirectory() ? registered : path.dirname(registered);
+  return fs.statSync(dir, { throwIfNoEntry: false })?.isDirectory() === true ? dir : null;
+}
+
 export class WorkspaceWatcher {
   private readonly subscribers = new Set<Subscriber>();
   private readonly handles: fs.FSWatcher[] = [];
@@ -111,7 +139,54 @@ export class WorkspaceWatcher {
         // directory missing — leave unobserved until the workspace grows.
       }
     }
+    this.watchRegisteredTemplateVersions();
     this.started = true;
+  }
+
+  /**
+   * Attach one recursive watch per registered template version directory.
+   *
+   * Failures are swallowed: a workspace with no `templates/` directory yet (or a
+   * platform without recursive watch) simply loses live invalidation, which
+   * degrades to the cache keeping serving the last good render.
+   */
+  private async watchRegisteredTemplateVersions(): Promise<void> {
+    const entries = await this.readRegisteredTemplates();
+    for (const relativePath of entries) {
+      const watchRoot = templateWatchRoot(this.root, relativePath);
+      if (watchRoot === null) continue;
+      try {
+        const handle = fs.watch(watchRoot, { recursive: true, persistent: false }, (_event, filename) => {
+          if (typeof filename !== 'string') return;
+          if (!TEMPLATE_SOURCE_EXTENSION.test(filename)) return;
+          this.scheduleEmit({
+            type: 'template.updated',
+            templateId: path.basename(relativePath),
+            relativePath,
+          });
+        });
+        handle.on('error', () => handle.close());
+        this.handles.push(handle);
+      } catch {
+        // recursive watch unsupported here — see the method docblock.
+      }
+    }
+  }
+
+  /** Workspace-relative paths of every registered template version root. */
+  private async readRegisteredTemplates(): Promise<readonly string[]> {
+    const raw = await fs.promises.readFile(path.join(this.root, 'seevee.json'), 'utf8').catch(() => null);
+    if (raw === null) return [];
+    const parsed = JSON.parse(raw) as {
+      data?: { resources?: { templates?: Record<string, { relativePath?: unknown } | undefined> } };
+    };
+    const templates = parsed.data?.resources?.templates ?? {};
+    const out: string[] = [];
+    for (const entry of Object.values(templates)) {
+      if (typeof entry?.relativePath !== 'string') continue;
+      out.push(entry.relativePath);
+    }
+    return out;
   }
 
   stop(): void {

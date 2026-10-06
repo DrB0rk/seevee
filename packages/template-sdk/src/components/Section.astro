@@ -1,0 +1,29 @@
+---
+// Section — wraps one CV section and emits the `data-seevee-section*`
+// anchors the dashboard anchors section-level comments on.
+//
+// IMPORTANT: part of the SDK safety boundary — see ../safety.ts.
+//
+// A section id that is absent from the read model still renders (so a
+// template never crashes on a sparse CV); it is marked `data-seevee-empty`
+// instead. Attribute names are load-bearing.
+import { bind } from '../bindings.js';
+import { getSection } from '../cv-helpers.js';
+import type { CvReadModel, SectionId } from '../types.js';
+
+interface Props {
+  readonly cv: CvReadModel;
+  readonly sectionId: SectionId;
+}
+
+const { cv, sectionId } = Astro.props;
+const section = getSection(cv, sectionId);
+---
+
+<section
+  {...bind.section(sectionId)}
+  data-seevee-section-title={section === null ? undefined : section.title}
+  data-seevee-section-type={section === null ? undefined : section.type}
+  data-seevee-section-visible={section === null ? undefined : String(section.visible)}
+  data-seevee-empty={section === null ? 'true' : undefined}
+><slot /></section>

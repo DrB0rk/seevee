@@ -44,9 +44,13 @@ needs to reach for.
 
 Per DEVELOPMENT_PLAN.md §12 the function executes these steps:
 
-1. validate canonical resources (CV, workspace, presentation);
+1. validate canonical resources (CV / workspace / presentation);
 2. load the compiled template artifact at `templateArtifactPath`;
-3. render via `@seevee/renderer.renderPresentationToHtml`;
+3. render the presentation through the template's real Astro source
+   (`@seevee/template-render`) and wrap the fragment into a complete
+   printable document — page geometry, the template's scoped CSS, and its
+   `styles/print.css` — so the PDF carries the template's styling rather
+   than a generic paginator dump;
 4. feed the HTML through Playwright with `waitUntil: 'load'`
    (fonts + stylesheets are awaited by Chromium);
 5. read the renderer's layout diagnostics;
@@ -54,11 +58,41 @@ Per DEVELOPMENT_PLAN.md §12 the function executes these steps:
    `allowForcedExport: true`;
 7. call `page.pdf(...)` with `printBackground: true` and the active
    page profile dimensions;
-8. verify the resulting PDF's page count and physical dimensions
+8. verify the resulting PDF's page count against the presentation's
+   declared `pagination.targetMax` and its physical dimensions
    (`pdfinfo` first; raw trailer-scan fallback);
 9. write the export metadata to
    `<workspaceRoot>/.seevee/exports/<exportId>.json`;
 10. return `ExportResult`.
+
+## Which HTML gets printed
+
+Step 3 is the template's own output, not the renderer's. Two consequences
+worth knowing:
+
+- **Rendering and measurement are separate.** The template decides what the
+  document looks like and Chromium performs the real page breaking; the
+  renderer still owns the read model and the item-height estimates the
+  overflow diagnostics are computed from. Wiring the template into step 3
+  changes appearance without weakening the overflow gate.
+- **The scoped CSS must be inlined.** Astro renders components in "partial"
+  mode, so a template fragment carries `data-astro-cid-*` attributes but no
+  `<style>`. `renderTemplateDocument` collects the compiled sheets via
+  `collectTemplateStyles` and injects them verbatim. Emitting the fragment
+  without them produces a well-formed but completely unstyled document.
+
+## Page counts
+
+`pageCount` is read back from the PDF; `estimatedPageCount` is what the
+renderer's height model predicted before Chromium ran. These are two
+different layout engines describing the same document, so they are reported
+side by side and deliberately **not** asserted equal — a check that fails on
+correct output teaches people to bypass the export path.
+
+The page-count check that *is* enforced is the presentation's declared
+policy: `pagination.targetMax` is a fatal bound and `pagination.targetMin` is
+advisory only. Both fields are optional by schema design; when no policy is
+declared the actual count is recorded and the export passes.
 
 ## Diagnostics-blocking policy
 

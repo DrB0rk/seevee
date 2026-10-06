@@ -42,10 +42,24 @@ import {
    cap (`--max-old-space-size=<memoryMb>`) and a timeout. Skipped with
    `level: 'skipped'` when astro is not on PATH.
 4. **fixture-render** — walks every `*.json` fixture in `fixtureDir`,
-   parses each as a CV, lays out a single page, and collects the
-   resulting `PageContent[]`. The renderer in this package is a
-   deterministic stub; the real `@seevee/renderer` will replace it
-   via the same `renderFixtures` boundary.
+   parses each as a CV, renders it through the template's real `.astro`
+   entry with `@seevee/template-render`, and measures the laid-out height
+   in Chromium. Page count and per-item overflow come from the browser's
+   own layout boxes, not from per-entity constants.
+   - The template's compiled scoped CSS is fetched with
+     `collectTemplateStyles` and inlined into the measuring document, so
+     what is measured is the template's real layout.
+   - `renderTemplateToHtml` must be called **before**
+     `collectTemplateStyles`; Astro only populates the style modules during
+     the entry's first SSR evaluation, and collecting first returns `[]`
+     silently.
+   - `playwright` is an OPTIONAL peer dependency. With no browser
+     available the stage records `level: 'skipped'` and states why — it
+     never substitutes a fabricated height. Callers that require a
+     measurement check `diagnostic.level === 'pass'`.
+   - A template that throws on a fixture fails the stage with the
+     template's own typed error (`TemplateCompileError`,
+     `TemplateRuntimeError`, …).
 5. **layout-diag** — runs each `PageContent` through
    `@seevee/template-sdk`'s `evaluatePageLayout`. Throws `RenderError`
    on any overflow.

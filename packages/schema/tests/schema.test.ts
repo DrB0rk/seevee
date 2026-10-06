@@ -3,7 +3,7 @@
  * migration framework.
  */
 
-import { expect, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -429,3 +429,40 @@ function makeChain(steps: Array<{ from: SemVer; to: SemVer }>): MigrationChain {
     })),
   };
 }
+
+describe('workspace relativePath validation', () => {
+  function withPath(relativePath: string): unknown {
+    const ws = minimalWorkspace();
+    ws.data.resources.templates['tpl_x'] = {
+      id: 'tpl_x',
+      relativePath,
+      currentVersionId: 'v1_x',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    };
+    return workspaceDocumentSchema.safeParse(ws);
+  }
+
+  // The traversal guard must reject `..` segments, and must reject ONLY
+  // those. An unescaped `..` in the pattern is a two-character wildcard,
+  // which silently rejected any two-character path segment (`v1`, `ab`,
+  // `cv`) — see the v0.2.1 fix.
+  test.each([
+    'templates/classic/v1',
+    'templates/two-column/v1',
+    'cvs/cv_main.json',
+    'templates/ab/style.css',
+    'a.json',
+  ])('accepts an ordinary relative path: %s', (p) => {
+    expect(withPath(p).success).toBe(true);
+  });
+
+  test.each([
+    '../outside.json',
+    'cvs/../../etc/passwd',
+    'cvs/..',
+    '/absolute.json',
+    'C:/windows/file.json',
+  ])('rejects an unsafe relative path: %s', (p) => {
+    expect(withPath(p).success).toBe(false);
+  });
+});

@@ -6,18 +6,29 @@
  * `data.cvId` matches `cvId`. When `profile` is provided it overrides
  * the presentation's preset (still resolved through `PageProfile`).
  *
- * The current implementation calls the deterministic renderer stub and
- * returns the page array plus diagnostics. The full Playwright renderer
- * will replace `renderCvToPages` without changing the response shape.
+ * The response executes the workspace's real template: the presentation's
+ * `data.template` selection resolves to a template version directory, that
+ * version's Astro entry is rendered against the CV, and the fragment is
+ * returned as a full HTML document alongside the page array and diagnostics.
+ * The response shape is unchanged — `result.pages` still carries one entry per
+ * physical page, and each page now carries its own HTML — so existing clients
+ * keep working.
+ *
+ * Template faults are surfaced as structured failures (422/404) rather than
+ * thrown, because a broken template is a document-state problem the dashboard
+ * should render, not a 500 that hides the reason.
  */
 import type { APIRoute } from 'astro';
 import { z } from 'zod';
 import {
+  loadCv,
   loadPresentation,
   loadWorkspaceContext,
   type WorkspaceContext,
 } from '../../../lib/workspace.js';
 import { renderCvToPages } from '../../../lib/renderer.js';
+import { resolveTemplateRoot } from '../../../lib/template-root.js';
+import { isTemplateRenderError, type TemplateRenderErrorCode } from '@seevee/template-render';
 
 export const prerender = false;
 
@@ -91,13 +102,61 @@ export const POST: APIRoute = async ({ request }) => {
   if (!loaded.ok) {
     return jsonResponse({ ok: false, reason: loaded.reason, issues: loaded.issues }, loaded.status);
   }
-  const result = await renderCvToPages({ cvId, presentation: loaded.document, profile });
+  const cvEntry = ctx.workspace.data.resources.cvs[cvId];
+  if (cvEntry === undefined) {
+    return jsonResponse({ ok: false, reason: `cv ${cvId} not declared` }, 404);
+  }
+  const cv = await loadCv(ctx.root, cvEntry.relativePath);
+  if (!cv.ok) {
+    return jsonResponse({ ok: false, reason: cv.reason, issues: cv.issues }, cv.status);
+  }
+
+  const selection = loaded.document.data.template;
+  let template;
+  try {
+    template = await resolveTemplateRoot(ctx, selection.templateId, selection.versionId);
+  } catch (error) {
+    return jsonResponse(
+      {
+        ok: false,
+        reason: error instanceof Error ? error.message : 'template resolution failed',
+      },
+      422,
+    );
+  }
+
+  let result;
+  try {
+    result = await renderCvToPages({
+      cv: cv.document,
+      presentation: loaded.document,
+      template: { root: template.root, entry: template.manifest.entry },
+      profile,
+    });
+  } catch (error) {
+    if (isTemplateRenderError(error)) {
+      return jsonResponse(
+        {
+          ok: false,
+          reason: error.message,
+          templateCode: error.code satisfies TemplateRenderErrorCode,
+        },
+        422,
+      );
+    }
+    throw error;
+  }
   return jsonResponse(
     {
       ok: true,
       cvId,
       presentationId: resolved.locator.id,
       profile: profile ?? loaded.document.data.page.preset,
+      template: {
+        templateId: selection.templateId,
+        versionId: selection.versionId,
+        entry: template.manifest.entry,
+      },
       result,
     },
     200,

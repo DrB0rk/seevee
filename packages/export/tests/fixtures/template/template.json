@@ -5,7 +5,7 @@
   "templateId": "tpl_minimal",
   "name": "Minimal",
   "version": "1.0.0",
-  "entry": "src/pages/index.astro",
+  "entry": "src/Resume.astro",
   "engine": "astro",
   "capabilities": {
     "multiPage": false,

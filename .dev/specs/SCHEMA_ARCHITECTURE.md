@@ -570,21 +570,18 @@ Presentation controls how CV data is rendered without changing CV facts.
       "bleedMm": 0
     },
     "pagination": {
-      "targetPages": 1,
-      "maxPages": 2,
-      "overflowPolicy": "error"
+      "targetMin": 1,
+      "targetMax": 2,
+      "breakBehavior": "avoid"
     },
     "tokens": {
-      "core": {
-        "fontFamily": "Inter",
-        "baseFontSizePt": 9.5,
-        "lineHeight": 1.3,
-        "density": 0.92,
-        "columnGapMm": 7,
-        "primaryColor": "#111111",
-        "accentColor": "#2457d6"
-      },
-      "template": {}
+      "fontFamily": { "type": "string", "value": "Inter" },
+      "baseFontSizePt": { "type": "number", "value": 9.5 },
+      "lineHeight": { "type": "number", "value": 1.3 },
+      "density": { "type": "number", "value": 0.92 },
+      "columnGapMm": { "type": "number", "value": 7 },
+      "primaryColor": { "type": "color", "value": "#111111" },
+      "accentColor": { "type": "color", "value": "#2457d6" }
     },
     "sectionOverrides": {
       "sec_projects": {
@@ -1084,7 +1081,7 @@ Checks include:
 - current-date range constraints are valid;
 - IDs are unique within their resource namespace;
 - source/provenance references are not dangling;
-- if both pagination targetPages and maxPages are non-null, targetPages <= maxPages.
+- if both pagination `targetMin` and `targetMax` are present, `targetMin <= targetMax`.
 
 ## 18. Schema versioning
 

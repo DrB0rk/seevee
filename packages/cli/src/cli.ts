@@ -41,7 +41,7 @@ export const EXIT = {
 
 export type ExitCode = (typeof EXIT)[keyof typeof EXIT];
 
-export const VERSION = process.env.SEEVEE_VERSION ?? '0.2.0';
+export const VERSION = process.env.SEEVEE_VERSION ?? '0.3.0';
 export const SCHEMA_VERSION = '1.0.0';
 export const RUNTIME_VERSION = VERSION;
 
@@ -346,7 +346,7 @@ Commands:
   open [path]          open the active dashboard in a browser
   validate [path]      run schema + semantic validation
   doctor [path]        diagnose runtime/browser/schema/template problems
-  export [path]        report CLI PDF export availability and dashboard fallback
+  export [path]        export the active CV to PDF via the active template
   comments list [path] list actionable comments for the active CV
   template <sub>       template lifecycle: list, draft, validate, compile, activate
 
