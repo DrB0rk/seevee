@@ -58,6 +58,26 @@ export class JsonRpcProcessError extends Error {
   }
 }
 
+/**
+ * Best-effort human-readable detail carried alongside a JSON-RPC error.
+ * OMP reports ACP failures as `{"code": -32603, "message": "Internal error",
+ * "data": {"details": "Unsupported ACP mode: full"}}`, so the actionable text
+ * lives in `data.details` rather than in `message`.
+ */
+export function jsonRpcErrorDetail(error: JsonRpcErrorShape): string | null {
+  if (typeof error.message !== 'string' || error.message.length === 0) return null;
+  if (error.message !== 'Internal error') return error.message;
+  const data = error.data;
+  if (typeof data === 'string' && data.length > 0) return data;
+  if (typeof data === 'object' && data !== null) {
+    const details = (data as Record<string, unknown>)['details'];
+    if (typeof details === 'string' && details.length > 0) return details;
+    const reason = (data as Record<string, unknown>)['reason'];
+    if (typeof reason === 'string' && reason.length > 0) return reason;
+  }
+  return null;
+}
+
 export class JsonRpcProcessClient {
   private readonly child: ChildProcessWithoutNullStreams;
   private readonly pending = new Map<JsonRpcId, PendingRequest>();

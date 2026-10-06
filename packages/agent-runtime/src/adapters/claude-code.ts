@@ -16,6 +16,7 @@ import type {
   AgentAdapter,
   CreateAdapterSessionOptions,
 } from '../control/adapter.js';
+import { CANCEL_CONFIRMATION_TIMEOUT_MS } from '../control/adapter.js';
 import { asRecord, optionalNumber, optionalString, sanitizeAgentValue } from '../control/payload.js';
 import {
   DEFAULT_AGENT_CAPABILITIES,
@@ -158,6 +159,9 @@ class ClaudeAdapterSession implements AdapterSession {
   private model: string | null = null;
   private permissionMode: PermissionMode = 'default';
   private closed = false;
+  /** Resolves when the SDK result message for the active turn arrives. */
+  private activeTurnSettled: Promise<void> = Promise.resolve();
+  private releaseActiveTurn: (() => void) | null = null;
 
   constructor(options: CreateAdapterSessionOptions) {
     this.emit = options.emit;
@@ -217,6 +221,7 @@ class ClaudeAdapterSession implements AdapterSession {
     const turnId = `claude_turn_${randomUUID()}`;
     const queued = this.activeTurnId !== null;
     this.activeTurnId = turnId;
+    this.activeTurnSettled = new Promise<void>((resolve) => { this.releaseActiveTurn = resolve; });
     const message: SDKUserMessage = {
       type: 'user',
       uuid: randomUUID(),
@@ -229,15 +234,28 @@ class ClaudeAdapterSession implements AdapterSession {
     return { turnId, queued, mode: queued ? 'queued' : 'new-turn' };
   }
 
+  /**
+   * Stops the running turn and resolves once the SDK's result message for that
+   * turn has arrived.
+   *
+   * `query.interrupt()` returning only means the interrupt was accepted, not
+   * that the turn ended. The terminal event is emitted by `handleResult`, which
+   * the SDK invokes when the turn actually finishes; `interrupt` waits for that
+   * rather than announcing a cancellation that may not happen.
+   */
   async interrupt(): Promise<void> {
     if (this.activeTurnId === null) return;
-    const receipt = await this.query.interrupt();
-    this.emit({
-      type: 'turn.cancelled',
-      turnId: this.activeTurnId,
-      approvalId: null,
-      data: { stillQueued: receipt?.still_queued ?? [] },
-    });
+    const turnId = this.activeTurnId;
+    await this.query.interrupt();
+    // Bounded so a provider that never delivers a result message fails loudly
+    // instead of leaving the UI's Stop control spinning.
+    await Promise.race([
+      this.activeTurnSettled,
+      new Promise<void>((resolve) => { setTimeout(resolve, CANCEL_CONFIRMATION_TIMEOUT_MS).unref?.(); }),
+    ]);
+    if (this.activeTurnId === turnId) {
+      throw new Error(`Claude Code did not confirm interruption of turn ${turnId} within ${CANCEL_CONFIRMATION_TIMEOUT_MS}ms.`);
+    }
   }
 
   async resolveApproval(approvalId: string, resolution: AdapterApprovalResolution): Promise<void> {
@@ -453,12 +471,18 @@ class ClaudeAdapterSession implements AdapterSession {
       ? this.activeTurnId
       : String(record['user_message_uuid']);
     const isError = record['is_error'] === true || optionalString(record['subtype'])?.startsWith('error_') === true;
+    // An interrupted turn reports `is_error: true` with an `aborted_*`
+    // terminal reason. That is a user-requested stop, not a failure, and it is
+    // the SDK's own confirmation that the turn actually ended.
+    const terminalReason = optionalString(record['terminal_reason']);
+    const aborted = terminalReason === 'aborted_streaming' || terminalReason === 'aborted_tools';
     this.emit({
-      type: isError ? 'turn.failed' : 'turn.completed',
+      type: aborted ? 'turn.cancelled' : isError ? 'turn.failed' : 'turn.completed',
       turnId,
       approvalId: null,
       data: {
         subtype: optionalString(record['subtype']),
+        terminalReason,
         result: sanitizeAgentValue(record['result']),
         errors: sanitizeAgentValue(record['errors']),
         usage: sanitizeAgentValue(record['usage']),
@@ -481,6 +505,11 @@ class ClaudeAdapterSession implements AdapterSession {
       },
     });
     if (this.activeTurnId === turnId) this.activeTurnId = null;
+    // Releases `interrupt()`, which waits for this result instead of assuming
+    // the interrupt it requested already stopped the turn.
+    this.releaseActiveTurn?.();
+    this.releaseActiveTurn = null;
+    this.activeTurnSettled = Promise.resolve();
   }
 
   private handleSystemMessage(record: Record<string, unknown>): void {

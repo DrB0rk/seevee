@@ -6,6 +6,21 @@ This project uses Semantic Versioning. See `.dev/VERSIONING.md` for the project 
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-10-07
+
+### Added
+
+- The dashboard chat agent now receives a compact operating briefing with every session: the workspace layout, where `AGENTS.md` and the workspace-agent skill live, the CLI commands to prefer over hand-rolled work, Seevee's hard rules, and the revision/`baseRevision` mutation contract. It previously received a state snapshot with no instructions and improvised, including hand-rolled shell and Python one-liners for tasks the CLI already performs.
+- The generated `AGENTS.md` names `SKILL.md` and each reference file explicitly, and states that the skill wins if an edited guide conflicts with it.
+
+### Fixed
+
+- **"Full access" permission mode now takes effect.** OMP's ACP server has no permission mode: `session/set_mode("full")` is rejected with "Unsupported ACP mode: full", so the previous code silently asked for nothing permission-related and approval prompts kept appearing. OMP controls approval through its `--approval-mode` flag, so the client now enforces the mode itself by advertising `fs.writeTextFile` and answering the resulting write requests according to the selected mode. Read-only plan mode is enforced on the ACP layer as well.
+- **Stopping a running session now actually stops it.** Cancellation was reported optimistically after a fire-and-forget request, so the dashboard showed a stopped turn while the agent kept working. The adapter now waits for the provider's own terminal event and reports an error when cancellation is not confirmed. The Codex adapter had the same flaw and was fixed the same way.
+- A failed provider request now surfaces as a typed, actionable error instead of a settings control that silently reverts.
+- `/api/render/preview` no longer fails depending on test order. The cached template server could be torn down by an earlier test, so the preview test only passed when it ran first.
+
+
 ## [0.3.1] - 2026-10-06
 
 ### Fixed

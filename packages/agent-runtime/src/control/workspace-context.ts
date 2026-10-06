@@ -11,6 +11,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
+import { WORKSPACE_OPERATING_BRIEFING } from './workspace-briefing.js';
+
 const UPLOAD_INDEX_PATH = 'sources/uploads/index.json';
 
 export interface WorkspaceContextSummary {
@@ -130,6 +132,9 @@ export async function readWorkspaceContext(workspaceRoot: string): Promise<Works
  *
  * `resumed` is stated explicitly: a resumed session keeps its conversation,
  * a new one does not, and the files on disk are the only memory either has.
+ *
+ * The block is state *plus* the standing operating briefing, in that order:
+ * "you are in X" is only actionable if the agent also knows how X works.
  */
 export function formatWorkspaceContext(
   context: WorkspaceContextSummary | null,
@@ -140,6 +145,8 @@ export function formatWorkspaceContext(
       '## Workspace context',
       '',
       'No Seevee workspace marker was found at the session root. Confirm the working directory before editing anything.',
+      '',
+      WORKSPACE_OPERATING_BRIEFING,
     ].join('\n');
   }
   const lines = [
@@ -157,7 +164,9 @@ export function formatWorkspaceContext(
     `Templates registered: ${context.templateIds.length > 0 ? context.templateIds.join(', ') : 'none'}`,
     `Workspace holds ${context.cvCount} CV(s) and ${context.presentationCount} presentation(s).`,
     '',
-    'The Studio adds a private, fresh snapshot of the active CV, presentation, provenance, comments, resource paths, and source inventory to every user prompt. Use that snapshot to start work immediately. When the user says "this CV", "the header", or "it", they mean the active document above. Read a registered file only when the current prompt needs detail the snapshot does not include, or when you need to confirm freshness before writing.',
+    'The Studio adds a private, fresh snapshot of the active CV, presentation, provenance, comments, resource paths, and source inventory to every user prompt. That per-prompt snapshot carries state only. Use it to start work immediately. When the user says "this CV", "the header", or "it", they mean the active document above. Read a registered file only when the current prompt needs detail the snapshot does not include, or when you need to confirm freshness before writing. That limit is about not re-reading what is already in front of you — it does not forbid looking up how this workspace works. Those rules are below.',
+    '',
+    WORKSPACE_OPERATING_BRIEFING,
   ];
   return lines.join('\n');
 }

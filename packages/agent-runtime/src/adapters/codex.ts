@@ -7,6 +7,7 @@ import type {
   AgentAdapter,
   CreateAdapterSessionOptions,
 } from '../control/adapter.js';
+import { CANCEL_CONFIRMATION_TIMEOUT_MS } from '../control/adapter.js';
 import {
   JsonRpcProcessClient,
   type JsonRpcNotificationMessage,
@@ -112,6 +113,9 @@ class CodexAdapterSession implements AdapterSession {
   private model: string | null = null;
   private approvalPolicy: 'untrusted' | 'on-request' | 'never' = 'on-request';
   private closed = false;
+  /** Resolves when Codex reports `turn/completed` for the active turn. */
+  private activeTurnSettled: Promise<void> = Promise.resolve();
+  private releaseActiveTurn: (() => void) | null = null;
   private readonly requestedResumeSessionId: string | undefined;
   private readonly instructions: string;
 
@@ -127,6 +131,7 @@ class CodexAdapterSession implements AdapterSession {
       cwd: options.workspaceRoot,
       includeJsonRpcVersion: false,
       requestTimeoutMs: 60_000,
+      env: options.env ?? process.env,
     });
     this.rpc.onNotification = (message) => this.handleNotification(message);
     this.rpc.onRequest = (message) => void this.handleServerRequest(message);
@@ -186,22 +191,34 @@ class CodexAdapterSession implements AdapterSession {
       approvalPolicy: this.approvalPolicy,
     }));
     this.activeTurnId = result.turn.id;
+    this.activeTurnSettled = new Promise<void>((resolve) => { this.releaseActiveTurn = resolve; });
     return { turnId: this.activeTurnId, queued: false, mode: 'new-turn' };
   }
 
+  /**
+   * Stops the running turn and resolves once Codex confirms it.
+   *
+   * `turn/interrupt` returning only means the request was accepted. Codex
+   * reports the real outcome on its own `turn/completed` notification, which
+   * carries `status: "interrupted"`; that path emits the terminal event and
+   * releases this method, so no cancellation is announced speculatively.
+   */
   async interrupt(): Promise<void> {
     if (this.externalSessionId === null || this.activeTurnId === null) return;
+    const turnId = this.activeTurnId;
     await this.rpc.request('turn/interrupt', {
       threadId: this.externalSessionId,
-      turnId: this.activeTurnId,
+      turnId,
     });
-    this.emit({
-      type: 'turn.cancelled',
-      turnId: this.activeTurnId,
-      approvalId: null,
-      data: { message: 'Codex turn interrupted by the user.' },
-    });
-    this.activeTurnId = null;
+    // Bounded so a provider that never reports `turn/completed` fails loudly
+    // instead of leaving the UI's Stop button spinning.
+    await Promise.race([
+      this.activeTurnSettled,
+      new Promise<void>((resolve) => { setTimeout(resolve, CANCEL_CONFIRMATION_TIMEOUT_MS).unref?.(); }),
+    ]);
+    if (this.activeTurnId === turnId) {
+      throw new Error(`Codex did not confirm interruption of turn ${turnId} within ${CANCEL_CONFIRMATION_TIMEOUT_MS}ms.`);
+    }
   }
 
   async resolveApproval(approvalId: string, resolution: AdapterApprovalResolution): Promise<void> {
@@ -324,6 +341,10 @@ class CodexAdapterSession implements AdapterSession {
           data: turn,
         });
         this.activeTurnId = null;
+        // Releases `interrupt()`, which waits for Codex's own terminal event.
+        this.releaseActiveTurn?.();
+        this.releaseActiveTurn = null;
+        this.activeTurnSettled = Promise.resolve();
         return;
       }
       case 'item/started':

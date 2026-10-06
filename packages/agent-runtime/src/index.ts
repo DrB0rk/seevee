@@ -35,6 +35,15 @@ export type {
 export { executeIngestionRole } from './roles/ingestion.js';
 export { AgentRuntimeManager, AgentRuntimeError } from './control/manager.js';
 export type { AgentEventSink } from './control/manager.js';
+export { formatWorkspaceContext, readWorkspaceContext } from './control/workspace-context.js';
+export type { WorkspaceContextSummary } from './control/workspace-context.js';
+export {
+  WORKSPACE_AGENT_SKILL_DIR,
+  WORKSPACE_AGENT_SKILL_ENTRY,
+  WORKSPACE_GUIDE_PATH,
+  WORKSPACE_OPERATING_BRIEFING,
+} from './control/workspace-briefing.js';
+export { CANCEL_CONFIRMATION_TIMEOUT_MS } from './control/adapter.js';
 export type {
   AdapterApprovalResolution,
   AdapterPromptOptions,
@@ -72,6 +81,9 @@ export type {
   UpdateAgentSessionRequest,
 } from './control/types.js';
 export { createDefaultAgentAdapters, ClaudeCodeAdapter, CodexAdapter, OmpAdapter } from './adapters/index.js';
+export { OmpProtocolError, OMP_PERMISSION_MODES, OMP_ACP_MODES, ompPermissionMode } from './adapters/omp.js';
+export type { OmpPermissionMode, OmpAcpMode } from './adapters/omp.js';
+export { JsonRpcProcessError, jsonRpcErrorDetail } from './control/json-rpc.js';
 
 export { workspaceGetTool, workspacePutTool, workspaceListTool, workspaceTools } from './tools/workspace.js';
 export {

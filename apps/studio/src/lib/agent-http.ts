@@ -1,4 +1,4 @@
-import { AgentRuntimeError } from '@seevee/agent-runtime';
+import { AgentRuntimeError, OmpProtocolError } from '@seevee/agent-runtime';
 
 export function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -37,6 +37,18 @@ export function agentErrorResponse(error: unknown): Response {
   if (error instanceof AgentRuntimeError) {
     const status = error.code === 'AGENT_SESSION_NOT_FOUND' ? 404 : 409;
     return jsonResponse({ ok: false, code: error.code, reason: error.message }, status);
+  }
+  // A provider that rejects the requested capability is a client-actionable
+  // condition (an unsupported permission mode, an unknown config option), not
+  // a server fault. Answer 409 with the provider's own wording so the picker
+  // can explain it instead of showing a bare "Internal error" 500.
+  if (error instanceof OmpProtocolError) {
+    return jsonResponse({
+      ok: false,
+      code: 'AGENT_PROVIDER_UNSUPPORTED',
+      provider: error.provider,
+      reason: error.message,
+    }, 409);
   }
   return jsonResponse({
     ok: false,
