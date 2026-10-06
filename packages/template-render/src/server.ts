@@ -87,6 +87,20 @@ interface TemplateServerSlot {
 const servers = new Map<string, TemplateServerSlot>();
 
 /**
+ * Hand out unique HMR ports.
+ *
+ * Vite's default (24678) is a fixed constant, so concurrent renderers collide.
+ * The OS picks a free port when we pass 0, which Vite forwards to its WebSocket
+ * server, so we only need a monotonic counter that never repeats within a
+ * process. Starting above Vite's default keeps the numbers recognisable in logs.
+ */
+let lastHmrPort = 24_679;
+function nextEphemeralHmrPort(): number {
+  lastHmrPort += 1;
+  return lastHmrPort;
+}
+
+/**
  * Resolve a host-owned specifier to an absolute ESM URL, or `null` when it is
  * not one of ours.
  *
@@ -317,8 +331,15 @@ async function createTemplateServer(templateRoot: string): Promise<TemplateServe
     },
     server: {
       middlewareMode: true,
-      hmr: false,
       watch: null,
+      // Every server gets its own HMR port. Vite defaults this to the fixed
+      // 24678, so two renderers — two vitest workers running the same package,
+      // or two template roots in one process — race for it and the loser dies
+      // with "Port 24678 is already in use", which surfaces as a dead
+      // transport and fails the render. Nothing serves HMR here; invalidation
+      // is driven by `invalidateTemplate` — so the port only has to be unique,
+      // not fixed.
+      hmr: { port: nextEphemeralHmrPort() },
     },
   };
 

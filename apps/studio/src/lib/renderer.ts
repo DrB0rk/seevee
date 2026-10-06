@@ -222,13 +222,23 @@ async function renderWithRecovery(
     return { fragment, styles };
   };
 
-  try {
-    return await render();
-  } catch (error) {
-    if (!isDeadTemplateServer(error)) throw error;
-    await invalidateTemplate(template.root);
-    return render();
+  // A dead cached server is a transport failure, not a template bug, so it is
+  // safe to drop the cache and rebuild. The retry is bounded rather than a
+  // single attempt because a fresh server can be torn down again by
+  // concurrent work before the render lands, and one retry lost that race
+  // intermittently. A genuinely broken template fails on the first pass and
+  // surfaces its real compile/runtime error untouched.
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return await render();
+    } catch (error) {
+      if (!isDeadTemplateServer(error)) throw error;
+      lastError = error;
+      await invalidateTemplate(template.root);
+    }
   }
+  throw lastError;
 }
 
 /**
