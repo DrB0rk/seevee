@@ -135,9 +135,22 @@ describe('workspace operating briefing', () => {
 
   it('points at AGENTS.md and the skill by exact path', async () => {
     const block = await preamble();
-    expect(block).toContain(`\`${WORKSPACE_GUIDE_PATH}\` in the workspace root`);
-    expect(block).toContain(`\`${WORKSPACE_AGENT_SKILL_ENTRY}\``);
+    expect(block).toContain(`${WORKSPACE_GUIDE_PATH} in the workspace root`);
+    expect(block).toContain(WORKSPACE_AGENT_SKILL_ENTRY);
     expect(block).toContain('references/');
+  });
+
+  // The first version of this briefing shipped broken: the paths sat inside a
+  // template literal as escaped markdown backticks, so the released bundle
+  // handed the agent the literal text `${WORKSPACE_GUIDE_PATH}` instead of
+  // `AGENTS.md` — the single most important pointer in the whole briefing.
+  // Every other test compared against the same exported constant, so they all
+  // passed. Assert on the resolved text so the bug cannot return.
+  it('resolves interpolated paths rather than shipping template syntax', () => {
+    expect(WORKSPACE_OPERATING_BRIEFING).not.toContain('${');
+    expect(WORKSPACE_OPERATING_BRIEFING).not.toContain('\\`');
+    expect(WORKSPACE_OPERATING_BRIEFING).toContain(WORKSPACE_GUIDE_PATH);
+    expect(WORKSPACE_OPERATING_BRIEFING).toContain(WORKSPACE_AGENT_SKILL_ENTRY);
   });
 
   it('carries the hard rules that are expensive to violate', async () => {

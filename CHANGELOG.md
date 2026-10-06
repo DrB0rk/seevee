@@ -6,6 +6,14 @@ This project uses Semantic Versioning. See `.dev/VERSIONING.md` for the project 
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-10-07
+
+### Fixed
+
+- The agent briefing shipped its file paths unresolved. Markdown backticks around the interpolated paths were escaped inside a template literal, so the released bundle handed the agent the literal text `${WORKSPACE_GUIDE_PATH}` instead of `AGENTS.md` — the single most important pointer in the briefing. Paths now resolve to real text, and a test asserts the rendered briefing contains no unresolved template syntax.
+- Template servers no longer collide on Vite's fixed HMR port (24678), which produced intermittent dead-transport render failures when two renderers ran concurrently.
+
+
 ## [0.3.2] - 2026-10-07
 
 ### Added
