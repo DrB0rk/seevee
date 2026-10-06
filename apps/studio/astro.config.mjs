@@ -26,20 +26,29 @@ export default defineConfig({
     // `astro build` work against an unbuilt workspace.
     ssr: {
       noExternal: [/^@seevee\//],
+      // The Vite toolchain resolves platform-specific native binaries at
+      // import time. Marking it external is required on both axes: with
+      // `rollupOptions.external` alone, Vite's CommonJS transform still
+      // inlined esbuild's `lib/main.js`, whose `requireNative()` runs on
+      // module load and throws `__dirname is not defined in ES module scope`
+      // once Rollup rewrote it into the ESM server bundle. That made every
+      // template render 500 in a release build.
+      external: ['esbuild', 'rollup', 'playwright', 'playwright-core'],
+    },
+    optimizeDeps: {
+      // Keep the native-binary toolchain out of the dep-optimization pass so
+      // its platform-specific entry stays resolved at runtime.
+      exclude: ['esbuild', 'rollup', 'playwright', 'playwright-core'],
     },
     build: {
       rollupOptions: {
         external: [
-          // `@seevee/export` depends on Playwright, which ships platform
-          // binaries and optional native bindings that Rollup cannot bundle
-          // (playwright-core imports `kerberos`). The bundle ships Playwright
-          // as a real runtime dependency, so leave it to Node's loader rather
-          // than inlining it into the server build.
+          'esbuild',
+          'rollup',
           'playwright',
           'playwright-core',
-          // macOS-only optional peers of the Vite/Rollup toolchain. They are
-          // genuinely absent on Linux and Windows, where the modules fall
-          // back to polling.
+          // macOS-only optional peers of the toolchain. Genuinely absent on
+          // Linux and Windows, where the modules fall back to polling.
           'fsevents',
           'kerberos',
         ],
