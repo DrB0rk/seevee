@@ -9,7 +9,8 @@
  * The tests do NOT start a real Astro server. Astro's standalone Node
  * adapter requires `astro build`, which is exercised separately.
  */
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { invalidateTemplate } from '@seevee/template-render';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -62,6 +63,18 @@ afterAll(async () => {
   delete process.env['SEEVEE_WORKSPACE_ROOT'];
   process.chdir(previousCwd);
   await fs.rm(testRoot, { recursive: true, force: true });
+});
+
+// `@seevee/template-render` caches one Vite dev server per template root for
+// the lifetime of the process, and the agent routes under test tear down the
+// transport that server runs on. A server cached by one test is therefore dead
+// for the next, which made `/api/render/preview` order-dependent: it passed
+// when it ran before the agent routes and failed when it ran after.
+//
+// Dropping the cache before each test removes the ordering dependency instead
+// of hoping the renderer's retry covers every teardown race.
+beforeEach(async () => {
+  await invalidateTemplate();
 });
 
 describe('Studio API', () => {
